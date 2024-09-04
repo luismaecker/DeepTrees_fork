@@ -15,6 +15,8 @@ from shapely.geometry import shape, Polygon
 
 from multiprocessing import Pool
 
+import re
+
 fiona.drvsupport.supported_drivers["SQLite"] = "rw"
 
 def get_parser():
@@ -214,9 +216,16 @@ if __name__ == '__main__':
 
     def work(f):
         with fiona.open(args.shpfile) as src:
+            assert src.crs == 'EPSG:25832', print(f'{args.shpfile} must be EPSG:25832 but is {src.crs}')
+
             input_file = os.path.abspath(f)
             input_path, input_fname = os.path.split(input_file)
-            suffix = input_fname.split('.')[0].split('_')[-1]
+
+            # this is the pattern for the tiles and associated labels
+            pattern = r'\d+_\d+'
+            match = re.search(pattern, input_fname)
+            suffix = match.group()
+            #suffix = input_fname.split('.')[0].split('_')[-1]
 
             output_file = os.path.abspath(args.output) + suffix + '.tif'
 
