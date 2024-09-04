@@ -1,19 +1,22 @@
+from typing import Union
+
 import os
 import glob
 import numpy as np
 import albumentations as A
-import pytorch_lightning as pl
+import lightning as L
 from torch.utils.data import DataLoader
 from ..dataloading import datasets as ds
 from ..modules.utils import dilate_img
 
 
-class InMemoryDataModule(pl.LightningDataModule):
+class InMemoryDataModule(L.LightningDataModule):
     def __init__(self,
-                 rasters: str or list,
-                 targets: tuple or list,
+                 rasters: Union[str, list],
+                 targets: Union[tuple, list],
                  training_split: float = 0.7,
                  batchsize: int = 16,
+                 num_workers: int = 8,
                  width: int = 256,
                  train_augmentation=None,
                  val_augmentation=None,
@@ -42,6 +45,7 @@ class InMemoryDataModule(pl.LightningDataModule):
                 (masks, outlines, distance_transforms) or b) a tuple / list of lists containg all the target files
             training_split (float): Value between 0 and 1 determining the training split. Default: 0.7
             batchsize (int): Batch size
+            num_workers (int): Number of workers in DataLoader
             width (int): Width and height of the cropped images returned by the data loader.
             train_augmentation: Training augmentation from the albumentations package.
             val_augmentation: Validation augmentation from the albumentations package.
@@ -83,6 +87,7 @@ class InMemoryDataModule(pl.LightningDataModule):
 
         self.training_split = training_split
         self.batch_size = batchsize
+        self.num_workers = num_workers
         self.width = width
         self.train_augmentation = train_augmentation
         self.val_augmentation = val_augmentation
@@ -179,13 +184,13 @@ class InMemoryDataModule(pl.LightningDataModule):
                     m[:, :, 1] = dilate_img(m[:, :, 1], self.dilate_second_target_band)
 
     def train_dataloader(self):
-        return DataLoader(self.train_ds, batch_size=self.batch_size, drop_last=True, pin_memory=True)
+        return DataLoader(self.train_ds, batch_size=self.batch_size, num_workers=self.num_workers, drop_last=True, pin_memory=True)
 
     def val_dataloader(self):
         if self.training_split == 1 and self.val_indices is None:
             return None
         else:
-            return DataLoader(self.val_ds, batch_size=self.batch_size, drop_last=True, pin_memory=True)
+            return DataLoader(self.val_ds, batch_size=self.batch_size, num_workers=self.num_workers, drop_last=True, pin_memory=True)
 
 
 class InMemoryMaskDataModule(InMemoryDataModule):

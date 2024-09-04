@@ -1,12 +1,12 @@
 import torch
-import pytorch_lightning as pl
+import lightning as L
 from .segmentation_model import SegmentationModel
 from .distance_model import DistanceModel
 from ..modules import metrics
 from ..modules.losses import BinarySegmentationLossWithLogits
 
 
-class TreeCrownDelineationModel(pl.LightningModule):
+class TreeCrownDelineationModel(L.LightningModule):
     def __init__(self, segmentation_model=None, distance_model=None, in_channels=None, lr=1E-4, apply_sigmoid=False):
         """Tree crown delineation model
 
