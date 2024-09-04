@@ -77,6 +77,9 @@ def get_parser():
                         default=None,
                         help="Name of the class column. In conjunction with -cls this can be used to rasterize only "
                              "polygons of a certain class.")
+    parser.add_argument('--crs',
+                        default='EPSG:25832',
+                        help='Expected coordinate reference system. Needs to align with the one used for the tiles.')
     # parser.add_argument("--num_classes",
     #                    dest="num_classes",
     #                    type=int,
@@ -216,7 +219,8 @@ if __name__ == '__main__':
 
     def work(f):
         with fiona.open(args.shpfile) as src:
-            assert src.crs == 'EPSG:25832', print(f'{args.shpfile} must be EPSG:25832 but is {src.crs}')
+            # assure labels and images are in the same CRS
+            assert src.crs == args.crs, print(f'{args.shpfile} was expected to be {args.crs} but is {src.crs}')
 
             input_file = os.path.abspath(f)
             input_path, input_fname = os.path.split(input_file)

@@ -22,6 +22,8 @@ from skimage.morphology import dilation, square
 
 from multiprocessing.pool import Pool, ThreadPool
 
+import re
+
 fiona.drvsupport.supported_drivers["SQLite"] = "rw"
 
 def get_parser():
@@ -200,7 +202,11 @@ def work(f, args):
 
     input_file = os.path.abspath(f)
     input_path, input_fname = os.path.split(input_file)
-    suffix = input_fname.split('.')[0].split("_")[-1]
+    # this is the pattern for the tiles and associated labels
+    pattern = r'\d+_\d+'
+    match = re.search(pattern, input_fname)
+    suffix = match.group()
+    #suffix = input_fname.split('.')[0].split("_")[-1]
 
     output_file = os.path.abspath(args.output) + suffix + ".tif"
     print(output_file)
