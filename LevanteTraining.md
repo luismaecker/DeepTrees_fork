@@ -2,7 +2,13 @@
 
 This document outlines the steps for fine-tuning a pretrained TreeCrownDelineation model on Levante.
 
-## Directory structure
+## Environment
+
+Install required libraries from `requirements_levante.txt`.
+
+## Preprocessing
+
+### Directory structure
 
 The root folder is `/work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/`. Sync this folder with the labeled tiles provided by UFZ.
 
@@ -25,7 +31,7 @@ Create the new empty directories
 |-- dist_trafo
 ```
 
-## Preparation
+### Preparation
 
 We will follow the instructions in the TreeCrownDelineation repository to fine tune the models. Link: https://github.com/AWF-GAUG/TreeCrownDelineation
 
@@ -62,3 +68,14 @@ python rasterize_to_distance_transform.py -i /work/ka1176/shared_data/2024-ufz-d
 ```
 
 6. Check that everything was processed correctly. Run the notebook `notebooks/processing/quick_data_check.ipynb` for a visual inspection.
+
+## Fine tuning
+
+Adapt your own config file based on the defaults in `finetune.yaml` as needed.
+
+Run the script like this:
+
+```bash
+python finetuning_halle.py # with default config finetune.yaml
+python finetuning_halle.py config=yourconfig # with your own config
+```
