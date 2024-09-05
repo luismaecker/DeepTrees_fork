@@ -7,12 +7,27 @@ Added:
 - Early stopping callback monitoring the validation loss
 
 TODO:
-- Fix loading pretrained model checkpoint
+- Fix loading pretrained model checkpoint -> not possible with torchscript
 - ColorJitter albumentation augmentation
 - Fix model save
+- Does the validation dataloader need cropped images? Could work with the whole tile
 
 Caroline Arnold, Harsh Grover, Helmholtz AI, 2024
 '''
+
+import rootutils
+
+path = rootutils.find_root(search_from=__file__, indicator=".project-root")
+
+# set root directory
+rootutils.set_root(
+    path=path, # path to the root directory
+    project_root_env_var=True, # set the PROJECT_ROOT environment variable to root directory
+    dotenv=True, # load environment variables from .env if exists in root directory
+    pythonpath=True, # add root directory to the PYTHONPATH (helps with imports)
+    cwd=False, # we do not want that with hydra
+)
+
 
 import os
 
@@ -29,7 +44,10 @@ from lightning.pytorch.loggers import TensorBoardLogger
 import hydra
 from omegaconf import DictConfig, OmegaConf
 
-@hydra.main(version_base=None, config_path="config", config_name="finetune")
+import logging
+log = logging.getLogger(__name__)
+
+@hydra.main(version_base=None, config_path="../config", config_name="finetune")
 def finetune(config: DictConfig) -> None:
     print(OmegaConf.to_yaml(config))
 
@@ -53,6 +71,7 @@ def finetune(config: DictConfig) -> None:
                                 ])
     val_augmentation = A.RandomCrop(config['data']['width'], config['data']['width'], always_apply=True)
 
+    log.info('Instantiating data module ...')
     data = InMemoryDataModule(config['data']['rasters'],
                              (config['data']['masks'], config['data']['outlines'], config['data']['dist']),
                              width=config['data']['width'],
@@ -66,25 +85,25 @@ def finetune(config: DictConfig) -> None:
                              dilate_second_target_band=2,
                              rescale_ndvi=True)
 
+    log.info('Instantiating model...')
     model = TreeCrownDelineationModel(in_channels=config['model']['in_channels'], lr=config['model']['lr'])
 
     # FIXME figure this out
     #model = torch.jit.load('/work/ka1176/shared_data/2024-ufz-deeptree/pretrained_models/tcd-20cm-RGBI-v1/Unet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=0_jitted.pt')
 
-    trainer = Trainer(devices=config['trainer']['devices'],
-                      accelerator=config['trainer']['accelerator'],
-                      logger=logger,
-                      callbacks=callbacks,
-                      max_epochs=config['trainer']['max_epochs']
-                      )
+    trainer: Trainer = hydra.utils.instantiate(config.trainer, callbacks=callbacks, logger=logger)
 
+    log.info('Starting model fit')
     trainer.fit(model, data)
 
     # save the trained model
     # FIXME
+    log.info('Saving trained model')
     model.to('cpu')
-    t = torch.rand(1, config['model']['in_channels'], config['data']['width'], config['data']['width'], dtype=torch.float32)
-    model.to_torchscript(os.path.join(os.getcwd(), f'{model_name}_jitted.pt'), method='trace', example_inputs=t)
+    input_sample = torch.rand(1, config['model']['in_channels'], config['data']['width'], config['data']['width'], dtype=torch.float32)
+    model.to_onnx(os.path.join(os.getcwd(), f'{model_name}.onnx'), input_sample=input_sample, export_params=True)
+    #torch.jit.save( model.to_torchscript(os.path.join(os.getcwd(), f'{model_name}_jitted.pt'), method='trace', example_inputs=t) )
+    log.info('Completed!')
 
 if __name__=='__main__':
     finetune()

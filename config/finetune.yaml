@@ -18,12 +18,17 @@ model:
   pretrained_model: null # pretrained model checkpoint (null: train from scratch)
 logdir: ${hydra.run.dir} # this is where we find logs, trained models, predictions
 model_save_path: null # TODO
+
 trainer:
+  _target_: lightning.Trainer
   devices: 1               # Number of devices (GPUs) to use
   accelerator: auto        # Choose GPU if available
-  max_epochs: 100        # maximum number of epochs
+  max_epochs: 100          # maximum number of epochs
+  num_sanity_val_steps: 1  # sanity check before training starts
+  fast_dev_run: False      # if True, runs one batch of each dataloader
+
 hydra:
   job:
     chdir: True
   run:
-    dir: outputs/${hydra.job.name}/${now:%Y-%m-%d}_${now:%H-%M-%S}
+    dir: experiments/${hydra.job.name}/${now:%Y-%m-%d}_${now:%H-%M-%S}
