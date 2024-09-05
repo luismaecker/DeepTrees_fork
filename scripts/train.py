@@ -1,5 +1,5 @@
 '''
-Fine tune a pretrained model on labeled Halle DOP data.
+Train a TreeCrownDelineation model on new data.
 
 Follows the example script. 
 
@@ -47,8 +47,8 @@ from omegaconf import DictConfig, OmegaConf
 import logging
 log = logging.getLogger(__name__)
 
-@hydra.main(version_base=None, config_path="../config", config_name="finetune")
-def finetune(config: DictConfig) -> None:
+@hydra.main(version_base=None, config_path="../config", config_name="train_halle")
+def train(config: DictConfig) -> None:
     print(OmegaConf.to_yaml(config))
 
     # we store the hyperparameters with the trained model and choose a short model name
@@ -106,4 +106,4 @@ def finetune(config: DictConfig) -> None:
     log.info('Completed!')
 
 if __name__=='__main__':
-    finetune()
+    train()

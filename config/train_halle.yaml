@@ -1,4 +1,4 @@
-name: finetune-halle
+name: train-halle
 data:
   rasters: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/tiles  # directory with raster images
   masks: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/tiles    # directory with masks

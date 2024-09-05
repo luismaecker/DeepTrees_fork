@@ -69,13 +69,27 @@ python rasterize_to_distance_transform.py -i /work/ka1176/shared_data/2024-ufz-d
 
 6. Check that everything was processed correctly. Run the notebook `notebooks/processing/quick_data_check.ipynb` for a visual inspection.
 
-## Fine tuning
+## Training
 
-Adapt your own config file based on the defaults in `finetune.yaml` as needed.
+Adapt your own config file based on the defaults in `train_halle.yaml` as needed.
 
 Run the script like this:
 
 ```bash
-python finetuning_halle.py # with default config finetune.yaml
-python finetuning_halle.py config=yourconfig # with your own config
+python scripts/train.py # with default config finetune.yaml
+python scripts/train.py --config-name=yourconfig # with your own config
+```
+
+You can overwrite individual parameters on the command line, e.g.
+
+```bash
+python scripts/train.py trainer.fast_dev_run=True
+```
+
+## Inference
+
+Run the inference script with the corresponding config file. Adjust as needed.
+
+```bash
+python scripts/inference_halle.py
 ```

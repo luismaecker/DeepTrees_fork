@@ -1,0 +1,26 @@
+name: inference-halle
+# input raster file
+input_file: /work/ka1176/shared_data/2024-ufz-deeptree/example_tiles/LVermGeo_DOP20/dop20rgbi_32_702_5706_2_st_2022.tif 
+output_file: test.sqlite # output file and path name, e.g. ~/output/result.sqlite
+# pretrained model
+model_path: /work/ka1176/shared_data/2024-ufz-deeptree/pretrained_models/tcd-20cm-RGBI-v1/testmodel.pt
+device: cuda # selects GPU if available
+width: 256 # network input window size, must be divisible by 8
+red: 0 # red channel index
+nir: 3 # near infrared channel index
+ndvi: True # if True, use NDVI
+rescale_ndvi: False # if True, rescale NDVI to 0 ... 1
+augment: False # if True, apply data augmentation in inference
+min_dist: 10 # minimum distnace in pixels between local maxima during feature extraction
+sigma: 2 # standard deviation of Gaussian filter during feature extraction
+label_threshold: 0.5 # minimum height of local maxima during feature extraction
+binary_threshold: 0.1 # threshold value for the feature map, lower is background
+simplify_dist: 0.3 # polygon simplification distance, vertices closer than this value are simplified
+divisor: 1.0 # input data will be divided by this value
+save_prediction: null # Enables saving of intermediate neural network predictions.
+batchsize: 16 # batch size during inference
+tilesize: 0 # Tile size for reading chunks from disk. Default is 0, which triggers an estimation based on available RAM.
+subsample: False # if True, polygon extraction works at half the resolution of the model output. Use this for speedup at the cost of accuracy.
+upsample: 1.0 # Input to the network will be upsampled bilinearly by the given factor
+sigmoid: False # if True, sigmoid activation will be applied to masks and outlines
+stride: null # Stride used in applying the network to the image
