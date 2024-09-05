@@ -1,8 +1,10 @@
 # Training
 
-This document outlines the steps for fine-tuning a pretrained TreeCrownDelineation model on Levante.
+This document outlines the steps for working with the TreeCrownDelineation model on Levante.
 
-## Environment
+## Setup
+
+Check out branch `finetune-halle` from the forked TreeCrownDelineation repository (https://codebase.helmholtz.cloud/ai-consultants-dkrz/TreeCrownDelineation/).
 
 Install required libraries from `requirements_levante.txt`.
 
