@@ -103,7 +103,7 @@ def train(config: DictConfig) -> None:
     input_sample = torch.rand(1, config['model']['in_channels'], config['data']['width'], config['data']['width'], dtype=torch.float32)
     model.to_onnx(os.path.join(os.getcwd(), f'{model_name}.onnx'), input_sample=input_sample, export_params=True)
     log.info('Saved ONNX')
-    torch.jit.save( model.seg_model.to_torchscript(method='trace', example_inputs=input_sample), os.path.join(os.getcwd(), f'{model_name}_jitted.pt') )
+    torch.jit.save( model.to_torchscript(method='trace', example_inputs=input_sample), os.path.join(os.getcwd(), f'{model_name}_jitted.pt') )
     log.info('Saved torchscript')
     log.info('Completed!')
 
