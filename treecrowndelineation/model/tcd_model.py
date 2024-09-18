@@ -1,9 +1,9 @@
 import torch
 import lightning as L
-from .segmentation_model import SegmentationModel
-from .distance_model import DistanceModel
-from ..modules import metrics
-from ..modules.losses import BinarySegmentationLossWithLogits
+from treecrowndelineation.model.segmentation_model import SegmentationModel
+from treecrowndelineation.model.distance_model import DistanceModel
+from treecrowndelineation.modules import metrics
+from treecrowndelineation.modules.losses import BinarySegmentationLossWithLogits
 
 
 class TreeCrownDelineationModel(L.LightningModule):

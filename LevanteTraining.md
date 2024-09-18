@@ -4,9 +4,21 @@ This document outlines the steps for working with the TreeCrownDelineation model
 
 ## Setup
 
+### Code
+
 Check out branch `finetune-halle` from the forked TreeCrownDelineation repository (https://codebase.helmholtz.cloud/ai-consultants-dkrz/TreeCrownDelineation/).
 
-Install required libraries from `requirements_levante.txt`.
+### Environment
+
+Install the required libraries in a conda environment:
+
+```bash
+conda create -n deeptree python=3.12
+conda activate deeptree
+
+conda install -c conda-forge gdal==3.9.2 pip
+pip install -r requirements_levante.txt
+```
 
 ## Preprocessing
 

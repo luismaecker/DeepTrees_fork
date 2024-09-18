@@ -31,7 +31,7 @@ rootutils.set_root(
 
 import os
 
-from treecrowndelineation import TreeCrownDelineationModel
+from treecrowndelineation.model.tcd_model import TreeCrownDelineationModel
 from treecrowndelineation.dataloading.in_memory_datamodule import InMemoryDataModule
 
 import albumentations as A
@@ -102,7 +102,9 @@ def train(config: DictConfig) -> None:
     model.to('cpu')
     input_sample = torch.rand(1, config['model']['in_channels'], config['data']['width'], config['data']['width'], dtype=torch.float32)
     model.to_onnx(os.path.join(os.getcwd(), f'{model_name}.onnx'), input_sample=input_sample, export_params=True)
-    #torch.jit.save( model.to_torchscript(os.path.join(os.getcwd(), f'{model_name}_jitted.pt'), method='trace', example_inputs=t) )
+    log.info('Saved ONNX')
+    torch.jit.save( model.to_torchscript(os.path.join(os.getcwd(), f'{model_name}_jitted.pt'), method='trace', example_inputs=input_sample) )
+    log.info('Saved torchscript')
     log.info('Completed!')
 
 if __name__=='__main__':

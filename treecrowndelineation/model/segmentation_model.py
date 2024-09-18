@@ -2,9 +2,9 @@ import torch
 import segmentation_models_pytorch as smp
 
 import pytorch_lightning as pl
-from ..modules import utils
-from ..modules import metrics
-from ..modules.losses import BinarySegmentationLossWithLogits, BinaryFocalLossWithLogits
+from treecrowndelineation.modules import utils
+from treecrowndelineation.modules import metrics
+from treecrowndelineation.modules.losses import BinarySegmentationLossWithLogits, BinaryFocalLossWithLogits
 
 architectures = [smp.Unet, smp.UnetPlusPlus, smp.Linknet, smp.FPN, smp.FPN, smp.PSPNet, smp.PAN, smp.DeepLabV3,
                  smp.DeepLabV3Plus]
