@@ -29,15 +29,16 @@ def gpu(x: torch.Tensor, device="cuda", dtype=torch.float32):
 
 
 def set_batchnorm_momentum(model, momentum):
-    # print("Setting batchnorm momentum to {}.".format(momentum))
-    if type(model) == torch.jit._script.RecursiveScriptModule:
-        for m in model.modules():
-            if "Batch" in m.original_name:
-                m.momentum = momentum
-    else:
-        for m in model.modules():
-            if "Batch" in str(m.__class__):
-                m.momentum = momentum
+    """
+    Set the momentum for all BatchNorm layers in the given model.
+
+    Args:
+        model: The model (either scripted or non-scripted) where batchnorm layers are modified.
+        momentum: The momentum value to set for the BatchNorm layers.
+    """
+    for m in model.modules():
+        if isinstance(m, (torch.nn.BatchNorm1d, torch.nn.BatchNorm2d, torch.nn.BatchNorm3d)):
+            m.momentum = momentum                
 
 
 def get_map_extent(gdal_raster):

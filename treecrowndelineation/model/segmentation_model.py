@@ -6,12 +6,6 @@ from treecrowndelineation.modules import utils
 from treecrowndelineation.modules import metrics
 from treecrowndelineation.modules.losses import BinarySegmentationLossWithLogits, BinaryFocalLossWithLogits
 
-architectures = [smp.Unet, smp.UnetPlusPlus, smp.Linknet, smp.FPN, smp.FPN, smp.PSPNet, smp.PAN, smp.DeepLabV3,
-                 smp.DeepLabV3Plus]
-arch_names = [m.__name__.replace("Plus", "+") for m in architectures]
-arch_dict = {name: m for name, m in zip(arch_names, architectures)}
-
-
 class SegmentationModel(pl.LightningModule):
     def __init__(self,
                  in_channels: int = 4,
@@ -27,7 +21,7 @@ class SegmentationModel(pl.LightningModule):
 
         Args:
             in_channels (int): Number of input channels
-            architecture (str): One of 'Unet, Unet++, Linknet, FPN, PSPNet, PAN, DeepLabV3'
+            architecture (str): One of 'Unet, Unet++, Linknet, FPN, PSPNet, PAN, DeepLabV3, DeepLabV3+'
             backbone (str): One of the backbones supported by the [pytorch segmentation models package](https://github.com/qubvel/segmentation_models.pytorch)
             lr (float): Learning rate
             mask_loss_share (float): Value between 0 and 1. Zero means only the outlines contribute to the loss,
@@ -35,7 +29,28 @@ class SegmentationModel(pl.LightningModule):
         """
 
         super().__init__()
-        arch = arch_dict[architecture]
+
+        # architectures should be static
+        match architecture:
+            case 'Unet':
+                arch = smp.Unet
+            case 'Unet++':
+                arch = smp.UnetPlusPlus
+            case 'Linknet':
+                arch = smp.Linknet
+            case 'FPN':
+                arch = smp.FPN
+            case 'PSPNet':
+                arch = smp.PSPNet
+            case 'PAN':
+                arch = smp.PAN
+            case 'DeepLabV3':
+                arch = smp.DeepLabV3
+            case 'DeepLabV3+':
+                arch = smp.DeepLabV3Plus
+            case _:
+                raise ValueError(f"Unsupported architecture: {architecture}")
+
         self.model = arch(in_channels=in_channels,
                           classes=2,
                           encoder_name=backbone)
@@ -45,7 +60,7 @@ class SegmentationModel(pl.LightningModule):
         # self.focal_loss = BinaryFocalLossWithLogits()
         self.lr = lr
         self.mask_loss_share = mask_loss_share
-        self.save_hyperparameters()  # logs the arguments of this function
+        #self.save_hyperparameters()  # logs the arguments of this function
 
     def forward(self, x):
         return self.model(x)
@@ -71,6 +86,7 @@ class SegmentationModel(pl.LightningModule):
 
         return loss, loss_mask, loss_outline, iou_mask, iou_outline
 
+    @torch.jit.ignore
     def training_step(self, batch, batch_idx):
         loss, loss_mask, loss_outline, iou_mask, iou_outline = self.shared_step(batch)
         self.log('train/loss'        , loss        , on_step = False, on_epoch = True, sync_dist = True)
@@ -80,6 +96,7 @@ class SegmentationModel(pl.LightningModule):
         self.log('train/iou_outline' , iou_outline , on_step = False, on_epoch = True, sync_dist = True)
         return loss
 
+    @torch.jit.ignore
     def validation_step(self, batch, batch_idx):
         loss, loss_mask, loss_outline, iou_mask, iou_outline = self.shared_step(batch)
         self.log('val/loss'        , loss        , on_step = False, on_epoch = True, sync_dist = True)
@@ -93,3 +110,7 @@ class SegmentationModel(pl.LightningModule):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, 30, 2)
         return [optimizer], [scheduler]
+
+    def to_torchscript(self, method, example_inputs):
+        if method == 'trace':
+            return torch.jit.trace(self.forward, example_inputs)

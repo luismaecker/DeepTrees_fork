@@ -1,13 +1,7 @@
 import torch
 import segmentation_models_pytorch as smp
 import pytorch_lightning as pl
-from ..modules import utils
-
-
-architectures = [smp.Unet, smp.UnetPlusPlus, smp.Linknet, smp.FPN, smp.PSPNet, smp.PAN, smp.DeepLabV3,
-                 smp.DeepLabV3Plus]
-arch_names = [m.__name__.replace("Plus", "+") for m in architectures]
-arch_dict = {name: m for name, m in zip(arch_names, architectures)}
+from treecrowndelineation.modules import utils
 
 
 class DistanceModel(pl.LightningModule):
@@ -18,11 +12,30 @@ class DistanceModel(pl.LightningModule):
 
         Args:
             in_channels (int): Number of input channels
-            architecture (str): One of 'Unet, Unet++, Linknet, FPN, PSPNet, PAN, DeepLabV3'
+            architecture (str): One of 'Unet, Unet++, Linknet, FPN, PSPNet, PAN, DeepLabV3, DeepLabV3+'
             backbone (str): One of the backbones supported by the [pytorch segmentation models package](https://github.com/qubvel/segmentation_models.pytorch)
         """
         super().__init__()
-        arch = arch_dict[architecture]
+
+        # architectures should be static
+        match architecture:
+            case 'Unet':
+                arch = smp.Unet
+            case 'Unet++':
+                arch = smp.UnetPlusPlus
+            case 'Linknet':
+                arch = smp.Linknet
+            case 'FPN':
+                arch = smp.FPN
+            case 'PSPNet':
+                arch = smp.PSPNet
+            case 'PAN':
+                arch = smp.PAN
+            case 'DeepLabV3':
+                arch = smp.DeepLabV3
+            case 'DeepLabV3+':
+                arch = smp.DeepLabV3Plus
+
         self.model = arch(encoder_name=backbone,
                           in_channels=in_channels,
                           classes=1,

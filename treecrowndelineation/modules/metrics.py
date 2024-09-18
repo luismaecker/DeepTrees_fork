@@ -2,7 +2,7 @@ import torch
 
 
 def iou(y_pred, y_true):
-    eps = 1E-15
+    eps = torch.finfo(torch.float32).eps  # A more stable epsilon for float32
     intersection = (y_pred * y_true).sum()
     union = y_pred.sum() + y_true.sum() - intersection
     return (intersection + eps) / (union + eps)
