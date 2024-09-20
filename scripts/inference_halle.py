@@ -7,10 +7,7 @@ Added:
 
 TODO:
 - load more than one model and average them
-- load the ONNX models finetuned on Halle data
 - Enable inference on a folder of tifs - Set this up with a proper dataloader
-- Fix output directory
-- Save config together with the output
 
 Caroline Arnold, Harsh Grover, Helmholtz AI, 2024
 '''
@@ -29,6 +26,7 @@ rootutils.set_root(
 )
 
 import os
+import fiona
 import torch
 import psutil
 import xarray
@@ -137,17 +135,17 @@ def test(config: DictConfig) -> None:
             disk_loading_time += t2 - t1
             log.info("Starting prediction on chunk {}/{}".format(idx, nchunks))
             result = utils.predict_on_array_cf(model,
-                                            data,
-                                            in_shape=(nbands + config.ndvi, config.width,
-                                            config.width),
-                                            out_bands=3,
-                                            drop_border=16,
-                                            batchsize=config.batchsize,
-                                            stride=stride,
-                                            device=config.device,
-                                            augmentation=config.augment,
-                                            no_data=0,
-                                            verbose=True)
+                                                data,
+                                                in_shape=(nbands + config.ndvi, config.width,
+                                                config.width),
+                                                out_bands=3,
+                                                drop_border=16,
+                                                batchsize=config.batchsize,
+                                                stride=stride,
+                                                device=config.device,
+                                                augmentation=config.augment,
+                                                no_data=0,
+                                                verbose=True)
 
             t3 = time.time()
             inference_time += t3 - t2
@@ -191,15 +189,15 @@ def test(config: DictConfig) -> None:
             t5 = time.time()
             postprocessing_time += t5 - t4
 
-    log.info(f"Found {len(polygons)} polygons in total.")
-    log.info(f"Total processing time: {time.time()-t0:.0f}s")
-    log.info(f"Time loading from disk: {disk_loading_time:.0f}s")
-    log.info(f"Inference time: {inference_time:.0f}s")
-    log.info(f"Post-processing time: {postprocessing_time:.0f}s")
-    log.info(f"Saving to {os.path.join(os.getcwd(), config.output_file)}")
+    log.info("Found {} polygons in total.".format(len(polygons)))
+    log.info("Total processing time: {}s".format(int(time.time() - t0)))
+    log.info("Time loading from disk: {}s".format(int(disk_loading_time)))
+    log.info("Inference time: {}s".format(int(inference_time)))
+    log.info("Post-processing time: {}s".format(int(postprocessing_time)))
+    log.info("Saving as {}".format(os.path.join(os.getcwd(), config.output_file)))
 
     crs_ = get_crs(array)
-    
+
     utils.save_polygons(polygons,
                         os.path.join(os.getcwd(), config.output_file),
                         crs=crs_)
