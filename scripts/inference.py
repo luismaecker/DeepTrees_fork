@@ -169,6 +169,8 @@ def get_crs(array):
 
 if __name__ == '__main__':
     args = get_parser().parse_args()
+    
+    print(args)
     # args = get_parser().parse_args("-i /data/bangalore/raster/WV3_2016-11_north.tif "
     # args = get_parser().parse_args("-i /data/bangalore/raster/WV3_Pansharpen_11_2016_subset.tif "
     #                                "-o /home/max/dr/deleteme.sqlite "

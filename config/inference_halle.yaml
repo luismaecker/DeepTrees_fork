@@ -16,7 +16,7 @@ sigma: 2 # standard deviation of Gaussian filter during feature extraction
 label_threshold: 0.5 # minimum height of local maxima during feature extraction
 binary_threshold: 0.1 # threshold value for the feature map, lower is background
 simplify_dist: 0.3 # polygon simplification distance, vertices closer than this value are simplified
-divisor: 1.0 # input data will be divided by this value
+divisor: 255.0 # input data will be divided by this value
 save_prediction: null # Enables saving of intermediate neural network predictions.
 batchsize: 16 # batch size during inference
 tilesize: 0 # Tile size for reading chunks from disk. Default is 0, which triggers an estimation based on available RAM.
