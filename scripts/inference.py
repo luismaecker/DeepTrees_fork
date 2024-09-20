@@ -1,4 +1,18 @@
 #!/usr/bin/env python3
+
+import rootutils
+
+path = rootutils.find_root(search_from=__file__, indicator=".project-root")
+
+# set root directory
+rootutils.set_root(
+    path=path, # path to the root directory
+    project_root_env_var=True, # set the PROJECT_ROOT environment variable to root directory
+    dotenv=True, # load environment variables from .env if exists in root directory
+    pythonpath=True, # add root directory to the PYTHONPATH (helps with imports)
+    cwd=False, # we do not want that with hydra
+)
+
 import sys
 import fiona.errors
 import torch
@@ -183,6 +197,8 @@ if __name__ == '__main__':
                                  }
 
     print("Loading model")
+
+    print(polygon_extraction_params)
     
     model_names = args.model
     
