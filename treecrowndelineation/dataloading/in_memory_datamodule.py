@@ -6,8 +6,8 @@ import numpy as np
 import albumentations as A
 import lightning as L
 from torch.utils.data import DataLoader
-from ..dataloading import datasets as ds
-from ..modules.utils import dilate_img
+from treecrowndelineation.dataloading import datasets as ds
+from treecrowndelineation.modules.utils import dilate_img
 
 
 class InMemoryDataModule(L.LightningDataModule):

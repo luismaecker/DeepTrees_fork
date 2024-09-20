@@ -12,6 +12,7 @@ from uuid import uuid4
 from skimage.morphology import dilation, square, disk
 from shapely.geometry import Polygon, mapping, shape
 from osgeo import osr
+from fiona import crs
 
 
 def load_model_weights(model, path):
@@ -710,4 +711,12 @@ def write_info_file(path, **kwargs):
     for key, value in kwargs.items():
         file.write( "{}: {}\n".format(key, value) )
     file.close()
+
+def get_crs(array):
+    crs_ = array.attrs["crs"]
+    if "epsg" in crs_:
+        crs_ = crs.from_epsg(crs_.split(':')[-1])
+    else:
+        crs_ = crs.from_string(crs_)
+    return crs_
 

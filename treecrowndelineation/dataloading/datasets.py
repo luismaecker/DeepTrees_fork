@@ -3,8 +3,8 @@ import xarray as xr
 import numpy as np
 import multiprocessing as mp
 from torch.utils.data import IterableDataset, get_worker_info
-from ..modules.indices import ndvi
-from ..modules.utils import read_img
+from treecrowndelineation.modules.indices import ndvi
+from treecrowndelineation.modules.utils import read_img
 
 
 class InMemoryRSDataset:

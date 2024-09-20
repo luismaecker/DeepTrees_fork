@@ -3,7 +3,7 @@ name: inference-halle
 input_file: /work/ka1176/shared_data/2024-ufz-deeptree/example_tiles/LVermGeo_DOP20/dop20rgbi_32_702_5706_2_st_2022.tif 
 output_file: test.sqlite # output file and path name, e.g. ~/output/result.sqlite
 # pretrained model
-model_path: /work/ka1176/shared_data/2024-ufz-deeptree/pretrained_models/tcd-20cm-RGBI-v1/testmodel.pt
+model_path: /work/ka1176/shared_data/2024-ufz-deeptree/finetuned_models/demo-unet-halle-jitted.pt
 device: cuda # selects GPU if available
 width: 256 # network input window size, must be divisible by 8
 red: 0 # red channel index
@@ -24,3 +24,9 @@ subsample: False # if True, polygon extraction works at half the resolution of t
 upsample: 1.0 # Input to the network will be upsampled bilinearly by the given factor
 sigmoid: False # if True, sigmoid activation will be applied to masks and outlines
 stride: null # Stride used in applying the network to the image
+
+hydra:
+  job:
+    chdir: True
+  run:
+    dir: results/${hydra.job.name}/${now:%Y-%m-%d}_${now:%H-%M-%S}

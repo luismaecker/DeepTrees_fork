@@ -106,7 +106,6 @@ class TreeCrownDelineationModel(L.LightningModule):
             return torch.jit.load(path)
 
     def to_torchscript(self, method='trace', example_inputs=None):
-        print("I am here")
         if method == 'trace':
             return torch.jit.trace(self.forward, example_inputs=example_inputs)
         else:

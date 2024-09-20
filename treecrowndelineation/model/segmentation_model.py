@@ -1,12 +1,12 @@
 import torch
 import segmentation_models_pytorch as smp
 
-import pytorch_lightning as pl
+import lightning as L
 from treecrowndelineation.modules import utils
 from treecrowndelineation.modules import metrics
 from treecrowndelineation.modules.losses import BinarySegmentationLossWithLogits, BinaryFocalLossWithLogits
 
-class SegmentationModel(pl.LightningModule):
+class SegmentationModel(L.LightningModule):
     def __init__(self,
                  in_channels: int = 4,
                  architecture: str = "Unet",
@@ -60,7 +60,7 @@ class SegmentationModel(pl.LightningModule):
         # self.focal_loss = BinaryFocalLossWithLogits()
         self.lr = lr
         self.mask_loss_share = mask_loss_share
-        #self.save_hyperparameters()  # logs the arguments of this function
+        self.save_hyperparameters()  # logs the arguments of this function
 
     def forward(self, x):
         return self.model(x)
@@ -110,7 +110,3 @@ class SegmentationModel(pl.LightningModule):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, 30, 2)
         return [optimizer], [scheduler]
-
-    def to_torchscript(self, method, example_inputs):
-        if method == 'trace':
-            return torch.jit.trace(self.forward, example_inputs)

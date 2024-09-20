@@ -28,7 +28,7 @@ rootutils.set_root(
     cwd=False, # we do not want that with hydra
 )
 
-import sys
+import os
 import torch
 import psutil
 import xarray
@@ -36,10 +36,10 @@ import numpy as np
 from torch.nn import DataParallel
 from torch.nn import UpsamplingBilinear2d, Sequential
 import time
-from fiona import crs
 from treecrowndelineation.modules import utils
 from treecrowndelineation.modules.indices import ndvi
 from treecrowndelineation.modules.postprocessing import extract_polygons
+from treecrowndelineation.modules.utils import get_crs
 from treecrowndelineation.model.inference_model import InferenceModel
 from treecrowndelineation.model.averaging_model import AveragingModel
 
@@ -48,14 +48,6 @@ from omegaconf import DictConfig, OmegaConf
 
 import logging
 log = logging.getLogger(__name__)
-
-def get_crs(array):
-    crs_ = array.attrs["crs"]
-    if "epsg" in crs_:
-        crs_ = crs.from_epsg(crs_.split(':')[-1])
-    else:
-        crs_ = crs.from_string(crs_)
-    return crs_
 
 @hydra.main(version_base=None, config_path="../config", config_name="inference_halle")
 def test(config: DictConfig) -> None:
@@ -72,18 +64,17 @@ def test(config: DictConfig) -> None:
                                  }
 
     log.info("Loading model")
-    # TODO convert this to ONNX
     
-    model_names = config.model_path
-    
-    if isinstance(model_names, str):
+    if isinstance(config.model_path, str):
+        # FIXME torchscript is not working 
         model = torch.jit.load(config.model_path).to(config.device)
-    elif isinstance(model_names, list):
-        models = [torch.jit.load(m).to(config.device) for m in model_names]
-        model = AveragingModel(models)
+
+    elif isinstance(config.model_path, list):
+        # models = [torch.jit.load(m).to(config.device) for m in model_names]
+        # model = AveragingModel(models)
+        raise NotImplementedError('Passing several models is not implemented')
     else:
-        print("Error during model loading.")
-        sys.exit(1)
+        raise RuntimeError('Model loading failed')
 
     log.info("Model loaded")
 
@@ -210,7 +201,7 @@ def test(config: DictConfig) -> None:
     crs_ = get_crs(array)
     
     utils.save_polygons(polygons,
-                        config.output_file,
+                        os.path.join(os.getcwd(), config.output_file),
                         crs=crs_)
     log.info("Done.")
 

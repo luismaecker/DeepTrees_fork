@@ -47,6 +47,9 @@ from omegaconf import DictConfig, OmegaConf
 import logging
 log = logging.getLogger(__name__)
 
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)
+
 @hydra.main(version_base=None, config_path="../config", config_name="train_halle")
 def train(config: DictConfig) -> None:
     print(OmegaConf.to_yaml(config))
@@ -89,7 +92,10 @@ def train(config: DictConfig) -> None:
     model = TreeCrownDelineationModel(in_channels=config['model']['in_channels'], lr=config['model']['lr'])
 
     # FIXME figure this out
-    #model = torch.jit.load('/work/ka1176/shared_data/2024-ufz-deeptree/pretrained_models/tcd-20cm-RGBI-v1/Unet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=0_jitted.pt')
+    if config['model']['pretrained_model'] is not None:
+        pretrained_model = torch.jit.load(os.path.join(config['model']['pretrained_path'], config['model']['pretrained_model']))
+        model.load_state_dict(pretrained_model.state_dict())
+        log.info('Loaded state dict from pretrained model')
 
     trainer: Trainer = hydra.utils.instantiate(config.trainer, callbacks=callbacks, logger=logger)
 
@@ -97,14 +103,13 @@ def train(config: DictConfig) -> None:
     trainer.fit(model, data)
 
     # save the trained model
-    # FIXME
     log.info('Saving trained model')
     model.to('cpu')
     input_sample = torch.rand(1, config['model']['in_channels'], config['data']['width'], config['data']['width'], dtype=torch.float32)
     model.to_onnx(os.path.join(os.getcwd(), f'{model_name}.onnx'), input_sample=input_sample, export_params=True)
-    log.info('Saved ONNX')
+    log.info(f'Saved ONNX to {os.getcwd():s}/{model_name:s}.onnx')
     torch.jit.save( model.to_torchscript(method='trace', example_inputs=input_sample), os.path.join(os.getcwd(), f'{model_name}_jitted.pt') )
-    log.info('Saved torchscript')
+    log.info(f'Saved torchscript to {os.getcwd():s}/{model_name:s}_jitted.pt')
     log.info('Completed!')
 
 if __name__=='__main__':
