@@ -196,7 +196,7 @@ def test(config: DictConfig) -> None:
     log.info(f"Time loading from disk: {disk_loading_time:.0f}s")
     log.info(f"Inference time: {inference_time:.0f}s")
     log.info(f"Post-processing time: {postprocessing_time:.0f}s")
-    log.info(f"Saving to {config.output_file}")
+    log.info(f"Saving to {os.path.join(os.getcwd(), config.output_file)}")
 
     crs_ = get_crs(array)
     
