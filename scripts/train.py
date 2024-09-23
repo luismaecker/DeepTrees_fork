@@ -7,9 +7,7 @@ Added:
 - Early stopping callback monitoring the validation loss
 
 TODO:
-- Fix loading pretrained model checkpoint -> not possible with torchscript
 - ColorJitter albumentation augmentation
-- Fix model save
 - Does the validation dataloader need cropped images? Could work with the whole tile
 
 Caroline Arnold, Harsh Grover, Helmholtz AI, 2024
@@ -37,7 +35,7 @@ from treecrowndelineation.dataloading.in_memory_datamodule import InMemoryDataMo
 import albumentations as A
 
 import torch
-from lightning import Trainer
+from lightning import Trainer, seed_everything
 from lightning.pytorch.callbacks import LearningRateMonitor, ModelCheckpoint, EarlyStopping
 from lightning.pytorch.loggers import TensorBoardLogger
 
@@ -53,6 +51,9 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 @hydra.main(version_base=None, config_path="../config", config_name="train_halle")
 def train(config: DictConfig) -> None:
     print(OmegaConf.to_yaml(config))
+
+    if config.seed:
+        seed_everything(config.seed, workers=True)
 
     # we store the hyperparameters with the trained model and choose a short model name
     model_name = config['model']['model_name']
@@ -80,13 +81,17 @@ def train(config: DictConfig) -> None:
                              width=config['data']['width'],
                              batchsize=config['data']['batchsize'],
                              training_split=config['data']['training_split'],
+                             train_indices=config['data']['train_indices'],
+                             val_indices=config['data']['val_indices'],
                              train_augmentation=train_augmentation,
                              val_augmentation=val_augmentation,
                              concatenate_ndvi=config['data']['concatenate_ndvi'],
                              red=config['data']['red'],
                              nir=config['data']['nir'],
                              dilate_second_target_band=2,
-                             rescale_ndvi=True)
+                             rescale_ndvi=True,
+                             num_workers=config['data']['num_workers']
+                            )
 
     log.info('Instantiating model...')
     model = TreeCrownDelineationModel(in_channels=config['model']['in_channels'], lr=config['model']['lr'])
@@ -106,8 +111,8 @@ def train(config: DictConfig) -> None:
     log.info('Saving trained model')
     model.to('cpu')
     input_sample = torch.rand(1, config['model']['in_channels'], config['data']['width'], config['data']['width'], dtype=torch.float32)
-    model.to_onnx(os.path.join(os.getcwd(), f'{model_name}.onnx'), input_sample=input_sample, export_params=True)
-    log.info(f'Saved ONNX to {os.getcwd():s}/{model_name:s}.onnx')
+    #model.to_onnx(os.path.join(os.getcwd(), f'{model_name}.onnx'), input_sample=input_sample, export_params=True)
+    #log.info(f'Saved ONNX to {os.getcwd():s}/{model_name:s}.onnx')
     torch.jit.save( model.to_torchscript(method='trace', example_inputs=input_sample), os.path.join(os.getcwd(), f'{model_name}_jitted.pt') )
     log.info(f'Saved torchscript to {os.getcwd():s}/{model_name:s}_jitted.pt')
     log.info('Completed!')

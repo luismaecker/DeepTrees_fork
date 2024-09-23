@@ -9,6 +9,8 @@ from torch.utils.data import DataLoader
 from treecrowndelineation.dataloading import datasets as ds
 from treecrowndelineation.modules.utils import dilate_img
 
+import logging
+log = logging.getLogger(__name__)
 
 class InMemoryDataModule(L.LightningDataModule):
     def __init__(self,
@@ -127,6 +129,13 @@ class InMemoryDataModule(L.LightningDataModule):
             validation_data = [r[self.val_indices] for r in data]
         else:
             validation_data = [r[int(len(r) * self.training_split):] for r in data]
+
+        log.info('Tiles in training data')
+        for t in training_data[0]:
+            log.info(t)
+        log.info('Tiles in validation data')
+        for t in validation_data[0]:
+            log.info(t)
 
         # load the data into a custom dataset format
         self.train_ds = ds.InMemoryRSTorchDataset(training_data[0],

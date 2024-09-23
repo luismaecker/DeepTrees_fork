@@ -7,9 +7,12 @@ data:
   width: 256             # Width and height of the cropped images returned by the data loader
   batchsize: 32          # dataloader batch size
   training_split: 0.8    # Train/val split
+  train_indices: null    # Train set indices (pass explicitly)
+  val_indices: null      # Validation set indices (pass explicitly)
   concatenate_ndvi: True # If True, concatenate NDVI
   red: 0                 # Index of Red channel
   nir: 3                 # Index of Infrared channel
+  num_workers: 8         # Number of workers in dataloader
 model:
   model_name: unet-halle # short and memorable model name
   arch: Unet-resnet18    # model architecture
@@ -20,6 +23,7 @@ model:
   pretrained_model: null # Pass e.g. Unet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=0_jitted.pt 
 logdir: ${hydra.run.dir} # this is where we find logs, trained models, predictions
 model_save_path: null # TODO
+seed: null               # Fix random seed 
 
 trainer:
   _target_: lightning.Trainer

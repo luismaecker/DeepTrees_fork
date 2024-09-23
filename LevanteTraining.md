@@ -24,7 +24,7 @@ pip install -r requirements_levante.txt
 
 ### Directory structure
 
-The root folder is `/work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/`. Sync this folder with the labeled tiles provided by UFZ.
+The root folder is `/work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/`. Sync the folder `tiles` and `labels` with the labeled tiles provided by UFZ. The unlabeled tiles go into `pool_tiles`.
 
 ```
 |-- tiles
@@ -34,6 +34,10 @@ The root folder is `/work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling
 |-- labels
 |   |-- label_tile_0_0.shp
 |   |-- label_tile_0_1.shp
+|   |-- ...
+|-- pool_tiles
+|   |-- tile_4_7.tif
+|   |-- tile_4_8.tif
 |   |-- ...
 ```
 
@@ -61,7 +65,7 @@ all_polygons = pd.concat([gpd.read_file(shape).set_crs(epsg=4326).to_crs(epsg=25
 all_polygons.to_file('/work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/labels/all_labels.shp')
 ```
 
-2. Create the raster image tiles: skip, they are provided by UFZ (TODO: Check)
+2. Create the raster image tiles: skip, they are provided by UFZ. These files should be in `tiles`.
 
 3. Rasterize the delineated tree crowns. We are working in `~treecrowndelineation/scripts`.
 
@@ -78,7 +82,7 @@ python rasterize.py -i /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labell
 5. Create the distance transform.
 
 ```python
-python rasterize_to_distance_transform.py -i /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/tiles/ -o /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/dist_trafo/dist_trafo_ -shp /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/labels/all_labels.shp
+python rasterize_to_distance_transform.py -i /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/tiles/* -o /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/dist_trafo/dist_trafo_ -shp /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/labels/all_labels.shp
 ```
 
 6. Check that everything was processed correctly. Run the notebook `notebooks/processing/quick_data_check.ipynb` for a visual inspection.

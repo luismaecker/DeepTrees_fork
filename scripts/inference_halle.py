@@ -64,13 +64,11 @@ def test(config: DictConfig) -> None:
     log.info("Loading model")
     
     if isinstance(config.model_path, str):
-        # FIXME torchscript is not working 
         model = torch.jit.load(config.model_path).to(config.device)
 
     elif isinstance(config.model_path, list):
-        # models = [torch.jit.load(m).to(config.device) for m in model_names]
-        # model = AveragingModel(models)
-        raise NotImplementedError('Passing several models is not implemented')
+        models = [torch.jit.load(m).to(config.device) for m in config.model_path]
+        model = AveragingModel(models)
     else:
         raise RuntimeError('Model loading failed')
 
