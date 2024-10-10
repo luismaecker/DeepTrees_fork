@@ -17,7 +17,7 @@ label_threshold: 0.5 # minimum height of local maxima during feature extraction
 binary_threshold: 0.1 # threshold value for the feature map, lower is background
 simplify_dist: 0.3 # polygon simplification distance, vertices closer than this value are simplified
 divisor: 255.0 # input data will be divided by this value
-save_prediction: True # Enables saving of intermediate neural network predictions.
+save_prediction: '/work/ka1176/shared_data/Deeptree_data_04_Oct_2024/polygon-labelling/saved_inferenced_results' # Enables saving of intermediate neural network predictions.
 batchsize: 16 # batch size during inference
 tilesize: 0 # Tile size for reading chunks from disk. Default is 0, which triggers an estimation based on available RAM.
 subsample: False # if True, polygon extraction works at half the resolution of the model output. Use this for speedup at the cost of accuracy.
