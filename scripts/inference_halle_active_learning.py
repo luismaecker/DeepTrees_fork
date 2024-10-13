@@ -55,6 +55,12 @@ from omegaconf import DictConfig, OmegaConf
 import logging
 log = logging.getLogger(__name__)
 
+def calculate_entropy(probability_map):
+    # Ensure the probability map is clipped between a very small value to avoid log(0)
+    probability_map = np.clip(probability_map, 1e-6, 1 - 1e-6)
+    entropy = - (probability_map * np.log(probability_map) + (1 - probability_map) * np.log(1 - probability_map))
+    return entropy
+
 @hydra.main(version_base=None, config_path="../config", config_name="inference_halle")
 def test(config: DictConfig) -> None:
     print(OmegaConf.to_yaml(config))
@@ -165,31 +171,18 @@ def test(config: DictConfig) -> None:
                 prediction_array = result['prediction']
 
                 # Extract only the first channel, which represents the probability map
-                probability_channel_0 = prediction_array[0, :, :]
-                probability_channel_1 = prediction_array[1, :, :]
                 probability_channel_2 = prediction_array[2, :, :]
 
-                
-                log.info(np.array(probability_channel_0).shape)
-                log.info(np.array(probability_channel_1).shape)
-                log.info(np.array(probability_channel_2).shape)
-                # log.info(probability_channel_1)
-                # log.info(probability_channel_2)
-                
-                # Compute the mean of the probability channel
-                mean_probability = np.mean(probability_channel_2)
 
-                # Store the chunk mean along with its identifier (e.g., idx)
-                chunk_means.append((mean_probability, filename))
+                # Assuming `probability_channel_2` is the probability map of the foreground
+                entropy_map = calculate_entropy(probability_channel_2)
+                mean_entropy = np.mean(entropy_map)
 
-                # (Optional) Log the mean probability of the current chunk
-                log.info(f"Mean probability of chunk {filename}: {mean_probability}")
+                # You can then sort patches by mean_entropy to select the least certain ones
+                chunk_means.append((mean_entropy, filename))
 
-                # print(result)
-                
-                # log.info(np.array(result['prediction'][0, :, :]))
-                
-            
+                log.info(f"Mean entropy of chunk {filename}: {mean_entropy}")
+
 
                 t3 = time.time()
                 inference_time += t3 - t2
@@ -234,11 +227,11 @@ def test(config: DictConfig) -> None:
                 postprocessing_time += t5 - t4
         
     # Sort the chunk means in ascending order by the mean probability value
-    sorted_chunk_means = sorted(chunk_means, key=lambda x: x[0], reverse=False)
+    sorted_chunk_means = sorted(chunk_means, key=lambda x: x[0], reverse=True)
 
     # Print or log the sorted list of chunk means
     for mean, chunk_id in sorted_chunk_means:
-        log.info(f"Chunk {chunk_id} has mean probability: {mean}")
+        log.info(f"Chunk {chunk_id} has mean entropy: {mean}")
         
     log.info("Found {} polygons in total.".format(len(polygons)))
     log.info("Total processing time: {}s".format(int(time.time() - t0)))
