@@ -3,8 +3,7 @@ name: inference-halle
 input_file: /work/ka1176/shared_data/2024-ufz-deeptree/example_tiles/LVermGeo_DOP20/dop20rgbi_32_702_5706_2_st_2022.tif 
 output_file: test.sqlite # output file and path name, e.g. ~/output/result.sqlite
 # pretrained model
-# model_path: /work/ka1176/shared_data/2024-ufz-deeptree/finetuned_models/demo-unet-halle-jitted.pt
-model_path: /work/ka1176/harsh/Tree_Delineation/TreeCrownDelineation_DKRZ/experiments/train/2024-10-17_15-33-03/unet-halle_jitted.pt
+model_path: /work/ka1176/shared_data/2024-ufz-deeptree/finetuned_models/demo-unet-halle-jitted.pt
 device: cuda # selects GPU if available
 width: 256 # network input window size, must be divisible by 8
 red: 0 # red channel index
