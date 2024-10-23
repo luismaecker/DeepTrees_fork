@@ -196,9 +196,11 @@ def test(config: DictConfig) -> None:
 
                 log.info("Prediction done, extracting polygons for chunk {}/{}.".format(idx, nchunks))
 
-                if config.save_prediction is not None:
+                if config.save_prediction is not None:      
+                    save_prediction_dir = os.path.join(os.getcwd(), config.save_prediction)
+                    os.makedirs(save_prediction_dir, exist_ok=True)              
                     utils.array_to_tif(result["prediction"].transpose(1, 2, 0),
-                                        os.path.abspath(config.save_prediction) + '/' + filename + "_pred.tif",
+                                        os.path.abspath(save_prediction_dir) + '/' + filename + "_pred.tif",
                                         transform=utils.xarray_trafo_to_gdal_trafo(chunk.attrs["transform"]),
                                         crs=array.attrs["crs"])
 

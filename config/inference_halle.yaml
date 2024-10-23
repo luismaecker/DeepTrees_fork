@@ -3,7 +3,8 @@ name: inference-halle
 input_file: /work/ka1176/shared_data/2024-ufz-deeptree/example_tiles/LVermGeo_DOP20/dop20rgbi_32_702_5706_2_st_2022.tif 
 output_file: test.sqlite # output file and path name, e.g. ~/output/result.sqlite
 # pretrained model
-model_path: /work/ka1176/shared_data/2024-ufz-deeptree/finetuned_models/demo-unet-halle-jitted.pt
+# model_path: /work/ka1176/shared_data/2024-ufz-deeptree/finetuned_models/demo-unet-halle-jitted.pt
+model_path: /work/ka1176/harsh/Tree_Delineation/TreeCrownDelineation_DKRZ/experiments/train/2024-10-17_15-33-03/unet-halle_jitted.pt
 device: cuda # selects GPU if available
 width: 256 # network input window size, must be divisible by 8
 red: 0 # red channel index
@@ -17,7 +18,7 @@ label_threshold: 0.5 # minimum height of local maxima during feature extraction
 binary_threshold: 0.1 # threshold value for the feature map, lower is background
 simplify_dist: 0.3 # polygon simplification distance, vertices closer than this value are simplified
 divisor: 255.0 # input data will be divided by this value
-save_prediction: '/work/ka1176/shared_data/Deeptree_data_04_Oct_2024/polygon-labelling/saved_inferenced_results' # Enables saving of intermediate neural network predictions.
+save_prediction: 'saved_inferenced_results' # Enables saving of intermediate neural network predictions.
 batchsize: 16 # batch size during inference
 tilesize: 0 # Tile size for reading chunks from disk. Default is 0, which triggers an estimation based on available RAM.
 subsample: False # if True, polygon extraction works at half the resolution of the model output. Use this for speedup at the cost of accuracy.
