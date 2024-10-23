@@ -36,7 +36,6 @@ import albumentations as A
 
 import torch
 from lightning import Trainer, seed_everything
-from lightning.pytorch.callbacks import LearningRateMonitor, ModelCheckpoint, EarlyStopping
 from lightning.pytorch.loggers import TensorBoardLogger
 
 import hydra
@@ -61,11 +60,13 @@ def train(config: DictConfig) -> None:
     # TODO store logs in different directory?
     logger = TensorBoardLogger(os.getcwd(), name=config['name'], version=model_name, default_hp_metric=False)
 
-    callbacks = [
-        ModelCheckpoint(os.path.join(os.getcwd(), 'checkpoints'), filename=None, monitor='val/loss', save_last=True, save_top_k=1),
-        EarlyStopping(monitor='val/loss', patience=3, mode='min'),
-        LearningRateMonitor()
-    ]
+    callbacks = []
+    for key, value in config.callbacks.items():
+        if value is not None:
+            log.info(f'Instantiating {key} callback')
+            callbacks.append(hydra.utils.instantiate(value))
+        else:
+            log.info(f'Callback not instantiated: {key}')
 
     train_augmentation = A.Compose([A.RandomCrop(config['data']['width'], config['data']['width'], always_apply=True),
                                 A.RandomRotate90(),

@@ -35,9 +35,7 @@ class TreeCrownDelineationModel(L.LightningModule):
 
         # freeze layers
         if freeze_layers:
-            for param in self.seg_model.params():
-                param.requires_grad = False
-            for param in self.dist_model.params():
+            for param in self.parameters():
                 param.requires_grad = False
             for param in self.dist_model.segmentation_head.params():
                 param.requires_grad = True 
@@ -100,7 +98,7 @@ class TreeCrownDelineationModel(L.LightningModule):
         return loss
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
+        optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.parameters()), lr=self.lr)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, 30, 2)
         return [optimizer], [scheduler]
 
