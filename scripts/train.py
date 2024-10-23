@@ -62,7 +62,6 @@ def train(config: DictConfig) -> None:
     logger = TensorBoardLogger(os.getcwd(), name=config['name'], version=model_name, default_hp_metric=False)
 
     callbacks = [
-        #ModelCheckpoint(os.getcwd(), f'{model_name}-{epoch}', monitor='val/loss', save_last=True, save_top_k=2),
         ModelCheckpoint(os.path.join(os.getcwd(), 'checkpoints'), filename=None, monitor='val/loss', save_last=True, save_top_k=1),
         EarlyStopping(monitor='val/loss', patience=3, mode='min'),
         LearningRateMonitor()
@@ -96,7 +95,6 @@ def train(config: DictConfig) -> None:
     log.info('Instantiating model...')
     model = TreeCrownDelineationModel(in_channels=config['model']['in_channels'], lr=config['model']['lr'])
 
-    # FIXME figure this out
     if config['model']['pretrained_model'] is not None:
         pretrained_model = torch.jit.load(os.path.join(config['model']['pretrained_path'], config['model']['pretrained_model']))
         model.load_state_dict(pretrained_model.state_dict())
@@ -111,8 +109,6 @@ def train(config: DictConfig) -> None:
     log.info('Saving trained model')
     model.to('cpu')
     input_sample = torch.rand(1, config['model']['in_channels'], config['data']['width'], config['data']['width'], dtype=torch.float32)
-    #model.to_onnx(os.path.join(os.getcwd(), f'{model_name}.onnx'), input_sample=input_sample, export_params=True)
-    #log.info(f'Saved ONNX to {os.getcwd():s}/{model_name:s}.onnx')
     torch.jit.save( model.to_torchscript(method='trace', example_inputs=input_sample), os.path.join(os.getcwd(), f'{model_name}_jitted.pt') )
     log.info(f'Saved torchscript to {os.getcwd():s}/{model_name:s}_jitted.pt')
     log.info('Completed!')

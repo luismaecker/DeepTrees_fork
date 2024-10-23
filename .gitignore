@@ -144,3 +144,9 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 /train/
+
+# Models
+*.pt
+*.png
+outputs/
+results/

@@ -7,7 +7,7 @@ from treecrowndelineation.modules.losses import BinarySegmentationLossWithLogits
 
 
 class TreeCrownDelineationModel(L.LightningModule):
-    def __init__(self, segmentation_model=None, distance_model=None, in_channels=None, lr=1E-4, apply_sigmoid=False):
+    def __init__(self, segmentation_model=None, distance_model=None, in_channels=None, lr=1E-4, apply_sigmoid=False, freeze_layers=False):
         """Tree crown delineation model
 
         The model consists of two sub-netoworks (two U-Nets with ResNet backbone). The first network calculates a tree
@@ -19,6 +19,8 @@ class TreeCrownDelineationModel(L.LightningModule):
             distance_model: pytorch model
             in_channels: Number of input channels / bands of the input image
             lr: learning rate
+            apply_sigmode (bool): TODO
+            freeze_layers (bool): If True, freeze all layers but the segmentation head. Default: False.
         """
         super().__init__()
         if in_channels is None and segmentation_model is not None and distance_model is not None:
@@ -30,6 +32,15 @@ class TreeCrownDelineationModel(L.LightningModule):
         else:
             raise ValueError("Please provide *either* the base models or the number of input channels via "
                              "'in_channels'.")
+
+        # freeze layers
+        if freeze_layers:
+            for param in self.seg_model.params():
+                param.requires_grad = False
+            for param in self.dist_model.params():
+                param.requires_grad = False
+            for param in self.dist_model.segmentation_head.params():
+                param.requires_grad = True 
 
         self.lr = lr
         self.apply_sigmoid = apply_sigmoid
