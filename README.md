@@ -121,7 +121,7 @@ To do
 ## Semantic Versioning
 This reposirotry has auto semantic versionining enabled. To create new releases, we need to merge into the default `finetuning-halle` branch. 
 
-Semantic Versionining, or SemVer, is versioning standard for versioning software ([SemVer website](https://semver.org/)). Given a version number MAJOR.MINOR.PATCH, increment the:
+Semantic Versionining, or SemVer, is a versioning standard for software ([SemVer website](https://semver.org/)). Given a version number MAJOR.MINOR.PATCH, increment the:
 
 - MAJOR version when you make incompatible API changes
 - MINOR version when you add functionality in a backward compatible manner
