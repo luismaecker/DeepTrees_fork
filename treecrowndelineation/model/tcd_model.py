@@ -1,3 +1,16 @@
+import rootutils
+
+path = rootutils.find_root(search_from=__file__, indicator=".project-root")
+
+# set root directory
+rootutils.set_root(
+    path=path, # path to the root directory
+    project_root_env_var=True, # set the PROJECT_ROOT environment variable to root directory
+    dotenv=True, # load environment variables from .env if exists in root directory
+    pythonpath=True, # add root directory to the PYTHONPATH (helps with imports)
+    cwd=False, # we do not want that with hydra
+)
+
 import torch
 import lightning as L
 from treecrowndelineation.model.segmentation_model import SegmentationModel
@@ -5,9 +18,11 @@ from treecrowndelineation.model.distance_model import DistanceModel
 from treecrowndelineation.modules import metrics
 from treecrowndelineation.modules.losses import BinarySegmentationLossWithLogits
 
+import logging
+log = logging.getLogger(__name__)
 
 class TreeCrownDelineationModel(L.LightningModule):
-    def __init__(self, segmentation_model=None, distance_model=None, in_channels=None, lr=1E-4, apply_sigmoid=False, freeze_layers=False):
+    def __init__(self, in_channels, architecture='Unet', backbone='resnet18', lr=1E-4, mask_loss_share=0.5, apply_sigmoid=False, freeze_layers=False):
         """Tree crown delineation model
 
         The model consists of two sub-netoworks (two U-Nets with ResNet backbone). The first network calculates a tree
@@ -15,31 +30,25 @@ class TreeCrownDelineationModel(L.LightningModule):
         background pixel). The first net receives the input image, the second one receives the input image and the output of network 1.
 
         Args:
-            segmentation_model: pytorch model
-            distance_model: pytorch model
             in_channels: Number of input channels / bands of the input image
+            architecture (str): segmentation model architecture
+            backbone (str): segmentation model backbone
             lr: learning rate
             apply_sigmode (bool): TODO
             freeze_layers (bool): If True, freeze all layers but the segmentation head. Default: False.
         """
         super().__init__()
-        if in_channels is None and segmentation_model is not None and distance_model is not None:
-            self.seg_model = segmentation_model
-            self.dist_model = distance_model
-        elif in_channels is not None and segmentation_model is None and distance_model is None:
-            self.seg_model = SegmentationModel(in_channels=in_channels)
-            self.dist_model = DistanceModel(in_channels=in_channels + 2)
-        else:
-            raise ValueError("Please provide *either* the base models or the number of input channels via "
-                             "'in_channels'.")
+        self.seg_model = SegmentationModel(in_channels=in_channels, architecture=architecture, backbone=backbone, lr=lr, mask_loss_share=mask_loss_share)
+        self.dist_model = DistanceModel(in_channels=in_channels + 2, architecture=architecture, backbone=backbone)
+        self.freeze_layers = freeze_layers
 
-        # freeze layers
-        if freeze_layers:
-            for param in self.parameters():
-                param.requires_grad = False
-            for param in self.dist_model.segmentation_head.params():
-                param.requires_grad = True 
-
+        # freeze all layers but segmentation head
+        if self.freeze_layers:
+            for name, param in self.named_parameters():
+                if 'segmentation_head' in name:
+                    param.requires_grad = True
+                else:
+                    param.requires_grad = False
         self.lr = lr
         self.apply_sigmoid = apply_sigmoid
 
@@ -98,6 +107,10 @@ class TreeCrownDelineationModel(L.LightningModule):
         return loss
 
     def configure_optimizers(self):
+        if self.freeze_layers:
+            for name, param in self.named_parameters():
+                if param.requires_grad:
+                    log.info(f'Parameters in {name} will be trained')
         optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.parameters()), lr=self.lr)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, 30, 2)
         return [optimizer], [scheduler]

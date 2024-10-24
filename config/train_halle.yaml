@@ -13,17 +13,22 @@ data:
   red: 0                 # Index of Red channel
   nir: 3                 # Index of Infrared channel
   num_workers: 8         # Number of workers in dataloader
-model:
-  model_name: unet-halle # short and memorable model name
-  arch: Unet-resnet18    # model architecture
-  in_channels: 5         # Number of input channels / bands of the input image
-  lr: 0.0003             # learning rate
-  freeze_layers: False   # freeze layers (keep only segmentation head trainable)
+pretrained:
   # path to pretrained models
-  pretrained_path: /work/ka1176/shared_data/2024-ufz-deeptree/pretrained_models/tcd-20cm-RGBI-v1/
-  pretrained_model: null # Pass e.g. Unet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=0_jitted.pt 
+  path: /work/ka1176/shared_data/2024-ufz-deeptree/pretrained_models/tcd-20cm-RGBI-v1/
+  model: null # Pass e.g. Unet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=0_jitted.pt 
+  
+model:
+  _target_: treecrowndelineation.model.tcd_model.TreeCrownDelineationModel
+  in_channels: 5         # Number of input channels / bands of the input image
+  architecture: Unet     # segmentation model architecture
+  backbone: resnet18     # backbone
+  lr: 0.0003             # learning rate
+  mask_loss_share: 0.5   # contribution of masks (vs outline) to overall loss.
+  freeze_layers: False   # freeze layers (keep only segmentation head trainable)
 logdir: ${hydra.run.dir} # this is where we find logs, trained models, predictions
 model_save_path: null # TODO
+model_name: unet-halle # short and memorable model name
 seed: null               # Fix random seed 
 
 callbacks:

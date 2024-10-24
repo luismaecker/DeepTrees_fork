@@ -55,7 +55,7 @@ def train(config: DictConfig) -> None:
         seed_everything(config.seed, workers=True)
 
     # we store the hyperparameters with the trained model and choose a short model name
-    model_name = config['model']['model_name']
+    model_name = config['model_name']
 
     # TODO store logs in different directory?
     logger = TensorBoardLogger(os.getcwd(), name=config['name'], version=model_name, default_hp_metric=False)
@@ -94,10 +94,10 @@ def train(config: DictConfig) -> None:
                             )
 
     log.info('Instantiating model...')
-    model = TreeCrownDelineationModel(in_channels=config['model']['in_channels'], lr=config['model']['lr'])
+    model: TreeCrownDelineationModel = hydra.utils.instantiate(config.model)
 
-    if config['model']['pretrained_model'] is not None:
-        pretrained_model = torch.jit.load(os.path.join(config['model']['pretrained_path'], config['model']['pretrained_model']))
+    if config['pretrained']['model'] is not None:
+        pretrained_model = torch.jit.load(os.path.join(config['pretrained']['path'], config['pretrained']['model']))
         model.load_state_dict(pretrained_model.state_dict())
         log.info('Loaded state dict from pretrained model')
 
