@@ -117,6 +117,28 @@ Example call for a RGB-NIR image, appending the NDVI and dividing the input by 2
 ## 5 Evaluation
 To do
 
+
+## Semantic Versioning
+This reposirotry has auto semantic versionining enabled. To create new releases, we need to merge into the default `finetuning-halle` branch. 
+
+Semantic Versionining, or SemVer, is versioning standard for versioning software ([SemVer website](https://semver.org/)). Given a version number MAJOR.MINOR.PATCH, increment the:
+
+- MAJOR version when you make incompatible API changes
+- MINOR version when you add functionality in a backward compatible manner
+- PATCH version when you make backward compatible bug fixes
+- Additional labels for pre-release and build metad
+
+See the SemVer rules and all possible commit prefixes in the [.releaserc.json](.releaserc.json) file. 
+
+| Prefix | Explanation                                                                                                                                                                                                                                     | Example                                                                                              |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| feat   | A new feature was implemented as part of the commit, <br>so the [Minor](https://mobiuscode.dev/posts/Automatic-Semantic-Versioning-for-GitLab-Projects/#minor) part of the version will be increased once <br>this is merged to the main branch | feat: model training updated                                            |
+| fix    | A bug was fixed, so the [Patch](https://mobiuscode.dev/posts/Automatic-Semantic-Versioning-for-GitLab-Projects/#patch) part of the version will be <br>increased once this is merged to the main branch                                         | fix: fix a bug that causes the user to not <br>be properly informed when a job<br>finishes |
+
+The implementation is based on. https://mobiuscode.dev/posts/Automatic-Semantic-Versioning-for-GitLab-Projects/
+
+
+
 ## Citation
 If you use this work in any way, please mention this citation:
 ```
