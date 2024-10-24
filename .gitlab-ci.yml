@@ -4,8 +4,6 @@ stages:
 semantic-versioning:
   image: node:lts
   stage: release
-  needs:
-    - job: compile-linux-amd64
   variables:
     GITLAB_TOKEN: $GITLAB_TOKEN_SEMANTIC_VERSIONING
   script:
