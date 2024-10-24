@@ -6,6 +6,5 @@ trainer:
   fast_dev_run: True
 data:
   num_workers: 1         # Number of workers in dataloader
-  training_split: 1
   train_indices: [1, 2, 3, 4]
   val_indices: [0]

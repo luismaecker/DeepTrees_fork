@@ -74,4 +74,4 @@ hydra:
   job:
     chdir: True
   run:
-    dir: experiments/${hydra.job.name}/${now:%Y-%m-%d}_${now:%H-%M-%S}
+    dir: experiments/${name}/${now:%Y-%m-%d}_${now:%H-%M-%S}
