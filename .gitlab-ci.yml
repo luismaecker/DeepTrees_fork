@@ -1,0 +1,21 @@
+stages:
+  - release
+
+semantic-versioning:
+  image: node:lts
+  stage: release
+  variables:
+    GITLAB_TOKEN: $GITLAB_TOKEN_SEMANTIC_VERSIONING
+  script:
+    - npx -y
+      -p @semantic-release/commit-analyzer@9.0.2
+      -p @semantic-release/git@10.0.1
+      -p @semantic-release/gitlab@9.5.0
+      -p @semantic-release/release-notes-generator@10.0.3
+      -p @semantic-release/exec@6.0.3
+      -p @semantic-release/changelog@6.0.2
+      -p conventional-changelog-conventionalcommits@5.0.0
+      -p semantic-release@19.0.5
+      semantic-release
+  only:
+    - finetuning-halle
