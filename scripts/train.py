@@ -90,6 +90,7 @@ def train(config: DictConfig) -> None:
                              nir=config['data']['nir'],
                              dilate_second_target_band=2,
                              rescale_ndvi=True,
+                             shuffle=config['data']['shuffle'],
                              num_workers=config['data']['num_workers']
                             )
 

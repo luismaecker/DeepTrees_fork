@@ -110,10 +110,10 @@ class InMemoryDataModule(L.LightningDataModule):
         self.rescale_ndvi = rescale_ndvi
 
     def setup(self, stage=None):  # throws error if arg is removed
-        if self.shuffle:
+        if self.shuffle: # FIXME shuffle should not be used together with fixed train indices!
             for x in (self.rasters, *self.targets):
                 if self.deterministic:
-                    np.random.seed(1337)
+                    np.random.seed(1337) # TODO conflicts with seed everything
                 np.random.shuffle(x)  # in-place
 
         # split into training and validation set
