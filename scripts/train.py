@@ -68,31 +68,8 @@ def train(config: DictConfig) -> None:
         else:
             log.info(f'Callback not instantiated: {key}')
 
-    train_augmentation = A.Compose([A.RandomCrop(config['data']['width'], config['data']['width'], always_apply=True),
-                                A.RandomRotate90(),
-                                A.VerticalFlip(),
-                                #A.ColorJitter(), TypeError: ColorJitter transformation expects 1-channel or 3-channel images.
-                                ])
-    val_augmentation = A.RandomCrop(config['data']['width'], config['data']['width'], always_apply=True)
-
     log.info('Instantiating data module ...')
-    data = InMemoryDataModule(config['data']['rasters'],
-                             (config['data']['masks'], config['data']['outlines'], config['data']['dist']),
-                             width=config['data']['width'],
-                             batchsize=config['data']['batchsize'],
-                             training_split=config['data']['training_split'],
-                             train_indices=config['data']['train_indices'],
-                             val_indices=config['data']['val_indices'],
-                             train_augmentation=train_augmentation,
-                             val_augmentation=val_augmentation,
-                             concatenate_ndvi=config['data']['concatenate_ndvi'],
-                             red=config['data']['red'],
-                             nir=config['data']['nir'],
-                             dilate_second_target_band=2,
-                             rescale_ndvi=True,
-                             shuffle=config['data']['shuffle'],
-                             num_workers=config['data']['num_workers']
-                            )
+    data: InMemoryDataModule = hydra.utils.instantiate(config.data)
 
     log.info('Instantiating model...')
     model: TreeCrownDelineationModel = hydra.utils.instantiate(config.model)
