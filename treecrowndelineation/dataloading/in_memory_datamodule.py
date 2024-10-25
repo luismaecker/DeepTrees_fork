@@ -19,7 +19,8 @@ class InMemoryDataModule(L.LightningDataModule):
                  outlines: Union[str, list],
                  distance_transforms: Union[str, list],
                  training_split: float = 0.7,
-                 batchsize: int = 16,
+                 batch_size: int = 16,
+                 val_batch_size: int = 2,
                  num_workers: int = 8,
                  width: int = 256,
                  augment_train = False,
@@ -49,7 +50,8 @@ class InMemoryDataModule(L.LightningDataModule):
             outlines (str or list): List of file paths to outlines, or list of outlines.
             distance_transforms (str or list): List of file paths to distance_transforms, or list of distance_transforms.
             training_split (float): Value between 0 and 1 determining the training split. Default: 0.7
-            batchsize (int): Batch size
+            batch_size (int): Batch size
+            val_batch_size (int): Validation set batch size
             num_workers (int): Number of workers in DataLoader
             width (int): Width and height of the cropped images returned by the data loader.
             augment_train (bool): If True, apply training augmentation from the albumentations package.
@@ -93,7 +95,8 @@ class InMemoryDataModule(L.LightningDataModule):
             self.targets = [np.sort(glob.glob(os.path.abspath(file_list) + "/*.tif")) for file_list in targets]
 
         self.training_split = training_split
-        self.batch_size = batchsize
+        self.batch_size = batch_size
+        self.val_batch_size = val_batch_size
         self.num_workers = num_workers
         self.width = width
         self.augment_train = augment_train
@@ -214,15 +217,15 @@ class InMemoryDataModule(L.LightningDataModule):
         if self.training_split == 1 and self.val_indices is None:
             return None
         else:
-            return DataLoader(self.val_ds, batch_size=self.batch_size, num_workers=self.num_workers, drop_last=True, pin_memory=True)
+            return DataLoader(self.val_ds, batch_size=self.val_batch_size, num_workers=self.num_workers, drop_last=True, pin_memory=True)
 
 
 class InMemoryMaskDataModule(InMemoryDataModule):
     def __init__(self,
                  rasters: str,
-                 targets: tuple or list,
+                 targets: Union[tuple, list],
                  training_split: float = 0.7,
-                 batchsize: int = 16,
+                 batch_size: int = 16,
                  width: int = 256,
                  use_last_target_as_mask=False,
                  concatenate_ndvi=False,
@@ -249,7 +252,7 @@ class InMemoryMaskDataModule(InMemoryDataModule):
                                         ])
         val_augmentation = A.RandomCrop(width, width, always_apply=True)
 
-        super().__init__(rasters, targets, training_split, batchsize, width,
+        super().__init__(rasters, targets, training_split, batch_size, width,
                          train_augmentation, val_augmentation, use_last_target_as_mask,
                          concatenate_ndvi, red, nir, divide_by, normalize, normalization_function,
                          dilate_second_target_band, shuffle, deterministic, train_indices, val_indices, rescale_ndvi)

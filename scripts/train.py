@@ -70,6 +70,7 @@ def train(config: DictConfig) -> None:
 
     log.info('Instantiating data module ...')
     data: InMemoryDataModule = hydra.utils.instantiate(config.data)
+    data.setup()
 
     log.info('Instantiating model...')
     model: TreeCrownDelineationModel = hydra.utils.instantiate(config.model)

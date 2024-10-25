@@ -6,7 +6,8 @@ data:
   outlines: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/outlines # directory with outlines
   distance_transforms: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/dist_trafo # directory with distance transforms
   width: 256             # Width and height of the cropped images returned by the data loader
-  batchsize: 2          # dataloader batch size
+  batch_size: 2          # dataloader batch size
+  val_batch_size: 1      # validation dataloader batch size
   training_split: 0.8    # Train/val split
   train_indices: null    # Train set indices (pass explicitly)
   val_indices: null      # Validation set indices (pass explicitly)
