@@ -26,7 +26,7 @@ class TreeCrownDelineationModel(L.LightningModule):
                  architecture='Unet',
                  backbone='resnet18',
                  lr=1E-4,
-                 mask_loss_share=0.5,
+                 mask_iou_share=0.5,
                  apply_sigmoid=False,
                  freeze_layers=False,
                  track_running_stats=True
@@ -47,10 +47,11 @@ class TreeCrownDelineationModel(L.LightningModule):
             track_running_stats (bool): If True, update batch norm layers. If False, keep them frozen. Default: True.
         """
         super().__init__()
-        self.seg_model = SegmentationModel(in_channels=in_channels, architecture=architecture, backbone=backbone, lr=lr, mask_loss_share=mask_loss_share)
+        self.seg_model = SegmentationModel(in_channels=in_channels, architecture=architecture, backbone=backbone, lr=lr, mask_loss_share=mask_iou_share)
         self.dist_model = DistanceModel(in_channels=in_channels + 2, architecture=architecture, backbone=backbone)
         self.freeze_layers = freeze_layers
         self.track_running_stats = track_running_stats
+        self.mask_iou_share = mask_iou_share
 
         # freeze all layers but segmentation head
         if self.freeze_layers:
@@ -100,28 +101,31 @@ class TreeCrownDelineationModel(L.LightningModule):
 
         # lower mask loss results in unlearning the masks
         # lower distance loss results in artifacts in the distance transform
+        # TODO add option to weight the different losses
         loss = loss_mask + loss_outline + loss_distance
 
-        iou = iou_mask + iou_outline
+        iou = self.mask_iou_share * iou_mask + (1.0 - self.mask_iou_share) * iou_outline
 
-        return loss, loss_mask, loss_outline, loss_distance, iou_mask, iou_outline
+        return loss, loss_mask, loss_outline, loss_distance, iou, iou_mask, iou_outline
 
     def training_step(self, batch, step):
-        loss, loss_mask, loss_outline, loss_distance, iou_mask, iou_outline = self.shared_step(batch)
+        loss, loss_mask, loss_outline, loss_distance, iou, iou_mask, iou_outline = self.shared_step(batch)
         self.log('train/loss'        , loss         , on_step = False, on_epoch = True, sync_dist = True)
         self.log('train/loss_mask'   , loss_mask    , on_step = False, on_epoch = True, sync_dist = True)
         self.log('train/loss_outline', loss_outline , on_step = False, on_epoch = True, sync_dist = True)
         self.log('train/loss_dist'   , loss_distance, on_step = False, on_epoch = True, sync_dist = True)
+        self.log('train/iou'         , iou,           on_step = False, on_epoch = True, sync_dist = True)
         self.log('train/iou_mask'    , iou_mask     , on_step = False, on_epoch = True, sync_dist = True)
         self.log('train/iou_outline' , iou_outline  , on_step = False, on_epoch = True, sync_dist = True)
         return loss
 
     def validation_step(self, batch, step):
-        loss, loss_mask, loss_outline, loss_distance, iou_mask, iou_outline = self.shared_step(batch)
+        loss, loss_mask, loss_outline, loss_distance, iou, iou_mask, iou_outline = self.shared_step(batch)
         self.log('val/loss'        , loss         , on_step = False, on_epoch = True, sync_dist = True)
         self.log('val/loss_mask'   , loss_mask    , on_step = False, on_epoch = True, sync_dist = True)
         self.log('val/loss_outline', loss_outline , on_step = False, on_epoch = True, sync_dist = True)
         self.log('val/loss_dist'   , loss_distance, on_step = False, on_epoch = True, sync_dist = True)
+        self.log('val/iou'         , iou,           on_step = False, on_epoch = True, sync_dist = True)
         self.log('val/iou_mask'    , iou_mask     , on_step = False, on_epoch = True, sync_dist = True)
         self.log('val/iou_outline' , iou_outline  , on_step = False, on_epoch = True, sync_dist = True)
         return loss
