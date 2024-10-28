@@ -11,9 +11,10 @@ pretrained:
 model:
   lr: 0.00003 # choose a smaller learning rate
   freeze_layers: True
+  track_running_stats: False
 
 data:
-  batchsize: 2
+  batch_size: 2
   train_indices: [0, 1, 2, 3, 4, 5, 6, 7,]
   val_indices: [8, 9]
   shuffle: False # should not be used with fixed indices

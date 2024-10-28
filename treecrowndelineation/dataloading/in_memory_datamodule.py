@@ -15,13 +15,16 @@ log = logging.getLogger(__name__)
 class InMemoryDataModule(L.LightningDataModule):
     def __init__(self,
                  rasters: Union[str, list],
-                 targets: Union[tuple, list],
+                 masks: Union[str, list],
+                 outlines: Union[str, list],
+                 distance_transforms: Union[str, list],
                  training_split: float = 0.7,
-                 batchsize: int = 16,
+                 batch_size: int = 16,
+                 val_batch_size: int = 2,
                  num_workers: int = 8,
                  width: int = 256,
-                 train_augmentation=None,
-                 val_augmentation=None,
+                 augment_train = False,
+                 augment_val = False,
                  use_last_target_as_mask=False,
                  concatenate_ndvi=False,
                  red=None,
@@ -43,14 +46,16 @@ class InMemoryDataModule(L.LightningDataModule):
         Args:
             rasters (str or list): Can be a list of file paths or a path to a folder containing the training raster
                 files in TIF format.
-            targets: (tuple or list): This has to be either: a) A tuple of three folder-paths, e.g.
-                (masks, outlines, distance_transforms) or b) a tuple / list of lists containg all the target files
+            masks (str or list): List of file paths to masks, or list of masks.
+            outlines (str or list): List of file paths to outlines, or list of outlines.
+            distance_transforms (str or list): List of file paths to distance_transforms, or list of distance_transforms.
             training_split (float): Value between 0 and 1 determining the training split. Default: 0.7
-            batchsize (int): Batch size
+            batch_size (int): Batch size
+            val_batch_size (int): Validation set batch size
             num_workers (int): Number of workers in DataLoader
             width (int): Width and height of the cropped images returned by the data loader.
-            train_augmentation: Training augmentation from the albumentations package.
-            val_augmentation: Validation augmentation from the albumentations package.
+            augment_train (bool): If True, apply training augmentation from the albumentations package.
+            augment_val (bool): If True, apply validation augmentation from the albumentations package.
             use_last_target_as_mask (bool): This can be used to black out certain regions of the training data. To do this you
                 have to load some no-data mask as last training target. Areas which you want to black out should be
                 greater 1, areas where the mask is 0 are kept.
@@ -82,17 +87,20 @@ class InMemoryDataModule(L.LightningDataModule):
         else:
             self.rasters = np.sort(glob.glob(os.path.abspath(rasters) + "/*.tif"))
 
+        targets = [masks, outlines, distance_transforms]
+
         if type(targets[0]) in (list, tuple, np.ndarray):
             self.targets = [np.sort(file_list) for file_list in targets]
         else:
             self.targets = [np.sort(glob.glob(os.path.abspath(file_list) + "/*.tif")) for file_list in targets]
 
         self.training_split = training_split
-        self.batch_size = batchsize
+        self.batch_size = batch_size
+        self.val_batch_size = val_batch_size
         self.num_workers = num_workers
         self.width = width
-        self.train_augmentation = train_augmentation
-        self.val_augmentation = val_augmentation
+        self.augment_train = augment_train
+        self.augment_val = augment_val
         self.use_last_target_as_mask = use_last_target_as_mask
         self.concatenate_ndvi = concatenate_ndvi
         self.red = red
@@ -136,6 +144,16 @@ class InMemoryDataModule(L.LightningDataModule):
         log.info('Tiles in validation data')
         for t in validation_data[0]:
             log.info(t)
+
+        log.info('Define augmentation functions') 
+        log.info(f'Used in training: {self.augment_train}')
+        log.info(f'Used in validation: {self.augment_val}')
+        self.train_augmentation = A.Compose([A.RandomCrop(self.width, self.width, always_apply=True),
+                                A.RandomRotate90(),
+                                A.VerticalFlip(),
+                                #A.ColorJitter(), TypeError: ColorJitter transformation expects 1-channel or 3-channel images.
+                                ])
+        self.val_augmentation = A.RandomCrop(self.width, self.width, always_apply=True)
 
         # load the data into a custom dataset format
         self.train_ds = ds.InMemoryRSTorchDataset(training_data[0],
@@ -199,15 +217,15 @@ class InMemoryDataModule(L.LightningDataModule):
         if self.training_split == 1 and self.val_indices is None:
             return None
         else:
-            return DataLoader(self.val_ds, batch_size=self.batch_size, num_workers=self.num_workers, drop_last=True, pin_memory=True)
+            return DataLoader(self.val_ds, batch_size=self.val_batch_size, num_workers=self.num_workers, drop_last=True, pin_memory=True)
 
 
 class InMemoryMaskDataModule(InMemoryDataModule):
     def __init__(self,
                  rasters: str,
-                 targets: tuple or list,
+                 targets: Union[tuple, list],
                  training_split: float = 0.7,
-                 batchsize: int = 16,
+                 batch_size: int = 16,
                  width: int = 256,
                  use_last_target_as_mask=False,
                  concatenate_ndvi=False,
@@ -234,7 +252,7 @@ class InMemoryMaskDataModule(InMemoryDataModule):
                                         ])
         val_augmentation = A.RandomCrop(width, width, always_apply=True)
 
-        super().__init__(rasters, targets, training_split, batchsize, width,
+        super().__init__(rasters, targets, training_split, batch_size, width,
                          train_augmentation, val_augmentation, use_last_target_as_mask,
                          concatenate_ndvi, red, nir, divide_by, normalize, normalization_function,
                          dilate_second_target_band, shuffle, deterministic, train_indices, val_indices, rescale_ndvi)

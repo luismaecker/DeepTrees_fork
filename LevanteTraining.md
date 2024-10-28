@@ -94,7 +94,8 @@ Adapt your own config file based on the defaults in `train_halle.yaml` as needed
 Run the script like this:
 
 ```bash
-python scripts/train.py # with default config finetune.yaml
+python scripts/train.py # this is the default config that trains from scratch
+python scripts/train.py --config-name=finetune_halle # finetune with pretrained model
 python scripts/train.py --config-name=yourconfig # with your own config
 ```
 

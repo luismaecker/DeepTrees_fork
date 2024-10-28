@@ -1,17 +1,28 @@
 name: train-halle
 data:
+  _target_: treecrowndelineation.dataloading.in_memory_datamodule.InMemoryDataModule
   rasters: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/tiles  # directory with raster images
   masks: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/masks # directory with masks
   outlines: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/outlines # directory with outlines
-  dist: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/dist_trafo # directory with distance transforms
+  distance_transforms: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/dist_trafo # directory with distance transforms
   width: 256             # Width and height of the cropped images returned by the data loader
-  batchsize: 2          # dataloader batch size
+  batch_size: 2          # dataloader batch size
+  val_batch_size: 1      # validation dataloader batch size
   training_split: 0.8    # Train/val split
   train_indices: null    # Train set indices (pass explicitly)
   val_indices: null      # Validation set indices (pass explicitly)
   concatenate_ndvi: True # If True, concatenate NDVI
+  rescale_ndvi: True     # NDVI rescaled to [0, 1]
   red: 0                 # Index of Red channel
   nir: 3                 # Index of Infrared channel
+  shuffle: True          # shuffle data before train/val split
+  augment_train: True # use augmentation during training
+  augment_val: False   # use augmentation during validation
+  use_last_target_as_mask: False # TODO
+  divide_by: 255         # divisor
+  normalize: False       # apply 0-mean, 1-stddev normalization
+  normalization_function: null # provide normalization function
+  dilate_second_target_band: False # dilate the outlines by number of pixels
   num_workers: 8         # Number of workers in dataloader
 pretrained:
   # path to pretrained models
@@ -24,8 +35,9 @@ model:
   architecture: Unet     # segmentation model architecture
   backbone: resnet18     # backbone
   lr: 0.0003             # learning rate
-  mask_loss_share: 0.5   # contribution of masks (vs outline) to overall loss.
+  mask_iou_share: 0.5   # contribution of masks (vs outline) to overall IOU.
   freeze_layers: False   # freeze layers (keep only segmentation head trainable)
+  track_running_stats: True # update batch norm layers
 logdir: ${hydra.run.dir} # this is where we find logs, trained models, predictions
 model_save_path: null # TODO
 model_name: unet-halle # short and memorable model name
@@ -34,7 +46,7 @@ seed: null               # Fix random seed
 callbacks:
   early_stopping:
     _target_: lightning.pytorch.callbacks.EarlyStopping
-    monitor: "val/iou_mask" # name of the logged metric which determines when model is improving
+    monitor: "val/iou" # name of the logged metric which determines when model is improving
     mode: "max" # "max" means higher metric value is better, can be also "min"
     patience: 6 # how many validation epochs of not improving until training stops
     min_delta: 0 # minimum change in the monitored metric needed to qualify as an improvement
