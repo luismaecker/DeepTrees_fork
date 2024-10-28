@@ -11,6 +11,7 @@ pretrained:
 model:
   lr: 0.00003 # choose a smaller learning rate
   freeze_layers: True
+  track_running_stats: False
 
 data:
   batch_size: 2

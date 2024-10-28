@@ -37,6 +37,7 @@ model:
   lr: 0.0003             # learning rate
   mask_loss_share: 0.5   # contribution of masks (vs outline) to overall loss.
   freeze_layers: False   # freeze layers (keep only segmentation head trainable)
+  track_running_stats: True # update batch norm layers
 logdir: ${hydra.run.dir} # this is where we find logs, trained models, predictions
 model_save_path: null # TODO
 model_name: unet-halle # short and memorable model name

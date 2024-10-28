@@ -61,7 +61,7 @@ def test(config: DictConfig) -> None:
                                  "simplify"          : config.simplify_dist,
                                  }
 
-    log.info("Loading model")
+    log.info(f"Loading model from {config.model_path}")
     
     if isinstance(config.model_path, str):
         model = torch.jit.load(config.model_path).to(config.device)

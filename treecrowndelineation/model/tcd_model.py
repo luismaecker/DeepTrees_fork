@@ -22,12 +22,20 @@ import logging
 log = logging.getLogger(__name__)
 
 class TreeCrownDelineationModel(L.LightningModule):
-    def __init__(self, in_channels, architecture='Unet', backbone='resnet18', lr=1E-4, mask_loss_share=0.5, apply_sigmoid=False, freeze_layers=False):
+    def __init__(self, in_channels,
+                 architecture='Unet',
+                 backbone='resnet18',
+                 lr=1E-4,
+                 mask_loss_share=0.5,
+                 apply_sigmoid=False,
+                 freeze_layers=False,
+                 track_running_stats=True
+                 ):
         """Tree crown delineation model
 
         The model consists of two sub-netoworks (two U-Nets with ResNet backbone). The first network calculates a tree
         cover mask and the tree outlines, the second calculates the distance transform of the masks (distance to next
-        background pixel). The first net receives the input image, the second one receives the input image and the output of network 1.
+        background pixel). The first net receives the input image, the second one receives the input image and the output of network 1.SK_SK_
 
         Args:
             in_channels: Number of input channels / bands of the input image
@@ -36,11 +44,13 @@ class TreeCrownDelineationModel(L.LightningModule):
             lr: learning rate
             apply_sigmode (bool): TODO
             freeze_layers (bool): If True, freeze all layers but the segmentation head. Default: False.
+            track_running_stats (bool): If True, update batch norm layers. If False, keep them frozen. Default: True.
         """
         super().__init__()
         self.seg_model = SegmentationModel(in_channels=in_channels, architecture=architecture, backbone=backbone, lr=lr, mask_loss_share=mask_loss_share)
         self.dist_model = DistanceModel(in_channels=in_channels + 2, architecture=architecture, backbone=backbone)
         self.freeze_layers = freeze_layers
+        self.track_running_stats = track_running_stats
 
         # freeze all layers but segmentation head
         if self.freeze_layers:
@@ -49,6 +59,14 @@ class TreeCrownDelineationModel(L.LightningModule):
                     param.requires_grad = True
                 else:
                     param.requires_grad = False
+
+        # freeze the batch norm layers
+        if not self.track_running_stats:
+            for module in self.modules():
+                if isinstance(module, torch.nn.BatchNorm2d):
+                    module.eval()
+                    module.track_running_stats = False
+
         self.lr = lr
         self.apply_sigmoid = apply_sigmoid
 
@@ -83,6 +101,8 @@ class TreeCrownDelineationModel(L.LightningModule):
         # lower mask loss results in unlearning the masks
         # lower distance loss results in artifacts in the distance transform
         loss = loss_mask + loss_outline + loss_distance
+
+        iou = iou_mask + iou_outline
 
         return loss, loss_mask, loss_outline, loss_distance, iou_mask, iou_outline
 

@@ -84,6 +84,8 @@ class SegmentationModel(L.LightningModule):
         loss_outline = self.seg_loss(outline_p, outline_t)
         loss = self.mask_loss_share * loss_mask + (1 - self.mask_loss_share) * loss_outline
 
+        # FIXME mask_loss_share is actually not used when using the combined model
+
         return loss, loss_mask, loss_outline, iou_mask, iou_outline
 
     @torch.jit.ignore
