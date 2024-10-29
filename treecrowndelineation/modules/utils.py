@@ -720,3 +720,9 @@ def get_crs(array):
         crs_ = crs.from_string(crs_)
     return crs_
 
+def fix_crs(shape, is_crs=4326, target_crs=25832):
+    '''Fix the CRS if necessary'''
+    if shape.crs is None: # naive coords
+        shape.crs = is_crs
+
+    return shape.to_crs(epsg=target_crs)
