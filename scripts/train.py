@@ -4,9 +4,6 @@ Train a TreeCrownDelineation model on new data.
 
 Follows the example script. 
 
-Added:
-- Early stopping callback monitoring the validation loss
-
 Caroline Arnold, Harsh Grover, Helmholtz AI, 2024
 
 ===================================================================================================

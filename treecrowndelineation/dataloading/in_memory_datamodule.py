@@ -11,7 +11,7 @@ import geopandas as gpd
 from torch.utils.data import DataLoader
 from treecrowndelineation.dataloading import datasets as ds
 from treecrowndelineation.modules.utils import dilate_img, fix_crs
-from treecrowndelineation.modules.preprocessing import MaskOutlinesGenerator
+from treecrowndelineation.dataloading.preprocessing import MaskOutlinesGenerator, DistanceTransformGenerator
 
 import logging
 log = logging.getLogger(__name__)
@@ -28,21 +28,25 @@ class InMemoryDataModule(L.LightningDataModule):
                  val_batch_size: int = 2,
                  num_workers: int = 8,
                  width: int = 256,
-                 augment_train = False,
-                 augment_val = False,
-                 use_last_target_as_mask=False,
-                 concatenate_ndvi=False,
-                 red=None,
-                 nir=None,
-                 divide_by=1,
-                 normalize=False,
+                 augment_train: bool = False,
+                 augment_val: bool = False,
+                 use_last_target_as_mask: bool = False,
+                 concatenate_ndvi: bool = False,
+                 red: int = None,
+                 nir: int = None,
+                 divide_by: float = 1,
+                 normalize: bool = False,
                  normalization_function=None,
-                 dilate_second_target_band=False,
-                 shuffle=True,
-                 deterministic=True,
-                 train_indices=None,
-                 val_indices=None,
-                 rescale_ndvi=True
+                 dilate_second_target_band: bool = False,
+                 shuffle: bool = True,
+                 deterministic: bool = True, # TODO remove in separate commit
+                 train_indices: list[int] = None,
+                 val_indices: list[int] = None,
+                 rescale_ndvi: bool = True,
+                 valid_class_ids: Union[str, list] = 'all',
+                 class_column_name: str = 'class',
+                 crs: str = 'EPSG:25832',
+                 nproc: int = 1,
                  ):
         """Pytorch lightning in memory data module
 
@@ -121,6 +125,13 @@ class InMemoryDataModule(L.LightningDataModule):
         self.val_ds = None
         self.rescale_ndvi = rescale_ndvi
 
+        self.valid_class_ids = valid_class_ids
+        self.class_column_name = class_column_name
+        self.crs = crs
+        self.nproc = nproc
+
+        self.targets = None # will be assigned in setup_data
+
     def prepare_data(self) -> None:
         '''prepare_data
         
@@ -141,24 +152,45 @@ class InMemoryDataModule(L.LightningDataModule):
             ground_truth = gpd.read_file(self.ground_truth_labels)
         elif os.path.isdir(self.ground_truth_labels):
             # combine all the ground truth labels TODO copy from notebook
-            shapes = np.sort(glob.glob(f'{self.ground_truth_labels}/*.shp'))
+            shapes = np.sort(glob.glob(f'{self.ground_truth_labels}/label_*.shp'))
             ground_truth = pd.concat([fix_crs(gpd.read_file(shape)).assign(tile=shape) for shape in shapes])
             log.info(f'Combining all polygons in {os.path.join(self.ground_truth_labels, 'all_labels.shp')}')
             ground_truth.drop(columns='tile').to_file(os.path.join(self.ground_truth_labels, 'all_labels.shp'))
 
         # generate masks
-        mask_generator = MaskOutlinesGenerator(output_files=self.masks, 
+        mask_generator = MaskOutlinesGenerator(rasters=self.rasters,
+                                               output_path=self.masks, 
                                                output_file_prefix='mask', 
+                                               ground_truth_labels=ground_truth,
+                                               valid_class_ids=self.valid_class_ids,
+                                               class_column_name=self.class_column_name,
+                                               crs=self.crs,
+                                               nproc=self.nproc,
                                                generate_outlines=False)
         mask_generator.apply_process()
 
         # generate outlines
-        outlines_generator = MaskOutlinesGenerator(output_files=self.outlines,
-                                                   output_file_prefix='outlines',
+        outlines_generator = MaskOutlinesGenerator(rasters=self.rasters,
+                                                   output_path=self.outlines, 
+                                                   output_file_prefix='outline', 
+                                                   ground_truth_labels=ground_truth,
+                                                   valid_class_ids=self.valid_class_ids,
+                                                   class_column_name=self.class_column_name,
+                                                   crs=self.crs,
+                                                   nproc=self.nproc,
                                                    generate_outlines=True)
         outlines_generator.apply_process()
 
         # generate distance transforms        
+        dist_trafo_generator = DistanceTransformGenerator(rasters=self.rasters,
+                                                   output_path=self.distance_transforms, 
+                                                   output_file_prefix='dist_trafo', 
+                                                   ground_truth_labels=ground_truth,
+                                                   valid_class_ids=self.valid_class_ids,
+                                                   class_column_name=self.class_column_name,
+                                                   crs=self.crs,
+                                                   nproc=self.nproc)
+        dist_trafo_generator.apply_process()
 
 
     def setup(self, stage=None):  # throws error if arg is removed
