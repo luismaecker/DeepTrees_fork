@@ -13,6 +13,7 @@ import numpy as np
 import xarray as xr
 import geopandas as gpd
 import rioxarray
+from shapely import Polygon
 from scipy.ndimage import distance_transform_edt
 from multiprocessing import Pool
 
@@ -71,12 +72,64 @@ class GroundTruthGenerator(ABC):
         else:
             self.ground_truth_labels = ground_truth_labels
 
-    def process(self, raster: str):
+    def output_filename(self, input_file: str) -> str:
+        '''setup_process 
+
+        - Construct output file name from input file name
+
+        Args:
+            input_file (str): input file
+
+        Returns:
+            str: output file
+        '''
+
+        input_file = os.path.abspath(input_file)
+        _, input_fname = os.path.split(input_file)
+
+        # this is the pattern for the tiles and associated labels
+        pattern = r'\d+_\d+' # TODO this may change in the future
+        match = re.search(pattern, input_fname)
+        suffix = match.group()
+        #suffix = input_fname.split('.')[0].split('_')[-1]
+
+        output_file = os.path.join(
+            os.path.abspath(self.output_path),
+            f'{self.output_file_prefix}_{suffix}.tif'
+        )
+
+        return output_file
+
+    def constrain_geometry_to_tile(self, input_file: str) -> list[Polygon]:
+        '''constrain_geometry_to_raster 
+
+        Filter the ground truth labels that fall within the bounding box of the
+        given raster image.
+
+        Args:
+            input_file (str): path to input raster file
+
+        Returns:
+            list[Polygon]: list of polygons within tile bounding box
+        '''
+        # assure labels and images are in the same CRS
+        if self.crs != str(self.ground_truth_labels.crs):
+            raise ValueError(f'CRS was expected to be {self.crs} but is {self.ground_truth_labels.crs}')
+
+        bbox = rutils.get_bbox_polygon(input_file)
+        # constrain to current tile
+        features = self.ground_truth_labels[self.ground_truth_labels.intersects(bbox)]
+        # filter for valid classes
+        features = rutils.filter_geometry(features, self.valid_class_ids, self.class_column_name)
+
+        return features
+
+    def process(self, input_file: str):
         '''
         Process function that works on one tile. Needs to be defined in subclass.
 
         Args:
-          raster (str): Path to input raster file.
+          input_file (str): Path to input input_file file.
         '''
         pass
 
@@ -84,11 +137,8 @@ class GroundTruthGenerator(ABC):
         '''
         Apply the processing function in parallel.
         '''
-        #with Pool(self.nproc) as p:
-        #    p.map(self.process, self.rasters)
-        for r in self.rasters:
-            self.process(r)
-
+        with Pool(self.nproc) as p:
+            p.map(self.process, self.rasters)
 
 class MaskOutlinesGenerator(GroundTruthGenerator):
     '''MaskOutlinesGenerator
@@ -126,33 +176,15 @@ class MaskOutlinesGenerator(GroundTruthGenerator):
                          class_column_name, crs, nproc)
         self.generate_outlines = generate_outlines
 
-    def process(self, input_file):
-        # assure labels and images are in the same CRS
-        if self.crs != str(self.ground_truth_labels.crs):
-            raise ValueError(f'CRS was expected to be {self.crs} but is {self.ground_truth_labels.crs}')
+    def process(self, input_file: str):
+        '''process Create raster mask/outline from input tile
 
-        input_file = os.path.abspath(input_file)
-        _, input_fname = os.path.split(input_file)
-
-        # this is the pattern for the tiles and associated labels
-        pattern = r'\d+_\d+' # TODO this may change in the future
-        match = re.search(pattern, input_fname)
-        suffix = match.group()
-        #suffix = input_fname.split('.')[0].split('_')[-1]
-
-        output_file = os.path.join(
-            os.path.abspath(self.output_path),
-            f'{self.output_file_prefix}_{suffix}.tif'
-        )
-
-        log.info(f'Generating {output_file}')
-
+        Args:
+            input_file (str): input raster file
+        '''
         img = rioxarray.open_rasterio(input_file)
-        bbox = rutils.extent_to_poly(img)
-        # constrain to current tile
-        features = self.ground_truth_labels[self.ground_truth_labels.within(bbox)]
-        # filter for valid classes
-        features = rutils.filter_geometry(features, self.valid_class_ids, self.class_column_name)
+        output_file = self.output_filename(input_file)
+        features = self.constrain_geometry_to_tile(input_file)
 
         if self.generate_outlines:
             res = rutils.rasterize(img, rutils.to_outline(features), dim_ordering="CHW")
@@ -198,57 +230,47 @@ class DistanceTransformGenerator(GroundTruthGenerator):
         self.area_max = area_max
         self.area_min = area_min
         
-    def process(self, raster):
-        # assure labels and images are in the same CRS
-        if self.crs != str(self.ground_truth_labels.crs):
-            raise ValueError(f'CRS was expected to be {self.crs} but is {self.ground_truth_labels.crs}')
+    def process(self, input_file):
+        '''process Create raster distance_transform from input tile
 
-        input_file = os.path.abspath(raster)
-        _, input_fname = os.path.split(input_file)
+        The distance transform is normalized per polygon (better for instance 
+        segmentation).
 
-        # this is the pattern for the tiles and associated labels
-        pattern = r'\d+_\d+' # TODO this may change in the future
-        match = re.search(pattern, input_fname)
-        suffix = match.group()
-        #suffix = input_fname.split('.')[0].split('_')[-1]
-
-        output_file = os.path.join(
-            os.path.abspath(self.output_path),
-            f'{self.output_file_prefix}_{suffix}.tif'
-        )
+        Args:
+            input_file (str): input raster file
+        '''
 
         img = rioxarray.open_rasterio(input_file)
-        bbox = rutils.extent_to_poly(img)
-        # constrain to current tile
-        features = self.ground_truth_labels[self.ground_truth_labels.within(bbox)]
-        # filter for valid classes
-        features = rutils.filter_geometry(features, self.valid_class_ids, self.class_column_name)
-
+        output_file = self.output_filename(input_file)
+        features = self.constrain_geometry_to_tile(input_file)
         mask = xr.zeros_like(img[[0]]).astype("float32")  # dirty hack to get three layers
 
-        i = 0
-        for polygon in features:
-            i += 1
+        for i, polygon in enumerate(features):
             if self.area_max is not None and polygon.area > self.area_max:
-                log.info(f'skipping polygon because it is too large with area {polygon.area}')
+                log.info(f'skipping polygon {i} because it is too large with area {polygon.area}')
                 continue
 
             if polygon.area < self.area_min:
-                log.info(f'skipping polygon because it is too small with area {polygon.area}')
+                log.info(f'skipping polygon {i} because it is too small with area {polygon.area}')
                 continue
 
+            # restrict to rectangle bounding box of current polygon
             xmin_p, ymin_p, xmax_p, ymax_p = polygon.bounds
             polygon_area = mask.loc[:, ymax_p:ymin_p, xmin_p:xmax_p].astype("float32")
-            if 0 in polygon_area.shape:
+            if 0 in polygon_area.shape: # polygon below resolution
                 continue
 
+            # mask for current polygon
             rasterized = rutils.rasterize(polygon_area, [polygon], dim_ordering="CHW")[0]
 
+            # calculate distance transform
             padded = np.pad(rasterized,1)
             distance_transformed = distance_transform_edt(padded)[1:-1,1:-1].astype("float32")
             distance_transformed /= max(np.max(distance_transformed), 1)
             polygon_area[0] = distance_transformed
+            # distance transform added to output mask
             mask.loc[:, ymax_p:ymin_p, xmin_p:xmax_p] += polygon_area
 
+        # clip excess distances
         mask[0] = np.clip(mask[0], 0, 1)
         mask.rio.to_raster(output_file, compress="DEFLATE")

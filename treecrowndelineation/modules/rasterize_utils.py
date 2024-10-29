@@ -7,52 +7,33 @@ from typing import Dict, Union
 import numpy as np
 import xarray as xr
 import geopandas as gpd
+import rasterio
 from osgeo import gdal
 from osgeo import osr
 from osgeo import ogr
 from osgeo import gdalnumeric as gdn
 
-from shapely.geometry import shape, Polygon
+from shapely.geometry import Polygon
 
-def get_xarray_extent(xarr: xr.DataArray) -> Dict[str, float]:
-    '''get_xarray_extent
-
-    Get the extent of an xarray DataArray.
-
-    Args:
-        xarr (xr.DataArray): Input array. 
-
-    Returns:
-        Dict[str, float]: Dictionary with extents.
-    '''        
-    x = xarr.coords["x"].data
-    y = xarr.coords["y"].data
-    gt = [float(x) for x in xarr.spatial_ref.GeoTransform.split()]
-    xres, yres = (gt[1], gt[5])
-
-    xdict = {'xmin': min(x), 'xmax': max(x),
-             'ymin': min(y), 'ymax': max(x),
-             'xres': xres, 'yres': yres}
-    return xdict
-
-def extent_to_poly(xarr: xr.DataArray) -> Polygon:
-    '''extent_to_poly
-    Returns the bounding box of an xarray as 
-    shapely polygon.
+def get_bbox_polygon(input_file: str) -> Polygon:
+    '''get_bbox_polygon
+    
+    Get the Polygon representing the bounding box 
+    of the tile in input_file
 
     Args:
-        xarr (xr.DataArray): Input array.
+        input_file (str): path to input file 
 
     Returns:
-        Polygon: Bounding box of input array.
+        Polygon: bounding box polygon 
     '''
+    box = rasterio.open(input_file).bounds
+    return Polygon([(box.left, box.bottom),
+                    (box.right, box.bottom),
+                    (box.right, box.top),
+                    (box.left, box.top)]
+                   )
 
-    xdict = get_xarray_extent(xarr)
-    return Polygon([(xdict['xmin'], xdict['ymax']),
-                    (xdict['xmin'], xdict['ymin']),
-                    (xdict['xmax'], xdict['ymin']),
-                    (xdict['xmax'], xdict['ymax']),
-                    ])
 
 def xarray_trafo_to_gdal_trafo(xarray_trafo):
     xres, xskew, xmin, yskew, yres, ymax = xarray_trafo
