@@ -13,6 +13,112 @@ from skimage.morphology import dilation, square, disk
 from shapely.geometry import Polygon, mapping, shape
 from osgeo import osr
 from fiona import crs
+import numpy as np
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+from PIL import Image
+import os
+
+def overlay_heatmap(image, entropy_map, output_path, filename):
+    """
+    Overlay an entropy heatmap on top of the image and save the result.
+    
+    Parameters:
+    - image: Original image (as a NumPy array or PIL image).
+    - entropy_map: 2D array representing the entropy values.
+    - output_path: Path to save the overlaid image.
+    - alpha: Opacity of the heatmap overlay.
+    """
+    # Ensure the image and entropy_map have compatible sizes
+    if isinstance(image, np.ndarray):
+        if len(image.shape) == 2 or image.shape[2] == 1:
+            image = np.stack([image]*3, axis=-1)  # Make grayscale image RGB-compatible
+        image_pil = Image.fromarray(image)
+    else:
+        image_pil = image
+    
+    # Create heatmap
+    plt.imshow(entropy_map, cmap='jet', alpha=1)
+    plt.axis('off')
+    # plt.colorbar()  # Add a color bar to interpret the heatmap scale
+
+    # Save heatmap as temporary file
+    
+    heatmap_path = os.path.join(output_path, 'image_heatmap.png')
+    
+    plt.savefig(heatmap_path, bbox_inches='tight', pad_inches=0)
+    plt.close()
+    
+    # Load heatmap image
+    heatmap = Image.open(heatmap_path).convert("RGBA")
+
+    image_pil = np.array(image_pil)
+
+    # Transpose the image to (height, width, channels)
+    image_pil = np.transpose(image_pil, (1, 2, 0))
+
+    # Convert to PIL image and resize to match heatmap dimensions
+    image_pil = Image.fromarray((image_pil).astype(np.uint8)).resize(heatmap.size)
+
+    # Overlay heatmap on original image
+    overlaid_image = Image.blend(image_pil, heatmap, alpha=0.4)
+
+    saved_path = os.path.join(output_path, filename)
+
+    # Save final image with overlaid heatmap
+    overlaid_image.save(saved_path)
+
+
+def calculate_entropy(probability_map):
+    """
+    Calculate the entropy of a given probability map.
+
+    This function computes the entropy for each value in the provided `probability_map`.
+    Entropy is a measure of uncertainty or randomness, commonly used in information theory.
+    Here, the binary entropy formula is used, which is defined for probabilities `p` as:
+    
+        H(p) = -[p * log(p) + (1 - p) * log(1 - p)]
+    
+    To avoid issues with log(0), which is undefined, the function clips probability values 
+    to a minimum of `1e-6` and a maximum of `1 - 1e-6`.
+
+    Parameters:
+    ----------
+    probability_map : numpy array
+        A numpy array containing probability values, where each value represents 
+        the probability of an event occurring (0 <= p <= 1).
+    
+    Returns:
+    -------
+    entropy : numpy array
+        A numpy array of the same shape as `probability_map`, containing the entropy 
+        values for each probability in the input array.
+
+    Example:
+    --------
+    >>> probability_map = np.array([0.2, 0.5, 0.8])
+    >>> calculate_entropy(probability_map)
+    array([0.50040242, 0.69314718, 0.50040242])
+    
+    Notes:
+    ------
+    - The formula used here is specifically for binary entropy, which is typically 
+      used when probabilities are defined for binary outcomes.
+    - Values near 0 or 1 have low entropy (low uncertainty), while values near 0.5 
+      have high entropy (high uncertainty).
+
+    """
+    
+    # Ensure the probability map values are within a small tolerance to prevent log(0) errors
+    probability_map = np.clip(probability_map, 1e-6, 1 - 1e-6)
+    
+    # Calculate entropy using the binary entropy formula
+    entropy = - (probability_map * np.log(probability_map) + (1 - probability_map) * np.log(1 - probability_map))
+    
+    return entropy
+
 
 
 def load_model_weights(model, path):

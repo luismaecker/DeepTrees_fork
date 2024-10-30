@@ -40,26 +40,14 @@ from treecrowndelineation.modules.postprocessing import extract_polygons
 from treecrowndelineation.modules.utils import get_crs
 from treecrowndelineation.model.inference_model import InferenceModel
 from treecrowndelineation.model.averaging_model import AveragingModel
-
-from baal import ModelWrapper
-from baal.active import get_heuristic, ActiveLearningLoop
-from baal.bayesian.dropout import MCDropoutModule
-from baal.modelwrapper import TrainingArgs
-from baal.utils.metrics import ClassificationReport
-from baal.utils.transforms import PILToLongTensor
-
-
+from treecrowndelineation.modules.utils import overlay_heatmap, calculate_entropy
 import hydra
 from omegaconf import DictConfig, OmegaConf
 
 import logging
 log = logging.getLogger(__name__)
 
-def calculate_entropy(probability_map):
-    # Ensure the probability map is clipped between a very small value to avoid log(0)
-    probability_map = np.clip(probability_map, 1e-6, 1 - 1e-6)
-    entropy = - (probability_map * np.log(probability_map) + (1 - probability_map) * np.log(1 - probability_map))
-    return entropy
+
 
 @hydra.main(version_base=None, config_path="../config", config_name="inference_halle")
 def test(config: DictConfig) -> None:
@@ -99,13 +87,12 @@ def test(config: DictConfig) -> None:
 
     model = DataParallel(model) # TODO check if we need this - should it be handled by the trainer?
     model.eval()
-    # TODO: Add this path to hydra config file
-    ground_truth_path = '/work/ka1176/shared_data/Deeptree_data_04_Oct_2024/polygon-labelling/tiles/'
+   
     chunk_means = [] 
-    for idx, img in enumerate(os.listdir(ground_truth_path)):
+    for idx, img in enumerate(os.listdir(config.unlabelled_tiles_folder)):
         filename = os.path.basename(img).split('.')[0]
         
-        array = xarray.open_rasterio(os.path.join(ground_truth_path, img))
+        array = xarray.open_rasterio(os.path.join(config.unlabelled_tiles_folder, img))
         nbands, height, width = array.shape
 
         if config.tilesize == 0:
@@ -119,11 +106,8 @@ def test(config: DictConfig) -> None:
         nchunks_h = len(range(0, height, chunk_size))
         nchunks_w = len(range(0, width, chunk_size))
         
-        print('total chunks in heights and width',nchunks_h, nchunks_w)
         nchunks = nchunks_h * nchunks_w
-        log.info("Chunk size for processing: {} pixels".format(chunk_size))
 
-        log.info("Starting processing...")
 
         polygons = []
 
@@ -136,8 +120,7 @@ def test(config: DictConfig) -> None:
         
         for i, y in enumerate(range(0, height, chunk_size)):             
             for j, x in enumerate(range(0, width, chunk_size)):
-                idx = i * nchunks_w + j + 1
-                log.info("Loading chunk {}/{}".format(idx, nchunks))
+                idx = i * nchunks_w + j + 1                
                 t1 = time.time()
                 chunk = array[:, y:y + chunk_size, x:x + chunk_size].load()  #.transpose('y', 'x', 'band')
                 data = chunk.data
@@ -170,18 +153,18 @@ def test(config: DictConfig) -> None:
                 # Extract prediction array from the result dictionary
                 prediction_array = result['prediction']
 
-                # Extract only the first channel, which represents the probability map
-                probability_channel_2 = prediction_array[2, :, :]
+                if config.log_entropy:
+                    # Extract only the third channel, which represents the probability map
+                    probability_channel = prediction_array[2, :, :]
+                   
+                    entropy_map = calculate_entropy(probability_channel)
+                   
+                    mean_entropy = np.mean(entropy_map)
 
+                    # You can then sort patches by mean_entropy to select the least certain ones
+                    chunk_means.append((mean_entropy, filename))
 
-                # Assuming `probability_channel_2` is the probability map of the foreground
-                entropy_map = calculate_entropy(probability_channel_2)
-                mean_entropy = np.mean(entropy_map)
-
-                # You can then sort patches by mean_entropy to select the least certain ones
-                chunk_means.append((mean_entropy, filename))
-
-                log.info(f"Mean entropy of chunk {filename}: {mean_entropy}")
+                    log.info(f"Mean entropy of chunk {filename}: {mean_entropy}")
 
 
                 t3 = time.time()
@@ -193,9 +176,7 @@ def test(config: DictConfig) -> None:
                     # in this case the prediction area was all no data, nothing to extract from here
                     log.info("Empty chunk, skipping remaining steps.")
                     continue
-
-                log.info("Prediction done, extracting polygons for chunk {}/{}.".format(idx, nchunks))
-
+               
                 if config.save_prediction is not None:      
                     save_prediction_dir = os.path.join(os.getcwd(), config.save_prediction)
                     os.makedirs(save_prediction_dir, exist_ok=True)              
@@ -227,21 +208,19 @@ def test(config: DictConfig) -> None:
                                                         **polygon_extraction_params))
                 t5 = time.time()
                 postprocessing_time += t5 - t4
-        
-    # Sort the chunk means in ascending order by the mean probability value
-    sorted_chunk_means = sorted(chunk_means, key=lambda x: x[0], reverse=True)
+                
+                if config.save_entropy_heatmaps:
+                    # plot and save entropy heatmaps for the prediction                     
+                    overlay_heatmap(array, entropy_map,  os.path.abspath(save_prediction_dir), filename + '.png')
+    
+    if config.log_entropy:                
+        # Sort the chunk means in ascending order by the mean probability value
+        sorted_chunk_means = sorted(chunk_means, key=lambda x: x[0], reverse=True)
 
-    # Print or log the sorted list of chunk means
-    for mean, chunk_id in sorted_chunk_means:
-        log.info(f"Chunk {chunk_id} has mean entropy: {mean}")
+        # Print or log the sorted list of chunk means
+        for mean, chunk_id in sorted_chunk_means:
+            log.info(f"Chunk {chunk_id} has mean entropy: {mean}")
         
-    log.info("Found {} polygons in total.".format(len(polygons)))
-    log.info("Total processing time: {}s".format(int(time.time() - t0)))
-    log.info("Time loading from disk: {}s".format(int(disk_loading_time)))
-    log.info("Inference time: {}s".format(int(inference_time)))
-    log.info("Post-processing time: {}s".format(int(postprocessing_time)))
-    log.info("Saving as {}".format(os.path.join(os.getcwd(), config.output_file)))
-
     crs_ = get_crs(array)
 
     utils.save_polygons(polygons,
