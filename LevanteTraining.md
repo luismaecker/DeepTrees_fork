@@ -55,7 +55,7 @@ We will follow the instructions in the TreeCrownDelineation repository to fine t
 
 ## Training
 
-Adapt your own config file based on the defaults in `train_halle.yaml` as needed.
+Adapt your own config file based on the defaults in `train_halle.yaml` as needed. For inspiration for a derived config file for finetuning, check `finetune_halle.yaml`.
 
 Run the script like this:
 
@@ -65,7 +65,7 @@ python scripts/train.py --config-name=finetune_halle # finetune with pretrained 
 python scripts/train.py --config-name=yourconfig # with your own config
 ```
 
-To re-generate the ground truth for training, make sure to pass the label directory in `data.ground_truth_labels`. To turn it off, pass `++data.ground_truth_labels=null`.
+To re-generate the ground truth for training, make sure to pass the label directory in `data.ground_truth_labels`. To turn it off, pass `data.ground_truth_labels=null`.
 
 You can overwrite individual parameters on the command line, e.g.
 
