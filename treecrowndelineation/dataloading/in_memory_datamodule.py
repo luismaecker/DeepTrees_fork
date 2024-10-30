@@ -5,9 +5,13 @@ import glob
 import numpy as np
 import albumentations as A
 import lightning as L
+import pandas as pd
+import geopandas as gpd
+
 from torch.utils.data import DataLoader
 from treecrowndelineation.dataloading import datasets as ds
-from treecrowndelineation.modules.utils import dilate_img
+from treecrowndelineation.modules.utils import dilate_img, fix_crs
+from treecrowndelineation.dataloading.preprocessing import MaskOutlinesGenerator, DistanceTransformGenerator
 
 import logging
 log = logging.getLogger(__name__)
@@ -18,26 +22,31 @@ class InMemoryDataModule(L.LightningDataModule):
                  masks: Union[str, list],
                  outlines: Union[str, list],
                  distance_transforms: Union[str, list],
+                 ground_truth_labels: Union[str, list, None] = None,
                  training_split: float = 0.7,
                  batch_size: int = 16,
                  val_batch_size: int = 2,
                  num_workers: int = 8,
                  width: int = 256,
-                 augment_train = False,
-                 augment_val = False,
-                 use_last_target_as_mask=False,
-                 concatenate_ndvi=False,
-                 red=None,
-                 nir=None,
-                 divide_by=1,
-                 normalize=False,
+                 augment_train: bool = False,
+                 augment_val: bool = False,
+                 use_last_target_as_mask: bool = False,
+                 concatenate_ndvi: bool = False,
+                 red: int = None,
+                 nir: int = None,
+                 divide_by: float = 1,
+                 normalize: bool = False,
                  normalization_function=None,
-                 dilate_second_target_band=False,
-                 shuffle=True,
-                 deterministic=True,
-                 train_indices=None,
-                 val_indices=None,
-                 rescale_ndvi=True
+                 dilate_second_target_band: bool = False,
+                 shuffle: bool = True,
+                 deterministic: bool = True, # TODO remove in separate commit
+                 train_indices: list[int] = None,
+                 val_indices: list[int] = None,
+                 rescale_ndvi: bool = True,
+                 valid_class_ids: Union[str, list] = 'all',
+                 class_column_name: str = 'class',
+                 crs: str = 'EPSG:25832',
+                 nproc: int = 1,
                  ):
         """Pytorch lightning in memory data module
 
@@ -49,6 +58,7 @@ class InMemoryDataModule(L.LightningDataModule):
             masks (str or list): List of file paths to masks, or list of masks.
             outlines (str or list): List of file paths to outlines, or list of outlines.
             distance_transforms (str or list): List of file paths to distance_transforms, or list of distance_transforms.
+            ground_truth_labels (str): File or folder containing the ground truth labels.
             training_split (float): Value between 0 and 1 determining the training split. Default: 0.7
             batch_size (int): Batch size
             val_batch_size (int): Validation set batch size
@@ -87,12 +97,10 @@ class InMemoryDataModule(L.LightningDataModule):
         else:
             self.rasters = np.sort(glob.glob(os.path.abspath(rasters) + "/*.tif"))
 
-        targets = [masks, outlines, distance_transforms]
-
-        if type(targets[0]) in (list, tuple, np.ndarray):
-            self.targets = [np.sort(file_list) for file_list in targets]
-        else:
-            self.targets = [np.sort(glob.glob(os.path.abspath(file_list) + "/*.tif")) for file_list in targets]
+        self.masks = masks
+        self.outlines = outlines
+        self.distance_transforms = distance_transforms
+        self.ground_truth_labels = ground_truth_labels
 
         self.training_split = training_split
         self.batch_size = batch_size
@@ -117,7 +125,82 @@ class InMemoryDataModule(L.LightningDataModule):
         self.val_ds = None
         self.rescale_ndvi = rescale_ndvi
 
+        self.valid_class_ids = valid_class_ids
+        self.class_column_name = class_column_name
+        self.crs = crs
+        self.nproc = nproc
+
+        self.targets = None # will be assigned in setup_data
+
+    def prepare_data(self) -> None:
+        '''prepare_data
+        
+        Prepare the ground truth masks, outlines, and distance transforms from
+        ground truth labels.
+        '''
+
+        if self.ground_truth_labels is None:
+            log.info('No ground truth labels provided. Proceed with existing ground truth ...')
+            log.info(f'Masks: {self.masks}')
+            log.info(f'Outlines: {self.outlines}')
+            log.info(f'Distance transforms: {self.distance_transforms}')
+    
+            return
+
+        # prepare ground truth from labels
+        if os.path.isfile(self.ground_truth_labels):
+            ground_truth = gpd.read_file(self.ground_truth_labels)
+        elif os.path.isdir(self.ground_truth_labels):
+            # combine all the ground truth labels TODO copy from notebook
+            shapes = np.sort(glob.glob(f'{self.ground_truth_labels}/label_*.shp'))
+            ground_truth = pd.concat([fix_crs(gpd.read_file(shape)).assign(tile=shape) for shape in shapes])
+            log.info(f'Combining all polygons in {os.path.join(self.ground_truth_labels, 'all_labels.shp')}')
+            ground_truth.drop(columns='tile').to_file(os.path.join(self.ground_truth_labels, 'all_labels.shp'))
+
+        # generate masks
+        mask_generator = MaskOutlinesGenerator(rasters=self.rasters,
+                                               output_path=self.masks, 
+                                               output_file_prefix='mask', 
+                                               ground_truth_labels=ground_truth,
+                                               valid_class_ids=self.valid_class_ids,
+                                               class_column_name=self.class_column_name,
+                                               crs=self.crs,
+                                               nproc=self.nproc,
+                                               generate_outlines=False)
+        mask_generator.apply_process()
+
+        # generate outlines
+        outlines_generator = MaskOutlinesGenerator(rasters=self.rasters,
+                                                   output_path=self.outlines, 
+                                                   output_file_prefix='outline', 
+                                                   ground_truth_labels=ground_truth,
+                                                   valid_class_ids=self.valid_class_ids,
+                                                   class_column_name=self.class_column_name,
+                                                   crs=self.crs,
+                                                   nproc=self.nproc,
+                                                   generate_outlines=True)
+        outlines_generator.apply_process()
+
+        # generate distance transforms        
+        dist_trafo_generator = DistanceTransformGenerator(rasters=self.rasters,
+                                                   output_path=self.distance_transforms, 
+                                                   output_file_prefix='dist_trafo', 
+                                                   ground_truth_labels=ground_truth,
+                                                   valid_class_ids=self.valid_class_ids,
+                                                   class_column_name=self.class_column_name,
+                                                   crs=self.crs,
+                                                   nproc=self.nproc)
+        dist_trafo_generator.apply_process()
+
+
     def setup(self, stage=None):  # throws error if arg is removed
+        targets = [self.masks, self.outlines, self.distance_transforms]
+
+        if type(targets[0]) in (list, tuple, np.ndarray):
+            self.targets = [np.sort(file_list) for file_list in targets]
+        else:
+            self.targets = [np.sort(glob.glob(os.path.abspath(file_list) + "/*.tif")) for file_list in targets]
+
         if self.shuffle: # FIXME shuffle should not be used together with fixed train indices!
             for x in (self.rasters, *self.targets):
                 if self.deterministic:
@@ -218,41 +301,3 @@ class InMemoryDataModule(L.LightningDataModule):
             return None
         else:
             return DataLoader(self.val_ds, batch_size=self.val_batch_size, num_workers=self.num_workers, drop_last=True, pin_memory=True)
-
-
-class InMemoryMaskDataModule(InMemoryDataModule):
-    def __init__(self,
-                 rasters: str,
-                 targets: Union[tuple, list],
-                 training_split: float = 0.7,
-                 batch_size: int = 16,
-                 width: int = 256,
-                 use_last_target_as_mask=False,
-                 concatenate_ndvi=False,
-                 red=None,
-                 nir=None,
-                 divide_by=1,
-                 normalize=False,
-                 normalization_function=None,
-                 dilate_second_target_band=False,
-                 shuffle=True,
-                 deterministic=True,
-                 train_indices=None,
-                 val_indices=None,
-                 rescale_ndvi=True
-                 ):
-        """
-        Please look at the documentation for `InMemoryDataModule`.
-        """
-        train_augmentation = A.Compose([#A.RandomResizedCrop(width, width, scale=(0.25, 1.), always_apply=True),
-                                        A.RandomCrop(width, width, always_apply=True),
-                                        A.RandomRotate90(),
-                                        A.VerticalFlip(),
-                                        #A.RandomGamma(gamma_limit=(70, 130))
-                                        ])
-        val_augmentation = A.RandomCrop(width, width, always_apply=True)
-
-        super().__init__(rasters, targets, training_split, batch_size, width,
-                         train_augmentation, val_augmentation, use_last_target_as_mask,
-                         concatenate_ndvi, red, nir, divide_by, normalize, normalization_function,
-                         dilate_second_target_band, shuffle, deterministic, train_indices, val_indices, rescale_ndvi)

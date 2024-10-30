@@ -53,6 +53,42 @@ Create the new empty directories
 
 We will follow the instructions in the TreeCrownDelineation repository to fine tune the models. Link: https://github.com/AWF-GAUG/TreeCrownDelineation
 
+## Training
+
+Adapt your own config file based on the defaults in `train_halle.yaml` as needed. For inspiration for a derived config file for finetuning, check `finetune_halle.yaml`.
+
+Run the script like this:
+
+```bash
+python scripts/train.py # this is the default config that trains from scratch
+python scripts/train.py --config-name=finetune_halle # finetune with pretrained model
+python scripts/train.py --config-name=yourconfig # with your own config
+```
+
+To re-generate the ground truth for training, make sure to pass the label directory in `data.ground_truth_labels`. To turn it off, pass `data.ground_truth_labels=null`.
+
+You can overwrite individual parameters on the command line, e.g.
+
+```bash
+python scripts/train.py trainer.fast_dev_run=True
+```
+
+To resume training from a checkpoint, take care to pass the hydra arguments in quotes to avoid the shell intercepting the string (pretrained model contains `=`):
+
+```bash
+python scripts/train.py 'model.pretrained_model="Unet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=0_jitted.pt"'
+```
+
+## Inference
+
+Run the inference script with the corresponding config file. Adjust as needed.
+
+```bash
+python scripts/inference_halle.py
+```
+
+## Separate ground truth data generation
+
 1. Combine all labels into one shapefile `all_labels.shp`. Make sure the coordinate reference system is `EPSG:25832` to comply with the tiles.
 
 ```python
@@ -86,35 +122,3 @@ python rasterize_to_distance_transform.py -i /work/ka1176/shared_data/2024-ufz-d
 ```
 
 6. Check that everything was processed correctly. Run the notebook `notebooks/processing/quick_data_check.ipynb` for a visual inspection.
-
-## Training
-
-Adapt your own config file based on the defaults in `train_halle.yaml` as needed.
-
-Run the script like this:
-
-```bash
-python scripts/train.py # this is the default config that trains from scratch
-python scripts/train.py --config-name=finetune_halle # finetune with pretrained model
-python scripts/train.py --config-name=yourconfig # with your own config
-```
-
-You can overwrite individual parameters on the command line, e.g.
-
-```bash
-python scripts/train.py trainer.fast_dev_run=True
-```
-
-To resume training from a checkpoint, take care to pass the hydra arguments in quotes to avoid the shell intercepting the string (pretrained model contains `=`):
-
-```bash
-python scripts/train.py 'model.pretrained_model="Unet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=0_jitted.pt"'
-```
-
-## Inference
-
-Run the inference script with the corresponding config file. Adjust as needed.
-
-```bash
-python scripts/inference_halle.py
-```
