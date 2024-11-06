@@ -37,7 +37,7 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
                  divide_by: float = 1,
                  normalize: bool = False,
                  normalization_function=None,
-                 dilate_second_target_band: bool = False,
+                 dilate_outlines: bool = False,
                  shuffle: bool = True,
                  deterministic: bool = True, # TODO remove in separate commit
                  train_indices: list[int] = None,
@@ -79,7 +79,7 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
                 'normalization_function'.
             normalization_function: A function, which is applied to all images. Optional NDVI concatenation happens after
                 applying the function. Exclusive with 'divide_by' and 'normalize'.
-            dilate_second_target_band (int): The second target band (the tree outlines) can be dilated (widened) by a
+            dilate_outlines (int): The second target band (the tree outlines) can be dilated (widened) by a
                 certain number of pixels.
             shuffle (bool): Whether or not to shuffle the data upon loading. This affects the partition into
                 training and validation data. Default: True
@@ -113,7 +113,7 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
         self.concatenate_ndvi = concatenate_ndvi
         self.red = red
         self.nir = nir
-        self.dilate_second_target_band = dilate_second_target_band
+        self.dilate_outlines = dilate_outlines
         self.deterministic = deterministic
         self.shuffle = shuffle
         self.train_indices = train_indices
@@ -152,7 +152,7 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
         if os.path.isfile(self.ground_truth_labels):
             ground_truth = gpd.read_file(self.ground_truth_labels)
         elif os.path.isdir(self.ground_truth_labels):
-            # combine all the ground truth labels TODO copy from notebook
+            # combine all the ground truth labels
             shapes = np.sort(glob.glob(f'{self.ground_truth_labels}/label_*.shp'))
             ground_truth = pd.concat([fix_crs(gpd.read_file(shape)).assign(tile=shape) for shape in shapes])
             log.info(f'Combining all polygons in {os.path.join(self.ground_truth_labels, 'all_labels.shp')}')
@@ -160,8 +160,8 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
 
         # generate masks
         mask_generator = MaskOutlinesGenerator(rasters=self.rasters,
-                                               output_path=self.masks, 
-                                               output_file_prefix='mask', 
+                                               output_path=self.masks,
+                                               output_file_prefix='mask',
                                                ground_truth_labels=ground_truth,
                                                valid_class_ids=self.valid_class_ids,
                                                class_column_name=self.class_column_name,
@@ -172,8 +172,8 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
 
         # generate outlines
         outlines_generator = MaskOutlinesGenerator(rasters=self.rasters,
-                                                   output_path=self.outlines, 
-                                                   output_file_prefix='outline', 
+                                                   output_path=self.outlines,
+                                                   output_file_prefix='outline',
                                                    ground_truth_labels=ground_truth,
                                                    valid_class_ids=self.valid_class_ids,
                                                    class_column_name=self.class_column_name,
@@ -182,17 +182,16 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
                                                    generate_outlines=True)
         outlines_generator.apply_process()
 
-        # generate distance transforms        
+        # generate distance transforms
         dist_trafo_generator = DistanceTransformGenerator(rasters=self.rasters,
-                                                   output_path=self.distance_transforms, 
-                                                   output_file_prefix='dist_trafo', 
+                                                   output_path=self.distance_transforms,
+                                                   output_file_prefix='dist_trafo',
                                                    ground_truth_labels=ground_truth,
                                                    valid_class_ids=self.valid_class_ids,
                                                    class_column_name=self.class_column_name,
                                                    crs=self.crs,
                                                    nproc=self.nproc)
         dist_trafo_generator.apply_process()
-
 
     def setup(self, stage=None):  # throws error if arg is removed
         if stage == 'fit':
@@ -230,7 +229,7 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
             for t in validation_data[0]:
                 log.info(t)
 
-            log.info('Define augmentation functions') 
+            log.info('Define augmentation functions')
             log.info(f'Used in training: {self.augment_train}')
             log.info(f'Used in validation: {self.augment_val}')
             self.train_augmentation = A.Compose([A.RandomCrop(self.width, self.width, always_apply=True),
@@ -248,7 +247,7 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
                                                     dim_ordering="HWC",
                                                     divide_by=self.divide_by)
 
-            # TODO do we ever need anything besides divide_by == 1 
+            # TODO do we ever need anything besides divide_by == 1
             # TODO if (!!) at all we should provide external mean/std eg for ViT
             if sum([self.divide_by != 1, self.normalization_function is not None, self.normalize]) > 1:
                 raise RuntimeError("Please provide either 'divide_by', 'normalize' or 'normalization_function' as argument.")
@@ -290,12 +289,12 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
                         self.val_ds.masks[i] = self.val_ds.masks[i][:, :, :-1] * mask
 
             # dilate the tree crown outlines to get a stronger training signal
-            if self.dilate_second_target_band:
+            if self.dilate_outlines:
                 for m in self.train_ds.masks:
-                    m[:, :, 1] = dilate_img(m[:, :, 1], self.dilate_second_target_band)
+                    m[:, :, 1] = dilate_img(m[:, :, 1], self.dilate_outlines)
                 if self.training_split < 1 or self.val_indices is not None:
                     for m in self.val_ds.masks:
-                        m[:, :, 1] = dilate_img(m[:, :, 1], self.dilate_second_target_band)
+                        m[:, :, 1] = dilate_img(m[:, :, 1], self.dilate_outlines)
         
         elif stage == 'test':
             self.test_ds = ds.TreeCrownDelineationDataset(training_data[0],

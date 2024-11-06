@@ -1,17 +1,17 @@
 import xarray as xr
 import numpy as np
+from numpy.typing import NDArray
 
 from torch.utils.data import IterableDataset
 
 from treecrowndelineation.modules.indices import ndvi
-
 class TreeCrownDelineationDataset(IterableDataset):
     """In memory remote sensing dataset for image segmentation."""
     def __init__(self, 
-                 raster_files: list, 
-                 mask_files: list, 
+                 raster_files: list[str], 
+                 mask_files: list[str], 
                  augmentation, 
-                 cutout_size, 
+                 cutout_size, # FIXME duplicate with the cutout size defined for albumentation, mover here?? 
                  overwrite_nan_with_zeros: bool = True,
                  in_memory: bool = True,
                  dim_ordering="HWC",
@@ -29,7 +29,7 @@ class TreeCrownDelineationDataset(IterableDataset):
             in_memory: If True, load full dataset into memory, else iterate. Default is True (for small labeled datasets).
             overwrite_nan_with_zeros: If True, fill NaN with 0. Default is True.
             dim_ordering: One of HWC or CHW; how rasters and masks are stored in memory. The albumentations library
-                needs HWC, so this is the default. CHW support could be bugged.
+                needs HWC, so this is the default. CHW support could be bugged. FIXME check if we need CHW support at all and if this is even working
             dtype: Data type for storing rasters and masks
         """
         # initial sanity checks
@@ -173,45 +173,28 @@ class TreeCrownDelineationDataset(IterableDataset):
             self.rasters[i] = xr.concat((r, res), dim="band")
         self.num_bands += 1
 
-    def get_raster_weights(self):
-        """Returns size of img i divided by total dataset size."""
+    def get_raster_weights(self) -> NDArray[float]:
+        '''get_raster_weights 
+
+        Calculate normalized weights according to the size of each raster tile.
+
+        Returns:
+            _type_: _description_
+        '''        
         weights = [np.prod(np.array(r.shape)[self.lateral_ax]) for r in self.rasters]
         weights /= np.sum(weights)
         return weights
 
-    def calculate_dataset_mean_stddev(self, estimate=True):
-        """Calculates the mean and standard deviation of the whole dataset."""
-        mean = np.zeros(self.num_bands)
-        stddev = np.zeros(self.num_bands)
-        weights = self.get_raster_weights()
-        for i, r in enumerate(self.rasters):
-            if estimate:
-                if self.dim_ordering == "HWC":
-                    mean += np.mean(r[::4, ::4, :], axis=tuple(self.lateral_ax)) * weights[i]
-                    stddev += np.std(r[::4, ::4, :], axis=tuple(self.lateral_ax)) * weights[i]
-                else:
-                    mean += np.mean(r[:, ::4, ::4], axis=tuple(self.lateral_ax)) * weights[i]
-                    stddev += np.std(r[:, ::4, ::4], axis=tuple(self.lateral_ax)) * weights[i]
-            else:
-                mean  += np.mean(r, axis=tuple(self.lateral_ax)) * weights[i]
-                stddev += np.std(r, axis=tuple(self.lateral_ax)) * weights[i]
-        return mean.data, stddev.data
+    def normalize(self, mean: float = 0.0, stddev: float = 1.0):
+        '''normalize 
 
-    def normalize(self):
-        """Normalizes each raster by the mean and standard deviation of the whole dataset."""
-        mean, stddev = self.calculate_dataset_mean_stddev()
+        Normalize each raster by provided mean and stddev.
+
+        TODO add support for channel-wise mean and stddev for compliance with pretrained ViT
+
+        Args:
+            mean (float, optional): Mean to be applied. Defaults to 0.0.
+            stddev (float, optional): Stddev to be applied. Defaults to 1.0.
+        '''        
         f = lambda x: (x-mean)/(stddev+1E-5)
         self.apply_to_rasters(f)
-
-    def normalize_percentile(self, low=2, high=99):
-        """Normalizes each raster by a weighted percentile of the whole raster."""
-        weights = self.get_raster_weights()
-        minp = [np.percentile(r.data, low) * weights[i] for i, r in enumerate(self.rasters)]
-        maxp = [np.percentile(r.data, high) * weights[i] for i, r in enumerate(self.rasters)]
-        minp = np.sum(minp)
-        maxp = np.sum(maxp)
-        f = lambda x: np.clip((x - minp) / (maxp - minp + 1E-5), 0, 1)
-        self.apply_to_rasters(f)
-
-
-
