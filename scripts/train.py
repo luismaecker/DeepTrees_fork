@@ -40,7 +40,7 @@ rootutils.set_root(
 )
 
 from treecrowndelineation.model.tcd_model import TreeCrownDelineationModel
-from treecrowndelineation.dataloading.in_memory_datamodule import InMemoryDataModule
+from treecrowndelineation.dataloading.datamodule import TreeCrownDelineationDataModule
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 log = logging.getLogger(__name__)
@@ -78,7 +78,7 @@ def train(config: DictConfig) -> None:
             log.info(f'Callback not instantiated: {key}')
 
     log.info('Instantiating data module ...')
-    data: InMemoryDataModule = hydra.utils.instantiate(config.data)
+    data: TreeCrownDelineationDataModule = hydra.utils.instantiate(config.data)
     data.prepare_data()
     data.setup()
 

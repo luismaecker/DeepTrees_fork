@@ -1,6 +1,6 @@
 name: train-halle
 data:
-  _target_: treecrowndelineation.dataloading.in_memory_datamodule.InMemoryDataModule
+  _target_: treecrowndelineation.dataloading.datamodule.TreeCrownDelineationDataModule
   rasters: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/tiles  # directory with raster images
   masks: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/masks # directory with masks
   outlines: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/outlines # directory with outlines

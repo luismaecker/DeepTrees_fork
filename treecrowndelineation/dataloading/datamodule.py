@@ -16,7 +16,7 @@ from treecrowndelineation.dataloading.preprocessing import MaskOutlinesGenerator
 import logging
 log = logging.getLogger(__name__)
 
-class InMemoryDataModule(L.LightningDataModule):
+class TreeCrownDelineationDataModule(L.LightningDataModule):
     def __init__(self,
                  rasters: Union[str, list],
                  masks: Union[str, list],
@@ -123,6 +123,7 @@ class InMemoryDataModule(L.LightningDataModule):
         self.normalization_function = normalization_function
         self.train_ds = None
         self.val_ds = None
+        self.test_ds = None
         self.rescale_ndvi = rescale_ndvi
 
         self.valid_class_ids = valid_class_ids
@@ -194,104 +195,115 @@ class InMemoryDataModule(L.LightningDataModule):
 
 
     def setup(self, stage=None):  # throws error if arg is removed
-        targets = [self.masks, self.outlines, self.distance_transforms]
+        if stage == 'fit':
+            targets = [self.masks, self.outlines, self.distance_transforms]
 
-        if type(targets[0]) in (list, tuple, np.ndarray):
-            self.targets = [np.sort(file_list) for file_list in targets]
-        else:
-            self.targets = [np.sort(glob.glob(os.path.abspath(file_list) + "/*.tif")) for file_list in targets]
+            if type(targets[0]) in (list, tuple, np.ndarray):
+                self.targets = [np.sort(file_list) for file_list in targets]
+            else:
+                self.targets = [np.sort(glob.glob(os.path.abspath(file_list) + "/*.tif")) for file_list in targets]
 
-        if self.shuffle: # FIXME shuffle should not be used together with fixed train indices!
-            for x in (self.rasters, *self.targets):
-                if self.deterministic:
-                    np.random.seed(1337) # TODO conflicts with seed everything
-                np.random.shuffle(x)  # in-place
+            if self.shuffle: # FIXME shuffle should not be used together with fixed train indices!
+                for x in (self.rasters, *self.targets):
+                    if self.deterministic:
+                        np.random.seed(1337) # TODO conflicts with seed everything
+                    np.random.shuffle(x)  # in-place
 
-        # split into training and validation set
-        data = (self.rasters, *self.targets)
+            # split into training and validation set
+            data = (self.rasters, *self.targets)
 
-        # if traiing and validation indices are given, use them
-        if self.train_indices is not None:
-            training_data = [r[self.train_indices] for r in data]
-        else:
-            training_data = [r[:int(len(r) * self.training_split)] for r in data]
+            # if traiing and validation indices are given, use them
+            if self.train_indices is not None:
+                training_data = [r[self.train_indices] for r in data]
+            else:
+                training_data = [r[:int(len(r) * self.training_split)] for r in data]
 
-        if self.val_indices is not None:
-            validation_data = [r[self.val_indices] for r in data]
-        else:
-            validation_data = [r[int(len(r) * self.training_split):] for r in data]
+            if self.val_indices is not None:
+                validation_data = [r[self.val_indices] for r in data]
+            else:
+                validation_data = [r[int(len(r) * self.training_split):] for r in data]
 
-        log.info('Tiles in training data')
-        for t in training_data[0]:
-            log.info(t)
-        log.info('Tiles in validation data')
-        for t in validation_data[0]:
-            log.info(t)
+            log.info('Tiles in training data')
+            for t in training_data[0]:
+                log.info(t)
+            log.info('Tiles in validation data')
+            for t in validation_data[0]:
+                log.info(t)
 
-        log.info('Define augmentation functions') 
-        log.info(f'Used in training: {self.augment_train}')
-        log.info(f'Used in validation: {self.augment_val}')
-        self.train_augmentation = A.Compose([A.RandomCrop(self.width, self.width, always_apply=True),
-                                A.RandomRotate90(),
-                                A.VerticalFlip(),
-                                #A.ColorJitter(), TypeError: ColorJitter transformation expects 1-channel or 3-channel images.
-                                ])
-        self.val_augmentation = A.RandomCrop(self.width, self.width, always_apply=True)
+            log.info('Define augmentation functions') 
+            log.info(f'Used in training: {self.augment_train}')
+            log.info(f'Used in validation: {self.augment_val}')
+            self.train_augmentation = A.Compose([A.RandomCrop(self.width, self.width, always_apply=True),
+                                    A.RandomRotate90(),
+                                    A.VerticalFlip(),
+                                    #A.ColorJitter(), TypeError: ColorJitter transformation expects 1-channel or 3-channel images.
+                                    ])
+            self.val_augmentation = A.RandomCrop(self.width, self.width, always_apply=True)
 
-        # load the data into a custom dataset format
-        self.train_ds = ds.InMemoryRSTorchDataset(training_data[0],
-                                                  training_data[1:],
-                                                  augmentation=self.train_augmentation,
-                                                  cutout_size=(self.width, self.width),
-                                                  dim_ordering="HWC",
-                                                  divide_by=self.divide_by)
-
-        if sum([self.divide_by != 1, self.normalization_function is not None, self.normalize]) > 1:
-            raise RuntimeError("Please provide either 'divide_by', 'normalize' or 'normalization_function' as argument.")
-        elif self.normalization_function is not None:
-            self.train_ds.apply_to_rasters(self.normalization_function)
-        elif self.normalize:
-            self.train_ds.normalize()
-
-        if self.training_split < 1 or self.val_indices is not None:
-            self.val_ds = ds.InMemoryRSTorchDataset(validation_data[0],
-                                                    validation_data[1:],
-                                                    augmentation=self.val_augmentation,
+            # load the data into a custom dataset format
+            self.train_ds = ds.TreeCrownDelineationDataset(training_data[0],
+                                                    training_data[1:],
+                                                    augmentation=self.train_augmentation,
                                                     cutout_size=(self.width, self.width),
                                                     dim_ordering="HWC",
                                                     divide_by=self.divide_by)
 
-            if self.normalization_function is not None:
-                self.val_ds.apply_to_rasters(self.normalization_function)
+            # TODO do we ever need anything besides divide_by == 1 
+            # TODO if (!!) at all we should provide external mean/std eg for ViT
+            if sum([self.divide_by != 1, self.normalization_function is not None, self.normalize]) > 1:
+                raise RuntimeError("Please provide either 'divide_by', 'normalize' or 'normalization_function' as argument.")
+            elif self.normalization_function is not None:
+                self.train_ds.apply_to_rasters(self.normalization_function)
             elif self.normalize:
-                self.val_ds.normalize()
+                self.train_ds.normalize()
 
-        # attach the NDVI to the rasters
-        if self.concatenate_ndvi and self.red is not None and self.nir is not None:
-            # we rescale the NDVI to [0...1] to allow gamma augmentation to work right
-            self.train_ds.concatenate_ndvi(red=self.red, nir=self.nir, rescale=self.rescale_ndvi)
             if self.training_split < 1 or self.val_indices is not None:
-                self.val_ds.concatenate_ndvi(red=self.red, nir=self.nir, rescale=self.rescale_ndvi)
+                self.val_ds = ds.TreeCrownDelineationDataset(validation_data[0],
+                                                        validation_data[1:],
+                                                        augmentation=self.val_augmentation,
+                                                        cutout_size=(self.width, self.width),
+                                                        dim_ordering="HWC",
+                                                        divide_by=self.divide_by)
 
-        # this can be used to black out certain regions, e.g. for those where no gt data is available
-        if self.use_last_target_as_mask:
-            for i, m in enumerate(self.train_ds.masks):
-                mask = (1 - np.clip(m.data[..., -1] - m.data[..., 0], 0, 1))[..., None]
-                self.train_ds.rasters[i] *= mask
-                self.train_ds.masks[i] = self.train_ds.masks[i][:, :, :-1] * mask
-            if self.training_split < 1 or self.val_indices is not None:
-                for i, m in enumerate(self.val_ds.masks):
+                if self.normalization_function is not None:
+                    self.val_ds.apply_to_rasters(self.normalization_function)
+                elif self.normalize:
+                    self.val_ds.normalize()
+
+            # attach the NDVI to the rasters
+            if self.concatenate_ndvi and self.red is not None and self.nir is not None:
+                # we rescale the NDVI to [0...1] to allow gamma augmentation to work right
+                self.train_ds.concatenate_ndvi(red=self.red, nir=self.nir, rescale=self.rescale_ndvi)
+                if self.training_split < 1 or self.val_indices is not None:
+                    self.val_ds.concatenate_ndvi(red=self.red, nir=self.nir, rescale=self.rescale_ndvi)
+
+            # this can be used to black out certain regions, e.g. for those where no gt data is available
+            if self.use_last_target_as_mask:
+                for i, m in enumerate(self.train_ds.masks):
                     mask = (1 - np.clip(m.data[..., -1] - m.data[..., 0], 0, 1))[..., None]
-                    self.val_ds.rasters[i] *= mask
-                    self.val_ds.masks[i] = self.val_ds.masks[i][:, :, :-1] * mask
+                    self.train_ds.rasters[i] *= mask
+                    self.train_ds.masks[i] = self.train_ds.masks[i][:, :, :-1] * mask
+                if self.training_split < 1 or self.val_indices is not None:
+                    for i, m in enumerate(self.val_ds.masks):
+                        mask = (1 - np.clip(m.data[..., -1] - m.data[..., 0], 0, 1))[..., None]
+                        self.val_ds.rasters[i] *= mask
+                        self.val_ds.masks[i] = self.val_ds.masks[i][:, :, :-1] * mask
 
-        # dilate the tree crown outlines to get a stronger training signal
-        if self.dilate_second_target_band:
-            for m in self.train_ds.masks:
-                m[:, :, 1] = dilate_img(m[:, :, 1], self.dilate_second_target_band)
-            if self.training_split < 1 or self.val_indices is not None:
-                for m in self.val_ds.masks:
+            # dilate the tree crown outlines to get a stronger training signal
+            if self.dilate_second_target_band:
+                for m in self.train_ds.masks:
                     m[:, :, 1] = dilate_img(m[:, :, 1], self.dilate_second_target_band)
+                if self.training_split < 1 or self.val_indices is not None:
+                    for m in self.val_ds.masks:
+                        m[:, :, 1] = dilate_img(m[:, :, 1], self.dilate_second_target_band)
+        
+        elif stage == 'test':
+            self.test_ds = ds.TreeCrownDelineationDataset(training_data[0],
+                                                    training_data[1:],
+                                                    augmentation=self.train_augmentation,
+                                                    cutout_size=(self.width, self.width),
+                                                    dim_ordering="HWC",
+                                                    divide_by=self.divide_by)
 
     def train_dataloader(self):
         return DataLoader(self.train_ds, batch_size=self.batch_size, num_workers=self.num_workers, drop_last=True, pin_memory=True)
@@ -301,3 +313,6 @@ class InMemoryDataModule(L.LightningDataModule):
             return None
         else:
             return DataLoader(self.val_ds, batch_size=self.val_batch_size, num_workers=self.num_workers, drop_last=True, pin_memory=True)
+
+    def test_dataloader(self):
+        return DataLoader(self.test_ds, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=False, drop_last=False)

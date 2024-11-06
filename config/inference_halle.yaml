@@ -1,34 +1,64 @@
 name: inference-halle
-# input raster file
-input_file: /work/ka1176/shared_data/2024-ufz-deeptree/example_tiles/LVermGeo_DOP20/dop20rgbi_32_702_5706_2_st_2022.tif 
-output_file: test.sqlite # output file and path name, e.g. ~/output/result.sqlite
-unlabelled_tiles_folder: '/work/ka1176/shared_data/Deeptree_data_04_Oct_2024/polygon-labelling/tiles/unlabelled_tiles' # unlabelled tiles, used for active learning run.
-# pretrained model
-model_path: /work/ka1176/shared_data/2024-ufz-deeptree/finetuned_models/demo-unet-halle-jitted.pt
-device: cuda # selects GPU if available
-width: 256 # network input window size, must be divisible by 8
-red: 0 # red channel index
-nir: 3 # near infrared channel index
-ndvi: True # if True, use NDVI
-rescale_ndvi: False # if True, rescale NDVI to 0 ... 1
-augment: False # if True, apply data augmentation in inference
-min_dist: 10 # minimum distnace in pixels between local maxima during feature extraction
-sigma: 2 # standard deviation of Gaussian filter during feature extraction
-label_threshold: 0.5 # minimum height of local maxima during feature extraction
-binary_threshold: 0.1 # threshold value for the feature map, lower is background
-simplify_dist: 0.3 # polygon simplification distance, vertices closer than this value are simplified
-divisor: 255.0 # input data will be divided by this value
-save_prediction: save_prediction_dir  # Enables saving of intermediate neural network predictions in the mentioned folder name.
-batchsize: 16 # batch size during inference
-tilesize: 0 # Tile size for reading chunks from disk. Default is 0, which triggers an estimation based on available RAM.
-subsample: False # if True, polygon extraction works at half the resolution of the model output. Use this for speedup at the cost of accuracy.
-upsample: 1.0 # Input to the network will be upsampled bilinearly by the given factor
-sigmoid: False # if True, sigmoid activation will be applied to masks and outlines
-stride: null # Stride used in applying the network to the image
-log_entropy: True # False by default if left empty, used for active learning (AL) purpose
-save_entropy_heatmaps: True # False by default if left empty, used for active learning (AL) purpose to analyse the results of AL.
+data:
+  _target_: treecrowndelineation.dataloading.datamodule.TreeCrownDelineationDataModule
+  rasters: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/tiles  # directory with raster images
+  masks: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/masks # directory with masks
+  outlines: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/outlines # directory with outlines
+  distance_transforms: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/dist_trafo # directory with distance transforms
+  width: 256             # Width and height of the cropped images returned by the data loader
+  batch_size: 2          # dataloader batch size
+  val_batch_size: 1      # validation dataloader batch size
+  training_split: 0.8    # Train/val split
+  train_indices: null    # Train set indices (pass explicitly)
+  val_indices: null      # Validation set indices (pass explicitly)
+  concatenate_ndvi: True # If True, concatenate NDVI
+  rescale_ndvi: True     # NDVI rescaled to [0, 1]
+  red: 0                 # Index of Red channel
+  nir: 3                 # Index of Infrared channel
+  shuffle: True          # shuffle data before train/val split
+  augment_train: True # use augmentation during training
+  augment_val: False   # use augmentation during validation
+  use_last_target_as_mask: False # TODO
+  divide_by: 255         # divisor
+  normalize: False       # apply 0-mean, 1-stddev normalization
+  normalization_function: null # provide normalization function
+  dilate_second_target_band: False # dilate the outlines by number of pixels
+  ground_truth_labels: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/labels/
+  nproc: 8               # number of workers in preprocessing
+  num_workers: 8         # Number of workers in dataloader
+pretrained:
+  # path to pretrained models
+  path: /work/ka1176/shared_data/2024-ufz-deeptree/pretrained_models/tcd-20cm-RGBI-v1/
+  model: null # Pass e.g. Unet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=0_jitted.pt 
+  
+model:
+  _target_: treecrowndelineation.model.tcd_model.TreeCrownDelineationModel
+  in_channels: 5         # Number of input channels / bands of the input image
+  architecture: Unet     # segmentation model architecture
+  backbone: resnet18     # backbone
+  lr: 0.0003             # learning rate
+  mask_iou_share: 0.5   # contribution of masks (vs outline) to overall IOU.
+  freeze_layers: False   # freeze layers (keep only segmentation head trainable)
+  track_running_stats: True # update batch norm layers
+logdir: ${hydra.run.dir} # this is where we find logs, trained models, predictions
+model_name: unet-halle # short and memorable model name
+seed: null               # Fix random seed 
+
+callbacks:
+  model_summary:
+    _target_: lightning.pytorch.callbacks.RichModelSummary
+    max_depth: -1
+
+  rich_progress_bar:
+    _target_: lightning.pytorch.callbacks.RichProgressBar
+
+trainer:
+  _target_: lightning.Trainer
+  devices: 1               # Number of devices (GPUs) to use
+  accelerator: auto        # Choose GPU if available
+
 hydra:
   job:
     chdir: True
   run:
-    dir: results/${hydra.job.name}/${now:%Y-%m-%d}_${now:%H-%M-%S}
+    dir: experiments/${name}/${now:%Y-%m-%d}_${now:%H-%M-%S}

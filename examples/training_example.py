@@ -8,7 +8,7 @@ from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 
 from treecrowndelineation import TreeCrownDelineationModel
-from treecrowndelineation.dataloading.in_memory_datamodule import InMemoryDataModule
+from treecrowndelineation.dataloading.datamodule import TreeCrownDelineationDataModule
 
 
 ###################################
@@ -63,7 +63,7 @@ train_augmentation = A.Compose([A.RandomCrop(width, width, always_apply=True),
                                 ])
 val_augmentation = A.RandomCrop(width, width, always_apply=True)
 
-data = InMemoryDataModule(rasters,
+data = TreeCrownDelineationDataModule(rasters,
                           (masks, outlines, dist),
                           width=width,
                           batchsize=batchsize,

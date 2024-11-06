@@ -8,7 +8,7 @@ import pytorch_lightning as pl
 from treecrowndelineation.model.segmentation_model import SegmentationModel
 from treecrowndelineation.model.distance_model import DistanceModel
 from treecrowndelineation.model.tcd_model import TreeCrownDelineationModel
-from treecrowndelineation.dataloading.in_memory_datamodule import InMemoryDataModule
+from treecrowndelineation.dataloading.datamodule import TreeCrownDelineationDataModule
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
@@ -74,7 +74,7 @@ if __name__ == '__main__':
                                     ])
     val_augmentation = A.RandomCrop(width, width, always_apply=True)
 
-    data_pretraining = InMemoryDataModule(rasters_pretrain,
+    data_pretraining = TreeCrownDelineationDataModule(rasters_pretrain,
                                           (masks_pretrain, outlines_pretrain),
                                           width=width,
                                           batchsize=batchsize,
@@ -115,7 +115,7 @@ if __name__ == '__main__':
 
     callbacks = [cp, LearningRateMonitor()]
 
-    data = InMemoryDataModule(rasters,
+    data = TreeCrownDelineationDataModule(rasters,
                               (masks, outlines, dist),
                               width=width,
                               batchsize=batchsize,

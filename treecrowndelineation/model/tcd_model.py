@@ -130,6 +130,17 @@ class TreeCrownDelineationModel(L.LightningModule):
         self.log('val/iou_outline' , iou_outline  , on_step = False, on_epoch = True, sync_dist = True)
         return loss
 
+    def test_step(self, batch, step):
+        x, _ = batch
+        output = self(x)
+
+        output_dict = {'mask': output[:,0],
+                       'outline': output[:,1],
+                       'distance_transform': output[:,2]
+                       }
+
+        return output_dict
+
     def configure_optimizers(self):
         if self.freeze_layers:
             for name, param in self.named_parameters():

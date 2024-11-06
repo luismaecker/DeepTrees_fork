@@ -63,7 +63,7 @@ def test(config: DictConfig) -> None:
                                  "simplify"          : config.simplify_dist,
                                  }
 
-    log.info("Loading model")
+    log.info(f"Loading model from {config.model_path}")
     
     if isinstance(config.model_path, str):
         model = torch.jit.load(config.model_path).to(config.device)
@@ -107,7 +107,9 @@ def test(config: DictConfig) -> None:
         nchunks_w = len(range(0, width, chunk_size))
         
         nchunks = nchunks_h * nchunks_w
+        log.info("Chunk size for processing: {} pixels".format(chunk_size))
 
+        log.info("Starting processing...")
 
         polygons = []
 
@@ -121,6 +123,7 @@ def test(config: DictConfig) -> None:
         for i, y in enumerate(range(0, height, chunk_size)):             
             for j, x in enumerate(range(0, width, chunk_size)):
                 idx = i * nchunks_w + j + 1                
+                log.info("Loading chunk {}/{}".format(idx, nchunks))
                 t1 = time.time()
                 chunk = array[:, y:y + chunk_size, x:x + chunk_size].load()  #.transpose('y', 'x', 'band')
                 data = chunk.data
@@ -177,6 +180,8 @@ def test(config: DictConfig) -> None:
                     log.info("Empty chunk, skipping remaining steps.")
                     continue
                
+                log.info("Prediction done, extracting polygons for chunk {}/{}.".format(idx, nchunks))
+
                 if config.save_prediction is not None:      
                     save_prediction_dir = os.path.join(os.getcwd(), config.save_prediction)
                     os.makedirs(save_prediction_dir, exist_ok=True)              
@@ -209,17 +214,12 @@ def test(config: DictConfig) -> None:
                 t5 = time.time()
                 postprocessing_time += t5 - t4
                 
-                if config.save_entropy_heatmaps:
-                    # plot and save entropy heatmaps for the prediction                     
-                    overlay_heatmap(array, entropy_map,  os.path.abspath(save_prediction_dir), filename + '.png')
-    
-    if config.log_entropy:                
-        # Sort the chunk means in ascending order by the mean probability value
-        sorted_chunk_means = sorted(chunk_means, key=lambda x: x[0], reverse=True)
-
-        # Print or log the sorted list of chunk means
-        for mean, chunk_id in sorted_chunk_means:
-            log.info(f"Chunk {chunk_id} has mean entropy: {mean}")
+    log.info("Found {} polygons in total.".format(len(polygons)))
+    log.info("Total processing time: {}s".format(int(time.time() - t0)))
+    log.info("Time loading from disk: {}s".format(int(disk_loading_time)))
+    log.info("Inference time: {}s".format(int(inference_time)))
+    log.info("Post-processing time: {}s".format(int(postprocessing_time)))
+    log.info("Saving as {}".format(os.path.join(os.getcwd(), config.output_file)))
         
     crs_ = get_crs(array)
 
