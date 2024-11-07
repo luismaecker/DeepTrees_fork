@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Dict, Any
 
 import os
 import glob
@@ -29,9 +29,7 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
                  width: int = 256,
                  augment_train: bool = False, # TODO change type
                  augment_eval: bool = False, # TODO change type
-                 concatenate_ndvi: bool = False,
-                 red: int = None,
-                 nir: int = None,
+                 ndvi: Dict[str, Any] = {'concatenate': False},
                  divide_by: float = 1,
                  normalize: bool = False,
                  normalization_function=None,
@@ -39,7 +37,6 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
                  shuffle: bool = True,
                  train_indices: list[int] = None,
                  val_indices: list[int] = None,
-                 rescale_ndvi: bool = True,
                  valid_class_ids: Union[str, list] = 'all',
                  class_column_name: str = 'class',
                  crs: str = 'EPSG:25832',
@@ -101,9 +98,7 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
         self.width = width
         self.augment_train = augment_train
         self.augment_eval = augment_eval
-        self.concatenate_ndvi = concatenate_ndvi
-        self.red = red
-        self.nir = nir
+        self.ndvi = ndvi
         self.dilate_outlines = dilate_outlines
         self.shuffle = shuffle
         self.train_indices = train_indices
@@ -114,7 +109,6 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
         self.train_ds = None
         self.val_ds = None
         self.test_ds = None
-        self.rescale_ndvi = rescale_ndvi
 
         self.valid_class_ids = valid_class_ids
         self.class_column_name = class_column_name
@@ -221,6 +215,7 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
             self.train_ds = ds.TreeCrownDelineationDataset(training_data[0],
                                                     training_data[1:],
                                                     augmentation=self.augment_train,
+                                                    ndvi=self.ndvi,
                                                     divide_by=self.divide_by)
 
             # TODO do we ever need anything besides divide_by == 1
@@ -236,6 +231,7 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
                 self.val_ds = ds.TreeCrownDelineationDataset(validation_data[0],
                                                         validation_data[1:],
                                                         augmentation=self.augment_eval,
+                                                        ndvi=self.ndvi,
                                                         divide_by=self.divide_by)
 
                 if self.normalization_function is not None:
@@ -243,14 +239,9 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
                 elif self.normalize:
                     self.val_ds.normalize()
 
-            # attach the NDVI to the rasters
-            if self.concatenate_ndvi and self.red is not None and self.nir is not None:
-                # we rescale the NDVI to [0...1] to allow gamma augmentation to work right
-                self.train_ds.concatenate_ndvi(red=self.red, nir=self.nir, rescale=self.rescale_ndvi)
-                if self.training_split < 1 or self.val_indices is not None:
-                    self.val_ds.concatenate_ndvi(red=self.red, nir=self.nir, rescale=self.rescale_ndvi)
-
             # dilate the tree crown outlines to get a stronger training signal
+            # TODO move this logic to the dataset
+            # TODO apply this on the masks
             if self.dilate_outlines:
                 for m in self.train_ds.masks:
                     m[:, :, 1] = dilate_img(m[:, :, 1], self.dilate_outlines)
@@ -262,6 +253,7 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
             self.test_ds = ds.TreeCrownDelineationDataset(training_data[0],
                                                     training_data[1:],
                                                     augmentation=self.augment_eval,
+                                                    ndvi=self.ndvi,
                                                     divide_by=self.divide_by)
 
     def train_dataloader(self):

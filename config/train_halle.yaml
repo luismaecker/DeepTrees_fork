@@ -11,10 +11,11 @@ data:
   training_split: 0.8    # Train/val split
   train_indices: null    # Train set indices (pass explicitly)
   val_indices: null      # Validation set indices (pass explicitly)
-  concatenate_ndvi: True # If True, concatenate NDVI
-  rescale_ndvi: True     # NDVI rescaled to [0, 1]
-  red: 0                 # Index of Red channel
-  nir: 3                 # Index of Infrared channel
+  ndvi:
+    concatenate: True    # If True, concatenate NDVI
+    rescale: True        # If True, rescale to [0, 1]
+    red: 0               # Index of Red channel
+    nir: 3               # Index of Infrared channel
   shuffle: True          # shuffle data before train/val split
   augment_train:         # augmentations to use during training
     RandomCrop:

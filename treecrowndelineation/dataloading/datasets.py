@@ -24,6 +24,7 @@ class TreeCrownDelineationDataset(Dataset):
                  raster_files: list[str], 
                  target_files: list[str], 
                  augmentation: Dict[str, Any],
+                 ndvi: Dict[str, Any] = {'concatenate': False},
                  overwrite_nan_with_zeros: bool = True,
                  in_memory: bool = True,
                  dim_ordering="CHW",
@@ -40,6 +41,7 @@ class TreeCrownDelineationDataset(Dataset):
                 The mask and raster file names must have the same index ending.
             TODO update docstring
             augmentation: dictionary defining augmentation 
+            ndvi: dictionary defining NDVI settings
             in_memory: If True, load full dataset into memory, else iterate. Default is True (for small labeled datasets).
             overwrite_nan_with_zeros: If True, fill NaN with 0. Default is True.
             dim_ordering: One of HWC or CHW; how rasters and masks are stored in memory. The albumentations library
@@ -69,6 +71,7 @@ class TreeCrownDelineationDataset(Dataset):
         # self.functions = functions
         self.divide_by = divide_by # TODO move this to torchvision transform
         self.augmentation = augmentation
+        self.ndvi = ndvi
         self.in_memory = in_memory
         self.overwrite_nan = overwrite_nan_with_zeros
         self.dtype = dtype
@@ -93,7 +96,8 @@ class TreeCrownDelineationDataset(Dataset):
             log.info(f'Finished loading data into memory in {time.time()-t0:.1f} seconds.')
 
         # add augmentation functions
-        transforms = [v2.ToDtype(dtype=torch.float32)]
+        # FIXME we need to cut and rotate rasters and targets in the same way, but we should only scale the rasters and not the targets!
+        transforms = []
         for key, val in self.augmentation.items():
             log.info(f'Adding augmentation {key} with parameter {val}')
             match key:
@@ -111,6 +115,7 @@ class TreeCrownDelineationDataset(Dataset):
                     raise NotImplementedError('Augmentation not implemented:', key)
                 case _:
                     raise ValueError(f'Augmentation not defined: {key}')
+        transforms.append(v2.ToDtype(dtype=torch.float32))
         self.augment = v2.Compose(transforms)
         
         if use_weights:
@@ -142,11 +147,9 @@ class TreeCrownDelineationDataset(Dataset):
             raster = self.load_raster(self.raster_files[idx])
             target = self.load_target(self.target_files[idx])
 
-        print(raster.shape)
-        print(target.shape)
-
         # apply transforms (this ensures they are augmented in the same way)
         # FIXME check with ColorJitter ... we do not want this on targets
+        # FIXME implement this https://pytorch.org/vision/main/auto_examples/transforms/plot_transforms_getting_started.html#detection-segmentation-videos
         raster, target = self.augment(raster, target)
         return raster, target
 
@@ -167,7 +170,15 @@ class TreeCrownDelineationDataset(Dataset):
         if used_bands is not None:
             raster = raster.isel(bands=used_bands)
 
-        return raster
+        if self.ndvi['concatenate']:
+            raster = self.concatenate_ndvi_to_raster(raster,
+                                                     red = self.ndvi['red'],
+                                                     nir = self.ndvi['nir'],
+                                                     dim_ordering = self.dim_ordering,
+                                                     rescale = self.ndvi['rescale']
+            )
+
+        return torch.from_numpy(raster.data)
 
     def load_target(self, file: str):
         """Loads a mask from disk."""
@@ -204,16 +215,39 @@ class TreeCrownDelineationDataset(Dataset):
         for i, m in enumerate(self.targets):
             self.targets[i].data[:] = f(m.data).astype(self.dtype)
 
-    def concatenate_ndvi(self, red=3, nir=4, rescale=False):
-        for i, r in enumerate(self.rasters):
-            # res = ndvi_xarray(r, red, nir).expand_dims(dim="band", axis=self.chax)
-            if rescale:
-                res = (ndvi(r, red, nir, axis=self.chax).expand_dims(dim="band", axis=self.chax) + 1) / 2
-            else:
-                res = ndvi(r, red, nir, axis=self.chax).expand_dims(dim="band", axis=self.chax)
-            res = res.assign_coords(band=[self.num_bands + 1])  # this line took 3 hours
-            self.rasters[i] = xr.concat((r, res), dim="band")
-        self.num_bands += 1
+    @staticmethod
+    def concatenate_ndvi_to_raster(raster: xr.Dataset,
+                                   red: int = 0,
+                                   nir: int = 3,
+                                   dim_ordering: str = 'CHW',
+                                   rescale: bool = False) -> xr.Dataset:
+        '''concatenate_ndvi_to_raster
+
+        Concatenate NDVI to the raster.
+
+        Args:
+            raster (xr.Dataset): loaded raster tile
+            red (int, optional): Index of red channel in raster bands. Defaults to 0.
+            nir (int, optional): Index of NIR channel in raster bands. Defaults to 3.
+            rescale (bool, optional): Rescale NDVI to [0, 1]. Defaults to False.
+
+        Returns:
+            xr.Dataset: _description_
+        '''
+        if dim_ordering == 'CHW':
+            chax = 0
+        elif dim_ordering == 'HWC':
+            chax = 2
+        else:
+            raise ValueError('Invalid dim_ordering: ', dim_ordering)
+
+        ndvi_band = ndvi(raster, red, nir, axis=chax).expand_dims(dim='band', axis=chax)
+        if rescale:
+            ndvi_band = (ndvi_band + 1.) / 2.
+        ndvi_band = ndvi_band.assign_coords({'band': [len(raster.band)+1]})
+        raster = xr.concat((raster, ndvi_band), dim='band')
+
+        return raster
 
     def get_raster_weights(self) -> NDArray[np.float32]:
         '''get_raster_weights 
