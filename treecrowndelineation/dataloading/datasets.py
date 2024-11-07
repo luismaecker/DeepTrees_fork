@@ -1,7 +1,11 @@
 import xarray as xr
 import numpy as np
+import torch
 from numpy.typing import NDArray
 
+# TODO check if standard map-style dataset wouldn't be sufficient here
+# TODO move to random resized crop for uniform sampling
+# TODO one epoch = one mini-patch out of each larger patch
 from torch.utils.data import IterableDataset
 
 from treecrowndelineation.modules.indices import ndvi
@@ -76,6 +80,8 @@ class TreeCrownDelineationDataset(IterableDataset):
 
     # these two methods are needed for pytorch dataloaders to work
     def __len__(self):
+        # FIXME do not repeat this calculation at every iteration
+        # TODO as far as i can tell, we iterate until there is an equal chance for each pixel to have been visited? could also use fixed epoch len
         # sum of product of all raster sizes
         total_pixels = np.sum([np.prod(np.array(r.shape)[self.lateral_ax]) for r in self.rasters])
         # product of the shape of cutout done by the transformation
@@ -92,6 +98,9 @@ class TreeCrownDelineationDataset(IterableDataset):
             image = augmented["image"].transpose((2, 0, 1))
             mask = augmented["mask"].transpose((2, 0, 1))
             i += 1
+
+            image = torch.from_numpy(image)
+            mask = torch.from_numpy(mask)
             yield image, mask
 
     def load_raster(self, file: str, used_bands: list = None):
@@ -173,14 +182,16 @@ class TreeCrownDelineationDataset(IterableDataset):
             self.rasters[i] = xr.concat((r, res), dim="band")
         self.num_bands += 1
 
-    def get_raster_weights(self) -> NDArray[float]:
+    def get_raster_weights(self) -> NDArray[np.float32]:
         '''get_raster_weights 
 
         Calculate normalized weights according to the size of each raster tile.
 
+        TODO maybe this should be directly torch tensor
+
         Returns:
-            _type_: _description_
-        '''        
+            NDArray[np.float32]: array with weights per raster tile
+        ''' 
         weights = [np.prod(np.array(r.shape)[self.lateral_ax]) for r in self.rasters]
         weights /= np.sum(weights)
         return weights
