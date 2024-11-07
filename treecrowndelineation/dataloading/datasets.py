@@ -6,6 +6,7 @@ import rioxarray
 import numpy as np
 import torch
 from torchvision.transforms import v2
+from torchvision import tv_tensors
 from numpy.typing import NDArray
 
 
@@ -150,6 +151,9 @@ class TreeCrownDelineationDataset(Dataset):
         # apply transforms (this ensures they are augmented in the same way)
         # FIXME check with ColorJitter ... we do not want this on targets
         # FIXME implement this https://pytorch.org/vision/main/auto_examples/transforms/plot_transforms_getting_started.html#detection-segmentation-videos
+        # FIXME we can define joint transform (for cutting etc) and separate transform (for color etc) by following this https://stackoverflow.com/questions/66284850/pytorch-transforms-compose-usage-for-pair-of-images-in-segmentation-tasks/73101141
+        raster = tv_tensors.Image(raster)
+        target = tv_tensors.Mask(target)
         raster, target = self.augment(raster, target)
         return raster, target
 
