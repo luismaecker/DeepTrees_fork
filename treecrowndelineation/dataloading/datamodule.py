@@ -3,7 +3,6 @@ from typing import Union
 import os
 import glob
 import numpy as np
-import albumentations as A
 import lightning as L
 import pandas as pd
 import geopandas as gpd
@@ -28,9 +27,8 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
                  val_batch_size: int = 2,
                  num_workers: int = 8,
                  width: int = 256,
-                 augment_train: bool = False,
-                 augment_val: bool = False,
-                 use_last_target_as_mask: bool = False,
+                 augment_train: bool = False, # TODO change type
+                 augment_eval: bool = False, # TODO change type
                  concatenate_ndvi: bool = False,
                  red: int = None,
                  nir: int = None,
@@ -63,11 +61,8 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
             val_batch_size (int): Validation set batch size
             num_workers (int): Number of workers in DataLoader
             width (int): Width and height of the cropped images returned by the data loader.
-            augment_train (bool): If True, apply training augmentation from the albumentations package.
-            augment_val (bool): If True, apply validation augmentation from the albumentations package.
-            use_last_target_as_mask (bool): This can be used to black out certain regions of the training data. To do this you
-                have to load some no-data mask as last training target. Areas which you want to black out should be
-                greater 1, areas where the mask is 0 are kept.
+            augment_train (bool): Augmentation to apply in train mode (train set).
+            augment_eval (bool): Augmentation to apply in eval mode (val/test set).
             concatenate_ndvi (bool): If set to true, the NDVI (normalized difference vegetation index) will be
                 appended to the rasters.You have to get the red and near IR band indices.
             red (int): Index of the red band, starting from 0.
@@ -105,8 +100,7 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
         self.num_workers = num_workers
         self.width = width
         self.augment_train = augment_train
-        self.augment_val = augment_val
-        self.use_last_target_as_mask = use_last_target_as_mask
+        self.augment_eval = augment_eval
         self.concatenate_ndvi = concatenate_ndvi
         self.red = red
         self.nir = nir
@@ -223,22 +217,10 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
             for t in validation_data[0]:
                 log.info(t)
 
-            log.info('Define augmentation functions')
-            log.info(f'Used in training: {self.augment_train}')
-            log.info(f'Used in validation: {self.augment_val}')
-            self.train_augmentation = A.Compose([A.RandomCrop(self.width, self.width, always_apply=True),
-                                    A.RandomRotate90(),
-                                    A.VerticalFlip(),
-                                    #A.ColorJitter(), TypeError: ColorJitter transformation expects 1-channel or 3-channel images.
-                                    ])
-            self.val_augmentation = A.RandomCrop(self.width, self.width, always_apply=True)
-
             # load the data into a custom dataset format
             self.train_ds = ds.TreeCrownDelineationDataset(training_data[0],
                                                     training_data[1:],
-                                                    augmentation=self.train_augmentation,
-                                                    cutout_size=(self.width, self.width),
-                                                    dim_ordering="HWC",
+                                                    augmentation=self.augment_train,
                                                     divide_by=self.divide_by)
 
             # TODO do we ever need anything besides divide_by == 1
@@ -253,9 +235,7 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
             if self.training_split < 1 or self.val_indices is not None:
                 self.val_ds = ds.TreeCrownDelineationDataset(validation_data[0],
                                                         validation_data[1:],
-                                                        augmentation=self.val_augmentation,
-                                                        cutout_size=(self.width, self.width),
-                                                        dim_ordering="HWC",
+                                                        augmentation=self.augment_eval,
                                                         divide_by=self.divide_by)
 
                 if self.normalization_function is not None:
@@ -270,18 +250,6 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
                 if self.training_split < 1 or self.val_indices is not None:
                     self.val_ds.concatenate_ndvi(red=self.red, nir=self.nir, rescale=self.rescale_ndvi)
 
-            # this can be used to black out certain regions, e.g. for those where no gt data is available
-            if self.use_last_target_as_mask:
-                for i, m in enumerate(self.train_ds.masks):
-                    mask = (1 - np.clip(m.data[..., -1] - m.data[..., 0], 0, 1))[..., None]
-                    self.train_ds.rasters[i] *= mask
-                    self.train_ds.masks[i] = self.train_ds.masks[i][:, :, :-1] * mask
-                if self.training_split < 1 or self.val_indices is not None:
-                    for i, m in enumerate(self.val_ds.masks):
-                        mask = (1 - np.clip(m.data[..., -1] - m.data[..., 0], 0, 1))[..., None]
-                        self.val_ds.rasters[i] *= mask
-                        self.val_ds.masks[i] = self.val_ds.masks[i][:, :, :-1] * mask
-
             # dilate the tree crown outlines to get a stronger training signal
             if self.dilate_outlines:
                 for m in self.train_ds.masks:
@@ -293,9 +261,7 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
         elif stage == 'test':
             self.test_ds = ds.TreeCrownDelineationDataset(training_data[0],
                                                     training_data[1:],
-                                                    augmentation=self.train_augmentation,
-                                                    cutout_size=(self.width, self.width),
-                                                    dim_ordering="HWC",
+                                                    augmentation=self.augment_eval,
                                                     divide_by=self.divide_by)
 
     def train_dataloader(self):

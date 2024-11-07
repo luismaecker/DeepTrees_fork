@@ -18,7 +18,6 @@ data:
   shuffle: True          # shuffle data before train/val split
   augment_train: True # use augmentation during training
   augment_val: False   # use augmentation during validation
-  use_last_target_as_mask: False # TODO
   divide_by: 255         # divisor
   normalize: False       # apply 0-mean, 1-stddev normalization
   normalization_function: null # provide normalization function

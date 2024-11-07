@@ -2,10 +2,11 @@ defaults:
   - finetune_halle.yaml
 
 name: debug-halle
+seed: 404
 trainer:
   fast_dev_run: True
 data:
-  batch_size: 16 
+  batch_size: 2 
   num_workers: 1         # Number of workers in dataloader
   train_indices: [0, 1, 2, 3, 4, 5, 6, 7]
   val_indices: [8, 9]

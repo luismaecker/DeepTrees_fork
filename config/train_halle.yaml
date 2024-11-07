@@ -16,9 +16,16 @@ data:
   red: 0                 # Index of Red channel
   nir: 3                 # Index of Infrared channel
   shuffle: True          # shuffle data before train/val split
-  augment_train: True # use augmentation during training
-  augment_val: False   # use augmentation during validation
-  use_last_target_as_mask: False # TODO
+  augment_train:         # augmentations to use during training
+    RandomCrop:
+      size: 256
+    RandomHorizontalFlip:
+      p: 0.5
+    RandomVerticalFlip:
+      p: 0.5
+  augment_eval:          # augmentations to use during validation / testing
+    RandomCrop:
+      size: 256
   divide_by: 255         # divisor
   normalize: False       # apply 0-mean, 1-stddev normalization
   normalization_function: null # provide normalization function
