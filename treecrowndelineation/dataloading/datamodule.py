@@ -39,7 +39,6 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
                  normalization_function=None,
                  dilate_outlines: bool = False,
                  shuffle: bool = True,
-                 deterministic: bool = True, # TODO remove in separate commit
                  train_indices: list[int] = None,
                  val_indices: list[int] = None,
                  rescale_ndvi: bool = True,
@@ -83,8 +82,6 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
                 certain number of pixels.
             shuffle (bool): Whether or not to shuffle the data upon loading. This affects the partition into
                 training and validation data. Default: True
-            deterministic (bool): Enable or disables deterministic shuffling when loading the data. Set to True to
-                always get the same data in the train and validation sets.
             train_indices (list): (Optional) List of indices specifying which images should be assigned to the training
             set.
             val_indices: (Optional) List of indices specifying which images should be assigned to the validation
@@ -114,7 +111,6 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
         self.red = red
         self.nir = nir
         self.dilate_outlines = dilate_outlines
-        self.deterministic = deterministic
         self.shuffle = shuffle
         self.train_indices = train_indices
         self.val_indices = val_indices
@@ -204,8 +200,6 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
 
             if self.shuffle: # FIXME shuffle should not be used together with fixed train indices!
                 for x in (self.rasters, *self.targets):
-                    if self.deterministic:
-                        np.random.seed(1337) # TODO conflicts with seed everything
                     np.random.shuffle(x)  # in-place
 
             # split into training and validation set
