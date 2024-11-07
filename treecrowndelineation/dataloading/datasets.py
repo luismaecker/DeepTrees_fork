@@ -98,26 +98,38 @@ class TreeCrownDelineationDataset(Dataset):
 
         # add augmentation functions
         # FIXME we need to cut and rotate rasters and targets in the same way, but we should only scale the rasters and not the targets!
-        transforms = []
+        img_transforms = []
+        target_transforms = []
+        joint_transforms = []
         for key, val in self.augmentation.items():
             log.info(f'Adding augmentation {key} with parameter {val}')
             match key:
                 case 'RandomResizedCrop':
-                    transforms.append(v2.RandomResizedCrop(**val))
+                    joint_transforms.append(v2.RandomResizedCrop(**val))
                 case 'RandomCrop':
-                    transforms.append(v2.RandomCrop(**val))
+                    joint_transforms.append(v2.RandomCrop(**val))
                 case 'Resize':
-                    transforms.append(v2.Resize(**val))
+                    joint_transforms.append(v2.Resize(**val))
                 case 'RandomHorizontalFlip':
-                    transforms.append(v2.RandomHorizontalFlip(**val))
+                    joint_transforms.append(v2.RandomHorizontalFlip(**val))
                 case 'RandomVerticalFlip':
-                    transforms.append(v2.RandomVerticalFlip(**val))
+                    joint_transforms.append(v2.RandomVerticalFlip(**val))
                 case 'ColorJitter':
                     raise NotImplementedError('Augmentation not implemented:', key)
                 case _:
                     raise ValueError(f'Augmentation not defined: {key}')
-        transforms.append(v2.ToDtype(dtype=torch.float32))
-        self.augment = v2.Compose(transforms)
+        img_transforms.append(v2.ToDtype(dtype=torch.float32))
+        self.augment_joint = v2.Compose(joint_transforms)
+
+        if len(target_transforms) > 0:
+            self.augment_target = v2.Compose(target_transforms)
+        else:
+            self.augment_target = None
+        
+        if len(img_transforms) > 0:
+            self.augment_img = v2.Compose(img_transforms)
+        else:
+            self.augment_img = None
         
         if use_weights:
             self.weights = self.get_raster_weights()
@@ -154,7 +166,11 @@ class TreeCrownDelineationDataset(Dataset):
         # FIXME we can define joint transform (for cutting etc) and separate transform (for color etc) by following this https://stackoverflow.com/questions/66284850/pytorch-transforms-compose-usage-for-pair-of-images-in-segmentation-tasks/73101141
         raster = tv_tensors.Image(raster)
         target = tv_tensors.Mask(target)
-        raster, target = self.augment(raster, target)
+        raster, target = self.augment_joint(raster, target)
+        if self.augment_img is not None:
+            raster = self.augment_img(raster)
+        if self.augment_target is not None:
+            target = self.augment_target(target)
         return raster, target
 
     def load_raster(self, file: str, used_bands: list = None):
