@@ -21,24 +21,19 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
                  masks: Union[str, list],
                  outlines: Union[str, list],
                  distance_transforms: Union[str, list],
-                 ground_truth_labels: Union[str, list, None] = None,
                  training_split: float = 0.7,
                  batch_size: int = 16,
                  val_batch_size: int = 2,
                  num_workers: int = 8,
-                 width: int = 256,
-                 augment_train: bool = False, # TODO change type
-                 augment_eval: bool = False, # TODO change type
+                 augment_train: Dict[str, Any] = {},
+                 augment_eval: Dict[str, Any] = {},
                  ndvi_config: Dict[str, Any] = {'concatenate': False},
                  divide_by: float = 1,
                  dilate_outlines: bool = False,
                  shuffle: bool = True,
                  train_indices: list[int] = None,
                  val_indices: list[int] = None,
-                 valid_class_ids: Union[str, list] = 'all',
-                 class_column_name: str = 'class',
-                 crs: str = 'EPSG:25832',
-                 nproc: int = 1,
+                 ground_truth_config: Dict[str, Any] = {'labels': None},
                  ):
         """Pytorch lightning in memory data module
 
@@ -50,7 +45,7 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
             masks (str or list): List of file paths to masks, or list of masks.
             outlines (str or list): List of file paths to outlines, or list of outlines.
             distance_transforms (str or list): List of file paths to distance_transforms, or list of distance_transforms.
-            ground_truth_labels (str): File or folder containing the ground truth labels.
+            labels (str): File or folder containing the ground truth labels.
             training_split (float): Value between 0 and 1 determining the training split. Default: 0.7
             batch_size (int): Batch size
             val_batch_size (int): Validation set batch size
@@ -83,16 +78,15 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
         self.masks = masks
         self.outlines = outlines
         self.distance_transforms = distance_transforms
-        self.ground_truth_labels = ground_truth_labels
 
         self.training_split = training_split
         self.batch_size = batch_size
         self.val_batch_size = val_batch_size
         self.num_workers = num_workers
-        self.width = width
         self.augment_train = augment_train
         self.augment_eval = augment_eval
         self.ndvi_config = ndvi_config
+        self.ground_truth_config = ground_truth_config
         self.dilate_outlines = dilate_outlines
         self.shuffle = shuffle
         self.train_indices = train_indices
@@ -101,11 +95,6 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
         self.train_ds = None
         self.val_ds = None
         self.test_ds = None
-
-        self.valid_class_ids = valid_class_ids
-        self.class_column_name = class_column_name
-        self.crs = crs
-        self.nproc = nproc
 
         self.targets = None # will be assigned in setup_data
 
@@ -116,7 +105,7 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
         ground truth labels.
         '''
 
-        if self.ground_truth_labels is None:
+        if self.ground_truth_config.labels is None:
             log.info('No ground truth labels provided. Proceed with existing ground truth ...')
             log.info(f'Masks: {self.masks}')
             log.info(f'Outlines: {self.outlines}')
@@ -125,24 +114,24 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
             return
 
         # prepare ground truth from labels
-        if os.path.isfile(self.ground_truth_labels):
-            ground_truth = gpd.read_file(self.ground_truth_labels)
-        elif os.path.isdir(self.ground_truth_labels):
+        if os.path.isfile(self.ground_truth_config.labels):
+            ground_truth = gpd.read_file(self.ground_truth_config.labels)
+        elif os.path.isdir(self.ground_truth_config.labels):
             # combine all the ground truth labels
-            shapes = np.sort(glob.glob(f'{self.ground_truth_labels}/label_*.shp'))
+            shapes = np.sort(glob.glob(f'{self.ground_truth_config.labels}/label_*.shp'))
             ground_truth = pd.concat([fix_crs(gpd.read_file(shape)).assign(tile=shape) for shape in shapes])
-            log.info(f'Combining all polygons in {os.path.join(self.ground_truth_labels, 'all_labels.shp')}')
-            ground_truth.drop(columns='tile').to_file(os.path.join(self.ground_truth_labels, 'all_labels.shp'))
+            log.info(f'Combining all polygons in {os.path.join(self.ground_truth_config.labels, 'all_labels.shp')}')
+            ground_truth.drop(columns='tile').to_file(os.path.join(self.ground_truth_config.labels, 'all_labels.shp'))
 
         # generate masks
         mask_generator = MaskOutlinesGenerator(rasters=self.rasters,
                                                output_path=self.masks,
                                                output_file_prefix='mask',
                                                ground_truth_labels=ground_truth,
-                                               valid_class_ids=self.valid_class_ids,
-                                               class_column_name=self.class_column_name,
-                                               crs=self.crs,
-                                               nproc=self.nproc,
+                                               valid_class_ids=self.ground_truth_config.valid_class_ids,
+                                               class_column_name=self.ground_truth_config.class_column_name,
+                                               crs=self.ground_truth_config.crs,
+                                               nproc=self.ground_truth_config.nproc,
                                                generate_outlines=False)
         mask_generator.apply_process()
 
@@ -151,10 +140,10 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
                                                    output_path=self.outlines,
                                                    output_file_prefix='outline',
                                                    ground_truth_labels=ground_truth,
-                                                   valid_class_ids=self.valid_class_ids,
-                                                   class_column_name=self.class_column_name,
-                                                   crs=self.crs,
-                                                   nproc=self.nproc,
+                                                   valid_class_ids=self.ground_truth_config.valid_class_ids,
+                                                   class_column_name=self.ground_truth_config.class_column_name,
+                                                   crs=self.ground_truth_config.crs,
+                                                   nproc=self.ground_truth_config.nproc,
                                                    generate_outlines=True)
         outlines_generator.apply_process()
 
@@ -163,10 +152,10 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
                                                    output_path=self.distance_transforms,
                                                    output_file_prefix='dist_trafo',
                                                    ground_truth_labels=ground_truth,
-                                                   valid_class_ids=self.valid_class_ids,
-                                                   class_column_name=self.class_column_name,
-                                                   crs=self.crs,
-                                                   nproc=self.nproc)
+                                                   valid_class_ids=self.ground_truth_config.valid_class_ids,
+                                                   class_column_name=self.ground_truth_config.class_column_name,
+                                                   crs=self.ground_truth_config.crs,
+                                                   nproc=self.ground_truth_config.nproc)
         dist_trafo_generator.apply_process()
 
     def setup(self, stage=None):  # throws error if arg is removed
@@ -230,10 +219,9 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
         return DataLoader(self.train_ds, batch_size=self.batch_size, num_workers=self.num_workers, drop_last=True, pin_memory=True)
 
     def val_dataloader(self):
-        if self.training_split == 1 and self.val_indices is None:
+        if self.val_ds is None:
             return None
-        else:
-            return DataLoader(self.val_ds, batch_size=self.val_batch_size, num_workers=self.num_workers, drop_last=True, pin_memory=True)
+        return DataLoader(self.val_ds, batch_size=self.val_batch_size, num_workers=self.num_workers, drop_last=True, pin_memory=True)
 
     def test_dataloader(self):
         return DataLoader(self.test_ds, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=False, drop_last=False)

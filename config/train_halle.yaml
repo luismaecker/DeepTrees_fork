@@ -5,9 +5,8 @@ data:
   masks: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/masks # directory with masks
   outlines: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/outlines # directory with outlines
   distance_transforms: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/dist_trafo # directory with distance transforms
-  width: 256             # Width and height of the cropped images returned by the data loader
   batch_size: 2          # dataloader batch size
-  val_batch_size: 1      # validation dataloader batch size
+  val_batch_size: 2      # validation dataloader batch size
   training_split: 0.8    # Train/val split
   train_indices: null    # Train set indices (pass explicitly)
   val_indices: null      # Validation set indices (pass explicitly)
@@ -16,6 +15,14 @@ data:
     rescale: True        # If True, rescale to [0, 1]
     red: 0               # Index of Red channel
     nir: 3               # Index of Infrared channel
+  ground_truth_config:
+    # path to directory with ground truth labels
+    labels: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/labels/
+    class_column_name: class # class column in label file
+    crs: EPSG:25832        # reference CRS
+    valid_class_ids: all   # specify IDs that you want to use here (default: all)
+    nproc: 8               # number of workers in preprocessing
+    
   shuffle: True          # shuffle data before train/val split
   augment_train:         # augmentations to use during training
     RandomCrop:
@@ -29,8 +36,6 @@ data:
       size: 256
   divide_by: 255         # divisor
   dilate_outlines: False # dilate the outlines by number of pixels
-  ground_truth_labels: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/labels/
-  nproc: 8               # number of workers in preprocessing
   num_workers: 8         # Number of workers in dataloader
 pretrained:
   # path to pretrained models
