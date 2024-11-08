@@ -28,8 +28,6 @@ data:
     RandomCrop:
       size: 256
   divide_by: 255         # divisor
-  normalize: False       # apply 0-mean, 1-stddev normalization
-  normalization_function: null # provide normalization function
   dilate_outlines: False # dilate the outlines by number of pixels
   ground_truth_labels: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/labels/
   nproc: 8               # number of workers in preprocessing

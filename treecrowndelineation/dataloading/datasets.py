@@ -98,7 +98,7 @@ class TreeCrownDelineationDataset(Dataset):
 
         # add augmentation functions
         # FIXME we need to cut and rotate rasters and targets in the same way, but we should only scale the rasters and not the targets!
-        img_transforms = []
+        raster_transforms = []
         target_transforms = []
         joint_transforms = []
         for key, val in self.augmentation.items():
@@ -116,11 +116,14 @@ class TreeCrownDelineationDataset(Dataset):
                     joint_transforms.append(v2.RandomVerticalFlip(**val))
                 case 'ColorJitter':
                     raise NotImplementedError('Augmentation not implemented:', key)
+                case 'Normalize': # applies only to rasters
+                    raster_transforms.append(v2.Normalize(**val))
                 case _:
                     raise ValueError(f'Augmentation not defined: {key}')
-        img_transforms.append(v2.ToDtype(dtype=torch.float32))
+        raster_transforms.append(v2.ToDtype(dtype=torch.float32))
+        # apply scaling by constant value as part of the torchvision transform chain
         ln = lambda x: x/self.divide_by
-        img_transforms.append(v2.Lambda(ln))
+        raster_transforms.append(v2.Lambda(ln))
         self.augment_joint = v2.Compose(joint_transforms)
 
         if len(target_transforms) > 0:
@@ -128,7 +131,7 @@ class TreeCrownDelineationDataset(Dataset):
         else:
             self.augment_target = None
         
-        self.augment_img = v2.Compose(img_transforms)
+        self.augment_raster = v2.Compose(raster_transforms)
         
         if use_weights:
             self.weights = self.get_raster_weights()
@@ -166,7 +169,7 @@ class TreeCrownDelineationDataset(Dataset):
         raster = tv_tensors.Image(raster, dtype=torch.float32)
         target = tv_tensors.Mask(target, dtype=torch.float32)
         raster, target = self.augment_joint(raster, target)
-        raster = self.augment_img(raster)
+        raster = self.augment_raster(raster)
         if self.augment_target is not None:
             target = self.augment_target(target)
         return raster, target
@@ -210,9 +213,12 @@ class TreeCrownDelineationDataset(Dataset):
         if self.overwrite_nan:
             target = target.fillna(0.)
 
-        return target 
+        return target
 
     def load_data(self):
+        '''
+        Load all rasters and targets into memory.
+        '''
         self.rasters = []
         for raster_file in self.raster_files:
             self.rasters.append(self.load_raster(raster_file))

@@ -31,8 +31,6 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
                  augment_eval: bool = False, # TODO change type
                  ndvi: Dict[str, Any] = {'concatenate': False},
                  divide_by: float = 1,
-                 normalize: bool = False,
-                 normalization_function=None,
                  dilate_outlines: bool = False,
                  shuffle: bool = True,
                  train_indices: list[int] = None,
@@ -66,10 +64,6 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
             nir (int): Index of the near IR band, starting from 0.
             divide_by (float): Constant value to divide the rasters by. Exclusive with 'normalize' and
                 'normalization_function'. Default: 1.
-            normalize (bool): Normalizes the dataset to 0 mean and standard deviation 1. Exclusive with 'divide_by' and
-                'normalization_function'.
-            normalization_function: A function, which is applied to all images. Optional NDVI concatenation happens after
-                applying the function. Exclusive with 'divide_by' and 'normalize'.
             dilate_outlines (int): The second target band (the tree outlines) can be dilated (widened) by a
                 certain number of pixels.
             shuffle (bool): Whether or not to shuffle the data upon loading. This affects the partition into
@@ -104,8 +98,6 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
         self.train_indices = train_indices
         self.val_indices = val_indices
         self.divide_by = divide_by
-        self.normalize = normalize
-        self.normalization_function = normalization_function
         self.train_ds = None
         self.val_ds = None
         self.test_ds = None
@@ -218,26 +210,12 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
                                                     ndvi=self.ndvi,
                                                     divide_by=self.divide_by)
 
-            # TODO do we ever need anything besides divide_by == 1
-            # TODO if (!!) at all we should provide external mean/std eg for ViT
-            if sum([self.divide_by != 1, self.normalization_function is not None, self.normalize]) > 1:
-                raise RuntimeError("Please provide either 'divide_by', 'normalize' or 'normalization_function' as argument.")
-            elif self.normalization_function is not None:
-                self.train_ds.apply_to_rasters(self.normalization_function)
-            elif self.normalize:
-                self.train_ds.normalize()
-
             if self.training_split < 1 or self.val_indices is not None:
                 self.val_ds = ds.TreeCrownDelineationDataset(validation_data[0],
                                                         validation_data[1:],
                                                         augmentation=self.augment_eval,
                                                         ndvi=self.ndvi,
                                                         divide_by=self.divide_by)
-
-                if self.normalization_function is not None:
-                    self.val_ds.apply_to_rasters(self.normalization_function)
-                elif self.normalize:
-                    self.val_ds.normalize()
 
             # dilate the tree crown outlines to get a stronger training signal
             # TODO move this logic to the dataset
