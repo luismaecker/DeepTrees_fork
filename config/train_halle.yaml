@@ -11,7 +11,7 @@ data:
   training_split: 0.8    # Train/val split
   train_indices: null    # Train set indices (pass explicitly)
   val_indices: null      # Validation set indices (pass explicitly)
-  ndvi:
+  ndvi_config:
     concatenate: True    # If True, concatenate NDVI
     rescale: True        # If True, rescale to [0, 1]
     red: 0               # Index of Red channel

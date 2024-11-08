@@ -16,6 +16,7 @@ from numpy.typing import NDArray
 from torch.utils.data import Dataset
 
 from treecrowndelineation.modules.indices import ndvi
+from treecrowndelineation.modules.utils import dilate_img
 
 import logging
 log = logging.getLogger(__name__)
@@ -25,7 +26,8 @@ class TreeCrownDelineationDataset(Dataset):
                  raster_files: list[str], 
                  target_files: list[str], 
                  augmentation: Dict[str, Any],
-                 ndvi: Dict[str, Any] = {'concatenate': False},
+                 ndvi_config: Dict[str, Any] = {'concatenate': False},
+                 dilate_outlines: int = None,
                  overwrite_nan_with_zeros: bool = True,
                  in_memory: bool = True,
                  dim_ordering="CHW",
@@ -69,10 +71,10 @@ class TreeCrownDelineationDataset(Dataset):
 
         self.raster_files = raster_files
         self.target_files = target_files
-        # self.functions = functions
         self.divide_by = divide_by # TODO move this to torchvision transform
         self.augmentation = augmentation
-        self.ndvi = ndvi
+        self.ndvi_config = ndvi_config
+        self.dilate_outlines = dilate_outlines
         self.in_memory = in_memory
         self.overwrite_nan = overwrite_nan_with_zeros
         self.dtype = dtype
@@ -191,12 +193,12 @@ class TreeCrownDelineationDataset(Dataset):
         if used_bands is not None:
             raster = raster.isel(bands=used_bands)
 
-        if self.ndvi['concatenate']:
+        if self.ndvi_config['concatenate']:
             raster = self.concatenate_ndvi_to_raster(raster,
-                                                     red = self.ndvi['red'],
-                                                     nir = self.ndvi['nir'],
+                                                     red = self.ndvi_config['red'],
+                                                     nir = self.ndvi_config['nir'],
                                                      dim_ordering = self.dim_ordering,
-                                                     rescale = self.ndvi['rescale']
+                                                     rescale = self.ndvi_config['rescale']
             )
 
         return raster
@@ -227,17 +229,14 @@ class TreeCrownDelineationDataset(Dataset):
             targets = [self.load_target(f) for f in files]
             # "override" ensures that small differences in geotransorm are neglected
             target = xr.concat(targets, dim="band", join="override")
+            # dilate masks
+            if self.dilate_outlines:
+                if self.dim_ordering == 'CHW':
+                    target[1, :, :] = dilate_img(target[1, :, :], self.dilate_outlines)
+                elif self.dim_ordering == 'HWC':
+                    target[:, :, 1] = dilate_img(target[:, :, 1], self.dilate_outlines)
+
             self.targets.append(target)
-
-    def apply_to_rasters(self, f):
-        """Applies function f to all rasters."""
-        for i, r in enumerate(self.rasters):
-            self.rasters[i].data[:] = f(r.data).astype(self.dtype)
-
-    def apply_to_masks(self, f):
-        """Applies function f to all rasters."""
-        for i, m in enumerate(self.targets):
-            self.targets[i].data[:] = f(m.data).astype(self.dtype)
 
     @staticmethod
     def concatenate_ndvi_to_raster(raster: xr.Dataset,
@@ -286,17 +285,3 @@ class TreeCrownDelineationDataset(Dataset):
         weights = [np.prod(np.array(r.shape)[self.lateral_ax]) for r in self.rasters]
         weights /= np.sum(weights)
         return weights
-
-    def normalize(self, mean: float = 0.0, stddev: float = 1.0):
-        '''normalize 
-
-        Normalize each raster by provided mean and stddev.
-
-        TODO add support for channel-wise mean and stddev for compliance with pretrained ViT
-
-        Args:
-            mean (float, optional): Mean to be applied. Defaults to 0.0.
-            stddev (float, optional): Stddev to be applied. Defaults to 1.0.
-        '''        
-        f = lambda x: (x-mean)/(stddev+1E-5)
-        self.apply_to_rasters(f)

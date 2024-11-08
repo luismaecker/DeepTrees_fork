@@ -29,7 +29,7 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
                  width: int = 256,
                  augment_train: bool = False, # TODO change type
                  augment_eval: bool = False, # TODO change type
-                 ndvi: Dict[str, Any] = {'concatenate': False},
+                 ndvi_config: Dict[str, Any] = {'concatenate': False},
                  divide_by: float = 1,
                  dilate_outlines: bool = False,
                  shuffle: bool = True,
@@ -92,7 +92,7 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
         self.width = width
         self.augment_train = augment_train
         self.augment_eval = augment_eval
-        self.ndvi = ndvi
+        self.ndvi_config = ndvi_config
         self.dilate_outlines = dilate_outlines
         self.shuffle = shuffle
         self.train_indices = train_indices
@@ -207,31 +207,23 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
             self.train_ds = ds.TreeCrownDelineationDataset(training_data[0],
                                                     training_data[1:],
                                                     augmentation=self.augment_train,
-                                                    ndvi=self.ndvi,
+                                                    ndvi_config=self.ndvi_config,
+                                                    dilate_outlines=self.dilate_outlines,
                                                     divide_by=self.divide_by)
 
             if self.training_split < 1 or self.val_indices is not None:
                 self.val_ds = ds.TreeCrownDelineationDataset(validation_data[0],
                                                         validation_data[1:],
                                                         augmentation=self.augment_eval,
-                                                        ndvi=self.ndvi,
+                                                        ndvi_config=self.ndvi_config,
+                                                        dilate_outlines=self.dilate_outlines,
                                                         divide_by=self.divide_by)
 
-            # dilate the tree crown outlines to get a stronger training signal
-            # TODO move this logic to the dataset
-            # TODO apply this on the masks
-            if self.dilate_outlines:
-                for m in self.train_ds.masks:
-                    m[:, :, 1] = dilate_img(m[:, :, 1], self.dilate_outlines)
-                if self.training_split < 1 or self.val_indices is not None:
-                    for m in self.val_ds.masks:
-                        m[:, :, 1] = dilate_img(m[:, :, 1], self.dilate_outlines)
-        
         elif stage == 'test':
             self.test_ds = ds.TreeCrownDelineationDataset(training_data[0],
                                                     training_data[1:],
                                                     augmentation=self.augment_eval,
-                                                    ndvi=self.ndvi,
+                                                    ndvi_config=self.ndvi_config,
                                                     divide_by=self.divide_by)
 
     def train_dataloader(self):
