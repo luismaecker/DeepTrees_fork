@@ -27,29 +27,30 @@ class TreeCrownDelineationDataset(Dataset):
                  target_files: list[str], 
                  augmentation: Dict[str, Any],
                  ndvi_config: Dict[str, Any] = {'concatenate': False},
-                 dilate_outlines: int = None,
+                 dilate_outlines: int = 0,
                  overwrite_nan_with_zeros: bool = True,
                  in_memory: bool = True,
                  dim_ordering="CHW",
                  dtype="float32",
                  divide_by=1):
+        '''__init__ 
 
-        """Creates a dataset containing images and targets (masks, outlines, and distance_transforms).
+        Creates a dataset containing images and targets (masks, outlines, and distance_transforms).
 
         Args:
-            raster_files: List of file paths to source rasters. File names must be of the form '.../the_name_i.tif' where i is some index
-            mask_files: A tuple containing lists of file paths to different sorts of 'masks',
-                e.g. mask, outline, distance transform.
-                The mask and raster file names must have the same index ending.
-            TODO update docstring
-            augmentation: dictionary defining augmentation 
-            ndvi: dictionary defining NDVI settings
-            in_memory: If True, load full dataset into memory, else iterate. Default is True (for small labeled datasets).
-            overwrite_nan_with_zeros: If True, fill NaN with 0. Default is True.
-            dim_ordering: One of HWC or CHW; how rasters and masks are stored in memory. The albumentations library
-                needs HWC, so this is the default. CHW support could be bugged. FIXME check if we need CHW support at all and if this is even working
-            dtype: Data type for storing rasters and masks
-        """
+            raster_files (list[str]): List of file paths to source rasters. File names must be of the form '.../the_name_i.tif' where i is some index
+            target_files (list[str]): mask_files: A tuple containing lists of file paths to different sorts of 'masks', e.g. mask, outline, distance transform.
+                  The mask and raster file names must have the same index ending.
+            augmentation (Dict[str, Any]): Dictionary defining augmentations. Keys correspond to torchvision transforms, values to their kwargs.
+            ndvi_config (_type_, optional): Dictionary defining NDVI concatenation. Defaults to {'concatenate': False}.
+            dilate_outlines (int, optional): If present, dilate outlines by give amount of pixels. Defaults to 0.
+            overwrite_nan_with_zeros (bool, optional): If True, fill missing values in targets with 0. Defaults to True.
+            in_memory (bool, optional): If True, load all rasters and targets into memory (works for small datasets, beware of OOM error). Defaults to True.
+            dim_ordering (str, optional): Order of dimensions. Defaults to "CHW".
+            dtype (str, optional): torch Datatype. Defaults to "float32".
+            divide_by (int, optional): Scalar to divide the raster pixel values by. Defaults to 1.
+        '''
+
         # initial sanity checks
         assert len(raster_files) > 0, "List of given rasters is empty."
         # TODO replace this by a regex based check
@@ -77,9 +78,6 @@ class TreeCrownDelineationDataset(Dataset):
         self.overwrite_nan = overwrite_nan_with_zeros
         self.dtype = dtype
 
-        self.rasters = []
-        self.targets = []
-        self.num_bands = 0
         self.dim_ordering = dim_ordering
         if dim_ordering == "CHW":
             self.chax = 0  # channel axis of imported arrays
@@ -217,6 +215,7 @@ class TreeCrownDelineationDataset(Dataset):
         for raster_file in self.raster_files:
             self.rasters.append(self.load_raster(raster_file))
 
+        self.targets = []
         for files in zip(*self.target_files):
             targets = [self.load_target(f) for f in files]
             # "override" ensures that small differences in geotransorm are neglected

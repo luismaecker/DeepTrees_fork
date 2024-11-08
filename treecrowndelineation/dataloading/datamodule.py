@@ -29,46 +29,36 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
                  augment_eval: Dict[str, Any] = {},
                  ndvi_config: Dict[str, Any] = {'concatenate': False},
                  divide_by: float = 1,
-                 dilate_outlines: bool = False,
+                 dilate_outlines: int = 0,
                  shuffle: bool = True,
                  train_indices: list[int] = None,
                  val_indices: list[int] = None,
                  ground_truth_config: Dict[str, Any] = {'labels': None},
                  ):
-        """Pytorch lightning in memory data module
+        '''
+        TreeCrownDelineationDataModule
 
-        For an explanation how data loading works look at README.md in dataloading source folder.
+        Datamodule to hold the different datasets, apply preprocessing, and return DataLoaders.
 
         Args:
-            rasters (str or list): Can be a list of file paths or a path to a folder containing the training raster
-                files in TIF format.
-            masks (str or list): List of file paths to masks, or list of masks.
-            outlines (str or list): List of file paths to outlines, or list of outlines.
-            distance_transforms (str or list): List of file paths to distance_transforms, or list of distance_transforms.
-            labels (str): File or folder containing the ground truth labels.
-            training_split (float): Value between 0 and 1 determining the training split. Default: 0.7
-            batch_size (int): Batch size
-            val_batch_size (int): Validation set batch size
-            num_workers (int): Number of workers in DataLoader
-            width (int): Width and height of the cropped images returned by the data loader.
-            augment_train (bool): Augmentation to apply in train mode (train set).
-            augment_eval (bool): Augmentation to apply in eval mode (val/test set).
-            concatenate_ndvi (bool): If set to true, the NDVI (normalized difference vegetation index) will be
-                appended to the rasters.You have to get the red and near IR band indices.
-            red (int): Index of the red band, starting from 0.
-            nir (int): Index of the near IR band, starting from 0.
-            divide_by (float): Constant value to divide the rasters by. Exclusive with 'normalize' and
-                'normalization_function'. Default: 1.
-            dilate_outlines (int): The second target band (the tree outlines) can be dilated (widened) by a
-                certain number of pixels.
-            shuffle (bool): Whether or not to shuffle the data upon loading. This affects the partition into
-                training and validation data. Default: True
-            train_indices (list): (Optional) List of indices specifying which images should be assigned to the training
-            set.
-            val_indices: (Optional) List of indices specifying which images should be assigned to the validation
-            set.
-            rescale_ndvi (bool): Whether to rescale the NDVI to the interval [0,1).
-        """
+            rasters (Union[str, list]): List of file paths, or path to folder containing the training raster files (TIF).
+            masks (Union[str, list]): List of file paths, or path to folder containing the masks.
+            outlines (Union[str, list]): List of file paths, or path to folder containing the outlines.
+            distance_transforms (Union[str, list]): List of file paths, or path to folder containing the distance transforms.
+            training_split (float, optional): Training data split. Defaults to 0.7.
+            batch_size (int, optional): Training batch size. Defaults to 16.
+            val_batch_size (int, optional): Validation batch size. Defaults to 2.
+            num_workers (int, optional): Number of workers in DataLoader. Defaults to 8.
+            augment_train (Dict[str, Any], optional): Dictionary defining torchvision augmentations to be used during training. Defaults to {}.
+            augment_eval (Dict[str, Any], optional): Dictionary defining torchvision augmentations to be used during validation/testing. Defaults to {}.
+            ndvi_config (_type_, optional): Dictionary defining the NDVI concatenation settings. Defaults to {'concatenate': False}.
+            divide_by (float, optional): Scalar used to normalize rasters. Defaults to 1.
+            dilate_outlines (int, optional): If present (>0), dilate outlines be given number of pixels. Defaults to False (=0).
+            shuffle (bool, optional): If True, shuffle data before applying split. Defaults to True.
+            train_indices (list[int], optional): List of indices of files to be used for training. Cannot be used with shuffle. Defaults to None.
+            val_indices (list[int], optional): List of indices of files to be used for validation. Cannot be used with shuffle. Defaults to None.
+            ground_truth_config (Dict[str, Any], optional): Dictionary defining the ground truth preprocessing settings. Defaults to {'labels': None}.
+        '''
         super().__init__()
         if type(rasters) in (list, tuple, np.ndarray):
             self.rasters = rasters
@@ -167,23 +157,25 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
             else:
                 self.targets = [np.sort(glob.glob(os.path.abspath(file_list) + "/*.tif")) for file_list in targets]
 
-            if self.shuffle: # FIXME shuffle should not be used together with fixed train indices!
+            if self.shuffle: 
+                if self.val_indices is not None or self.train_indices is not None:
+                    raise ValueError('Cannot use shuffled dataset split together with prescribed train/val indices')
                 for x in (self.rasters, *self.targets):
                     np.random.shuffle(x)  # in-place
 
             # split into training and validation set
             data = (self.rasters, *self.targets)
 
-            # if traiing and validation indices are given, use them
-            if self.train_indices is not None:
-                training_data = [r[self.train_indices] for r in data]
-            else:
+            # if training and validation indices are given, use them
+            if self.train_indices is None:
                 training_data = [r[:int(len(r) * self.training_split)] for r in data]
-
-            if self.val_indices is not None:
-                validation_data = [r[self.val_indices] for r in data]
             else:
+                training_data = [r[self.train_indices] for r in data]
+
+            if self.val_indices is None:
                 validation_data = [r[int(len(r) * self.training_split):] for r in data]
+            else:
+                validation_data = [r[self.val_indices] for r in data]
 
             log.info('Tiles in training data')
             for t in training_data[0]:

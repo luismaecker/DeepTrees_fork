@@ -76,7 +76,7 @@ callbacks:
 
   model_checkpoint:
     _target_: lightning.pytorch.callbacks.ModelCheckpoint
-    monitor: "val/iou_mask" # name of the logged metric which determines when model is improving
+    monitor: "val/iou" # name of the logged metric which determines when model is improving
     mode: "max" # "max" means higher metric value is better, can be also "min"
     save_top_k: 1 # save k best models (determined by above metric)
     save_last: True # additionaly always save model from last epoch
