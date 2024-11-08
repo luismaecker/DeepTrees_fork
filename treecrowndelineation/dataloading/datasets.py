@@ -119,6 +119,8 @@ class TreeCrownDelineationDataset(Dataset):
                 case _:
                     raise ValueError(f'Augmentation not defined: {key}')
         img_transforms.append(v2.ToDtype(dtype=torch.float32))
+        ln = lambda x: x/self.divide_by
+        img_transforms.append(v2.Lambda(ln))
         self.augment_joint = v2.Compose(joint_transforms)
 
         if len(target_transforms) > 0:
@@ -126,10 +128,7 @@ class TreeCrownDelineationDataset(Dataset):
         else:
             self.augment_target = None
         
-        if len(img_transforms) > 0:
-            self.augment_img = v2.Compose(img_transforms)
-        else:
-            self.augment_img = None
+        self.augment_img = v2.Compose(img_transforms)
         
         if use_weights:
             self.weights = self.get_raster_weights()
@@ -164,11 +163,10 @@ class TreeCrownDelineationDataset(Dataset):
         # FIXME check with ColorJitter ... we do not want this on targets
         # FIXME implement this https://pytorch.org/vision/main/auto_examples/transforms/plot_transforms_getting_started.html#detection-segmentation-videos
         # FIXME we can define joint transform (for cutting etc) and separate transform (for color etc) by following this https://stackoverflow.com/questions/66284850/pytorch-transforms-compose-usage-for-pair-of-images-in-segmentation-tasks/73101141
-        raster = tv_tensors.Image(raster)
-        target = tv_tensors.Mask(target)
+        raster = tv_tensors.Image(raster, dtype=torch.float32)
+        target = tv_tensors.Mask(target, dtype=torch.float32)
         raster, target = self.augment_joint(raster, target)
-        if self.augment_img is not None:
-            raster = self.augment_img(raster)
+        raster = self.augment_img(raster)
         if self.augment_target is not None:
             target = self.augment_target(target)
         return raster, target
@@ -198,21 +196,21 @@ class TreeCrownDelineationDataset(Dataset):
                                                      rescale = self.ndvi['rescale']
             )
 
-        return torch.from_numpy(raster.data)
+        return raster
 
     def load_target(self, file: str):
-        """Loads a mask from disk."""
-        mask = rioxarray.open_rasterio(file).load()
+        """Loads a target from disk."""
+        target = rioxarray.open_rasterio(file).load()
 
         if self.dim_ordering == 'CHW':
-            mask = mask.transpose('band', 'y', 'x')
+            target = target.transpose('band', 'y', 'x')
         elif self.dim_ordering == 'HWC':
-            mask = mask.transpose('y', 'x', 'band')
+            target = target.transpose('y', 'x', 'band')
 
         if self.overwrite_nan:
-            mask = mask.fillna(0.)
+            target = target.fillna(0.)
 
-        return mask 
+        return target 
 
     def load_data(self):
         self.rasters = []

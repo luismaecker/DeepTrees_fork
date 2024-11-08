@@ -121,7 +121,6 @@ class TreeCrownDelineationModel(L.LightningModule):
 
     def validation_step(self, batch, step):
         loss, loss_mask, loss_outline, loss_distance, iou, iou_mask, iou_outline = self.shared_step(batch)
-        print(iou, iou_mask, iou_outline)
         self.log('val/loss'        , loss         , on_step = False, on_epoch = True, sync_dist = True)
         self.log('val/loss_mask'   , loss_mask    , on_step = False, on_epoch = True, sync_dist = True)
         self.log('val/loss_outline', loss_outline , on_step = False, on_epoch = True, sync_dist = True)
