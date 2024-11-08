@@ -32,7 +32,6 @@ class TreeCrownDelineationDataset(Dataset):
                  in_memory: bool = True,
                  dim_ordering="CHW",
                  dtype="float32",
-                 use_weights: bool = False,
                  divide_by=1):
 
         """Creates a dataset containing images and targets (masks, outlines, and distance_transforms).
@@ -50,7 +49,6 @@ class TreeCrownDelineationDataset(Dataset):
             dim_ordering: One of HWC or CHW; how rasters and masks are stored in memory. The albumentations library
                 needs HWC, so this is the default. CHW support could be bugged. FIXME check if we need CHW support at all and if this is even working
             dtype: Data type for storing rasters and masks
-            use_weights: If True, calculate weights according to tile size and use in loss function. Default is False.
         """
         # initial sanity checks
         assert len(raster_files) > 0, "List of given rasters is empty."
@@ -135,12 +133,6 @@ class TreeCrownDelineationDataset(Dataset):
         
         self.augment_raster = v2.Compose(raster_transforms)
         
-        if use_weights:
-            self.weights = self.get_raster_weights()
-            raise NotImplementedError('Weights are not used in loss function')
-        else:
-            self.weights = None  # can be used for proportional sampling of unevenly sized tiles
-
     # these two methods are needed for pytorch dataloaders to work
     def __len__(self):
         '''Returns length of the dataset: number of raster files'''
@@ -271,17 +263,3 @@ class TreeCrownDelineationDataset(Dataset):
         raster = xr.concat((raster, ndvi_band), dim='band')
 
         return raster
-
-    def get_raster_weights(self) -> NDArray[np.float32]:
-        '''get_raster_weights 
-
-        Calculate normalized weights according to the size of each raster tile.
-
-        TODO maybe this should be directly torch tensor
-
-        Returns:
-            NDArray[np.float32]: array with weights per raster tile
-        ''' 
-        weights = [np.prod(np.array(r.shape)[self.lateral_ax]) for r in self.rasters]
-        weights /= np.sum(weights)
-        return weights
