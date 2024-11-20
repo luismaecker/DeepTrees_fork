@@ -2,33 +2,28 @@ name: inference-halle
 data:
   _target_: treecrowndelineation.dataloading.datamodule.TreeCrownDelineationDataModule
   rasters: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/tiles  # directory with raster images
-  masks: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/masks # directory with masks
-  outlines: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/outlines # directory with outlines
-  distance_transforms: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/dist_trafo # directory with distance transforms
-  width: 256             # Width and height of the cropped images returned by the data loader
-  batch_size: 2          # dataloader batch size
-  val_batch_size: 1      # validation dataloader batch size
-  training_split: 0.8    # Train/val split
-  train_indices: null    # Train set indices (pass explicitly)
-  val_indices: null      # Validation set indices (pass explicitly)
-  concatenate_ndvi: True # If True, concatenate NDVI
-  rescale_ndvi: True     # NDVI rescaled to [0, 1]
-  red: 0                 # Index of Red channel
-  nir: 3                 # Index of Infrared channel
-  shuffle: True          # shuffle data before train/val split
-  augment_train: True # use augmentation during training
-  augment_val: False   # use augmentation during validation
+  masks: null
+  outlines: null
+  distance_transforms: null
+  batch_size: 1          # dataloader batch size
+  ndvi_config:
+    concatenate: True    # If True, concatenate NDVI
+    rescale: True        # If True, rescale to [0, 1]
+    red: 0               # Index of Red channel
+    nir: 3               # Index of Infrared channel
   divide_by: 255         # divisor
-  normalize: False       # apply 0-mean, 1-stddev normalization
-  normalization_function: null # provide normalization function
   dilate_outlines: False # dilate the outlines by number of pixels
-  ground_truth_labels: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/labels/
-  nproc: 8               # number of workers in preprocessing
+  ground_truth_config:
+    labels: null
+    class_column_name: class # class column in label file
+    crs: EPSG:25832        # reference CRS
+    valid_class_ids: all   # specify IDs that you want to use here (default: all)
+    nproc: 8               # number of workers in preprocessing
   num_workers: 8         # Number of workers in dataloader
 pretrained:
   # path to pretrained models
   path: /work/ka1176/shared_data/2024-ufz-deeptree/pretrained_models/tcd-20cm-RGBI-v1/
-  model: null # Pass e.g. Unet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=0_jitted.pt 
+  model: Unet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=0_jitted.pt 
   
 model:
   _target_: treecrowndelineation.model.tcd_model.TreeCrownDelineationModel

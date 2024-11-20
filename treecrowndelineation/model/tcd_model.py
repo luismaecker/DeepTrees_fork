@@ -131,7 +131,7 @@ class TreeCrownDelineationModel(L.LightningModule):
         return loss
 
     def test_step(self, batch, step):
-        x, _ = batch
+        x = batch
         output = self(x)
 
         output_dict = {'mask': output[:,0],

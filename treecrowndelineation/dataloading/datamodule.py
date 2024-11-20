@@ -201,10 +201,11 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
                                                         divide_by=self.divide_by)
 
         elif stage == 'test':
-            self.test_ds = ds.TreeCrownDelineationDataset(training_data[0],
-                                                    training_data[1:],
+            self.test_ds = ds.TreeCrownDelineationInferenceDataset(self.rasters,
                                                     augmentation=self.augment_eval,
                                                     ndvi_config=self.ndvi_config,
+                                                    dilate_outlines=self.dilate_outlines,
+                                                    in_memory=False,
                                                     divide_by=self.divide_by)
 
     def train_dataloader(self):
