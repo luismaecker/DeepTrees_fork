@@ -13,6 +13,9 @@ data:
     nir: 3               # Index of Infrared channel
   divide_by: 255         # divisor
   dilate_outlines: False # dilate the outlines by number of pixels
+  augment_eval:
+    Pad:
+      padding: 6 
   ground_truth_config:
     labels: null
     class_column_name: class # class column in label file

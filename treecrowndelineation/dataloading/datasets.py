@@ -103,6 +103,8 @@ class TreeCrownDelineationBaseDataset(ABC):
                     raise NotImplementedError('Augmentation not implemented:', key)
                 case 'Normalize': # applies only to rasters
                     raster_transforms.append(v2.Normalize(**val))
+                case 'Pad':
+                    target_transforms.append(v2.Pad(**val))
                 case _:
                     raise ValueError(f'Augmentation not defined: {key}')
         raster_transforms.append(v2.ToDtype(dtype=torch.float32))
@@ -346,5 +348,5 @@ class TreeCrownDelineationInferenceDataset(TreeCrownDelineationBaseDataset, Data
         else: # load from disk
             raster = self.load_raster(self.raster_files[idx])
 
-        # TODO do we need augmentation here?
-        return raster.data
+        raster = tv_tensors.Image(raster.data, dtype=torch.float32)
+        return self.augment_target(raster)
