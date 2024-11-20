@@ -153,9 +153,9 @@ class TreeCrownDelineationModel(L.LightningModule):
         output = self(x)
         t_inference = time.time() - t0
 
-        mask = output[:,0].cpu().numpy()
-        outline = output[:,1].cpu().numpy()
-        distance_transform = output[:,2].cpu().numpy()
+        mask = output[:,0].cpu().numpy().squeeze()
+        outline = output[:,1].cpu().numpy().squeeze()
+        distance_transform = output[:,2].cpu().numpy().squeeze()
 
         # TODO active learning
 

@@ -54,7 +54,7 @@ class TreeCrownDelineationBaseDataset(ABC):
 
         self.raster_files = raster_files
         self.target_files = target_files
-        self.divide_by = divide_by # TODO move this to torchvision transform
+        self.divide_by = divide_by
         self.augmentation = augmentation
         self.ndvi_config = ndvi_config
         self.dilate_outlines = dilate_outlines
@@ -107,13 +107,10 @@ class TreeCrownDelineationBaseDataset(ABC):
                     raster_transforms.append(v2.Pad(**val))
                 case _:
                     raise ValueError(f'Augmentation not defined: {key}')
-        raster_transforms.append(v2.ToDtype(dtype=torch.float32))
-        # apply scaling by constant value as part of the torchvision transform chain
-        ln = lambda x: x/self.divide_by
         if len(joint_transforms) == 0:
             lc = lambda x: x
             joint_transforms.append(v2.Lambda(lc))
-        raster_transforms.append(v2.Lambda(ln))
+        raster_transforms.append(v2.ToDtype(dtype=torch.float32))
         self.augment_joint = v2.Compose(joint_transforms)
 
         if len(target_transforms) > 0:
@@ -142,6 +139,9 @@ class TreeCrownDelineationBaseDataset(ABC):
 
         if used_bands is not None:
             raster = raster.isel(bands=used_bands)
+
+        # need to normalize before concatenating NDVI
+        raster = raster / self.divide_by
 
         if self.ndvi_config['concatenate']:
             raster = self.concatenate_ndvi_to_raster(raster,
@@ -346,6 +346,7 @@ class TreeCrownDelineationInferenceDataset(TreeCrownDelineationBaseDataset, Data
         Returns:
             _type_: _description_
         '''
+        log.info(f'Predicting on {self.raster_files[idx]}')
         if self.in_memory: # retrieve preloaded tiles
             raise NotImplementedError('Inference only works with loading data on-the-fly')
         else: # load from disk

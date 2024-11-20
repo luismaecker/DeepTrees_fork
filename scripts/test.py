@@ -17,7 +17,8 @@ https://github.com/AWF-GAUG/TreeCrownDelineation (v0.1.0). (c) Max Freudenberg, 
 
 import warnings
 import logging
-import os
+
+import geopandas as gpd
 
 import torch
 from lightning import Trainer, seed_everything
@@ -40,6 +41,7 @@ rootutils.set_root(
 
 from treecrowndelineation.model.tcd_model import TreeCrownDelineationModel
 from treecrowndelineation.dataloading.datamodule import TreeCrownDelineationDataModule
+from treecrowndelineation.modules import utils
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 log = logging.getLogger(__name__)
@@ -73,20 +75,31 @@ def train(config: DictConfig) -> None:
     log.info('Instantiating model...')
     model: TreeCrownDelineationModel = hydra.utils.instantiate(config.model)
 
-    if config['pretrained']['model'] is not None:
-        pretrained_model = torch.jit.load(os.path.join(config['pretrained']['path'],
-                                                       config['pretrained']['model']))
+    if config['pretrained_model'] is None:
+        raise ValueError("Inference requires a pretrained model")
+    else:
+        pretrained_model = torch.jit.load(config['pretrained_model'])
         model.load_state_dict(pretrained_model.state_dict())
         log.info('Loaded state dict from pretrained model')
-    else:
-        raise ValueError("Inference requires a pretrained model")
 
     trainer: Trainer = hydra.utils.instantiate(config.trainer, callbacks=callbacks)
 
     log.info('Starting predictions ...')
     output_dict = trainer.predict(model, data)
+
+    all_polygons = []
     for dd in output_dict:
-        print(dd)
+        all_polygons.extend(dd['polygons'])
+
+    log.info(f'Saving all polygons to {config["polygon_file"]}.')
+    utils.save_polygons(all_polygons, config['polygon_file'], crs=config['crs'])
+
+    # additional post processing that works on all polygons
+    baumkataster = gpd.read_file(config['baumkataster_file']).to_crs(config['crs'])
+    inters = gpd.GeoDataFrame(all_polygons).sjoin(baumkataster)
+    log.info(f'Saving all polygons that overlap with Baumkataster to {config["polygon_baumkataster_file"]}.')
+    utils.save_polygons(inters, config['polygon_baumkataster_file'], crs=config['crs'])
+
 
 if __name__=='__main__':
     train()

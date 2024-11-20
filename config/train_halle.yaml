@@ -13,7 +13,7 @@ data:
   val_indices: null      # Validation set indices (pass explicitly)
   ndvi_config:
     concatenate: True    # If True, concatenate NDVI
-    rescale: True        # If True, rescale to [0, 1]
+    rescale: False       # If True, rescale to [0, 1]
     red: 0               # Index of Red channel
     nir: 3               # Index of Infrared channel
   ground_truth_config:

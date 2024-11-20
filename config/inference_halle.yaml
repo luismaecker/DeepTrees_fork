@@ -9,7 +9,7 @@ data:
   test_indices: [10, 11] # set to null to process the whole folder
   ndvi_config:
     concatenate: True    # If True, concatenate NDVI
-    rescale: True        # If True, rescale to [0, 1]
+    rescale: False       # If True, rescale to [0, 1]
     red: 0               # Index of Red channel
     nir: 3               # Index of Infrared channel
   divide_by: 255         # divisor
@@ -19,15 +19,8 @@ data:
       padding: 6 
   ground_truth_config:
     labels: null
-    class_column_name: class # class column in label file
-    crs: EPSG:25832        # reference CRS
-    valid_class_ids: all   # specify IDs that you want to use here (default: all)
-    nproc: 8               # number of workers in preprocessing
   num_workers: 8         # Number of workers in dataloader
-pretrained:
-  # path to pretrained models
-  path: /work/ka1176/caroline/gitlab/TreeCrownDelineation/experiments/finetune-halle/2024-11-20_12-47-31/
-  model: unet-halle_jitted.pt
+pretrained_model: /work/ka1176/caroline/gitlab/TreeCrownDelineation/experiments/finetune-halle/2024-11-20_12-47-31/unet-halle_jitted.pt
   
 model:
   _target_: treecrowndelineation.model.tcd_model.TreeCrownDelineationModel
@@ -59,10 +52,12 @@ logdir: ${hydra.run.dir} # this is where we find logs, trained models, predictio
 model_name: unet-halle # short and memorable model name
 seed: null               # Fix random seed 
 
-callbacks:
-  model_summary:
-    _target_: lightning.pytorch.callbacks.RichModelSummary
-    max_depth: -1
+crs: EPSG:25832
+polygon_file: treecrowns.sqlite
+baumkataster_file: /work/ka1176/shared_data/2024-ufz-deeptree/halle-baumkataster/itc005211130105323_point.shp
+baumkataster_intersection_file: treecrowns_baumkataster.sqlite
+
+callbacks: {}
 
 trainer:
   _target_: lightning.Trainer

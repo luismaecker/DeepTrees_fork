@@ -129,6 +129,9 @@ def test(config: DictConfig) -> None:
                     n = (n + 1) / 2
                 data = np.concatenate((data, n), axis=0)
 
+            np.save('/work/ka1176/caroline/gitlab/TreeCrownDelineation/notebooks/development/data', data)
+            print('data_mean', data.mean())
+
             t2 = time.time()
             disk_loading_time += t2 - t1
             log.info("Starting prediction on chunk {}/{}".format(idx, nchunks))
@@ -145,6 +148,7 @@ def test(config: DictConfig) -> None:
                                                 no_data=0,
                                                 verbose=True)
 
+            np.save('/work/ka1176/caroline/gitlab/TreeCrownDelineation/notebooks/development/result', result)
             t3 = time.time()
             inference_time += t3 - t2
 
@@ -195,6 +199,8 @@ def test(config: DictConfig) -> None:
     log.info("Saving as {}".format(os.path.join(os.getcwd(), config.output_file)))
 
     crs_ = get_crs(array)
+
+    print('CRS', crs_)
 
     utils.save_polygons(polygons,
                         os.path.join(os.getcwd(), config.output_file),
