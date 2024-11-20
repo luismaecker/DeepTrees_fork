@@ -141,6 +141,19 @@ class TreeCrownDelineationModel(L.LightningModule):
 
         return output_dict
 
+    def predict_step(self, batch, step):
+        x = batch
+        output = self(x)
+
+        output_dict = {'mask': output[:,0],
+                       'outline': output[:,1],
+                       'distance_transform': output[:,2]
+                       }
+
+        # add postprocessing here
+
+        return output_dict
+
     def configure_optimizers(self):
         if self.freeze_layers:
             for name, param in self.named_parameters():

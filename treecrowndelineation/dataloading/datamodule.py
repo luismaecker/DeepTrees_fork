@@ -33,6 +33,7 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
                  shuffle: bool = True,
                  train_indices: list[int] = None,
                  val_indices: list[int] = None,
+                 test_indices: list[int] = None,
                  ground_truth_config: Dict[str, Any] = {'labels': None},
                  ):
         '''
@@ -57,6 +58,7 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
             shuffle (bool, optional): If True, shuffle data before applying split. Defaults to True.
             train_indices (list[int], optional): List of indices of files to be used for training. Cannot be used with shuffle. Defaults to None.
             val_indices (list[int], optional): List of indices of files to be used for validation. Cannot be used with shuffle. Defaults to None.
+            test_indices (list[int], optional): List of indices of files to be used for testing. Cannot be used with shuffle. Defaults to None.
             ground_truth_config (Dict[str, Any], optional): Dictionary defining the ground truth preprocessing settings. Defaults to {'labels': None}.
         '''
         super().__init__()
@@ -81,6 +83,7 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
         self.shuffle = shuffle
         self.train_indices = train_indices
         self.val_indices = val_indices
+        self.test_indices = test_indices
         self.divide_by = divide_by
         self.train_ds = None
         self.val_ds = None
@@ -201,6 +204,8 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
                                                         divide_by=self.divide_by)
 
         elif stage == 'test':
+            if self.test_indices is not None:
+                self.rasters = self.rasters[self.test_indices]
             self.test_ds = ds.TreeCrownDelineationInferenceDataset(self.rasters,
                                                     augmentation=self.augment_eval,
                                                     ndvi_config=self.ndvi_config,
@@ -217,4 +222,7 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
         return DataLoader(self.val_ds, batch_size=self.val_batch_size, num_workers=self.num_workers, drop_last=True, pin_memory=True)
 
     def test_dataloader(self):
+        return DataLoader(self.test_ds, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=False, drop_last=False)
+
+    def predict_dataloader(self):
         return DataLoader(self.test_ds, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=False, drop_last=False)
