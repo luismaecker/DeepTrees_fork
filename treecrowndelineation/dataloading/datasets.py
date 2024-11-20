@@ -121,6 +121,9 @@ class TreeCrownDelineationDataset(Dataset):
         raster_transforms.append(v2.ToDtype(dtype=torch.float32))
         # apply scaling by constant value as part of the torchvision transform chain
         ln = lambda x: x/self.divide_by
+        if len(joint_transforms) == 0:
+            lc = lambda x: x
+            joint_transforms.append(v2.Lambda(lc))
         raster_transforms.append(v2.Lambda(ln))
         self.augment_joint = v2.Compose(joint_transforms)
 

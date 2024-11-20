@@ -32,7 +32,9 @@ data:
       p: 0.5
     RandomVerticalFlip:
       p: 0.5
-  augment_eval: {}         # augmentations to use during validation / testing
+  augment_eval:          # augmentations to use during validation / testing
+    RandomCrop:
+      size: 256
   divide_by: 255         # divisor
   dilate_outlines: False # dilate the outlines by number of pixels
   num_workers: 8         # Number of workers in dataloader
@@ -104,6 +106,7 @@ hydra:
 logger:
   _target_: lightning.pytorch.loggers.MLFlowLogger
   experiment_name: ${name}
+  run_name: ${now:%Y-%m-%d}_${now:%H-%M-%S}
   tracking_uri: null
   tags: null
   save_dir: ${original_work_dir}/logs/mlruns

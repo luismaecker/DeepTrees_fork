@@ -147,8 +147,9 @@ class TreeCrownDelineationModel(L.LightningModule):
                 if param.requires_grad:
                     log.info(f'Parameters in {name} will be trained')
         optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.parameters()), lr=self.lr)
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, 30, 2)
-        return [optimizer], [scheduler]
+        #scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, 30, 2)
+        #return [optimizer], [scheduler]
+        return [optimizer]
 
     @classmethod
     def from_checkpoint(cls, path: str,
