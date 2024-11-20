@@ -84,7 +84,7 @@ python scripts/train.py 'model.pretrained_model="Unet-resnet18_epochs=209_lr=0.0
 Run the inference script with the corresponding config file. Adjust as needed.
 
 ```bash
-python scripts/inference_halle.py
+python scripts/test.py --config-name=inference_halle
 ```
 
 ## Separate ground truth data generation
