@@ -13,7 +13,7 @@ from torchvision import tv_tensors
 from torch.utils.data import IterableDataset, Dataset
 
 from treecrowndelineation.modules.indices import ndvi
-from treecrowndelineation.modules.utils import dilate_img
+from treecrowndelineation.modules.utils import dilate_img, get_rioxarray_trafo
 
 import logging
 log = logging.getLogger(__name__)
@@ -104,7 +104,7 @@ class TreeCrownDelineationBaseDataset(ABC):
                 case 'Normalize': # applies only to rasters
                     raster_transforms.append(v2.Normalize(**val))
                 case 'Pad':
-                    target_transforms.append(v2.Pad(**val))
+                    raster_transforms.append(v2.Pad(**val))
                 case _:
                     raise ValueError(f'Augmentation not defined: {key}')
         raster_transforms.append(v2.ToDtype(dtype=torch.float32))
@@ -129,6 +129,9 @@ class TreeCrownDelineationBaseDataset(ABC):
         Args:
             file (str): file to load
             used_bands (list): bands to use, indexing starts from 0, default 'None' loads all bands
+
+        Returns:
+            raster
         """
         raster = rioxarray.open_rasterio(file).load() # xarray.open_rasterio is deprecated
 
@@ -344,9 +347,12 @@ class TreeCrownDelineationInferenceDataset(TreeCrownDelineationBaseDataset, Data
             _type_: _description_
         '''
         if self.in_memory: # retrieve preloaded tiles
-            raster = self.rasters[idx].data
+            raise NotImplementedError('Inference only works with loading data on-the-fly')
         else: # load from disk
             raster = self.load_raster(self.raster_files[idx])
 
+        trafo = get_rioxarray_trafo(raster)
+
         raster = tv_tensors.Image(raster.data, dtype=torch.float32)
-        return self.augment_target(raster)
+        
+        return self.augment_raster(raster), trafo

@@ -1,3 +1,16 @@
+import rootutils
+
+path = rootutils.find_root(search_from=__file__, indicator=".project-root")
+
+# set root directory
+rootutils.set_root(
+    path=path, # path to the root directory
+    project_root_env_var=True, # set the PROJECT_ROOT environment variable to root directory
+    dotenv=True, # load environment variables from .env if exists in root directory
+    pythonpath=True, # add root directory to the PYTHONPATH (helps with imports)
+    cwd=False, # we do not want that with hydra
+)
+
 import numpy as np
 from shapely.geometry import Polygon
 from scipy import ndimage as ndi
@@ -8,8 +21,8 @@ from hyperopt import fmin, tpe, hp, STATUS_OK
 from rasterio.transform import IDENTITY
 from rasterio.features import shapes
 
-from . import utils
-from . import polygon_metrics as pm
+from treecrowndelineation.modules import utils
+from treecrowndelineation.modules import polygon_metrics as pm
 
 
 def find_treecrowns(mask, contour,

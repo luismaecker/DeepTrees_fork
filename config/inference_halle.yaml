@@ -26,18 +26,35 @@ data:
   num_workers: 8         # Number of workers in dataloader
 pretrained:
   # path to pretrained models
-  path: /work/ka1176/shared_data/2024-ufz-deeptree/pretrained_models/tcd-20cm-RGBI-v1/
-  model: Unet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=0_jitted.pt 
+  path: /work/ka1176/caroline/gitlab/TreeCrownDelineation/experiments/finetune-halle/2024-11-20_12-47-31/
+  model: unet-halle_jitted.pt
   
 model:
   _target_: treecrowndelineation.model.tcd_model.TreeCrownDelineationModel
   in_channels: 5         # Number of input channels / bands of the input image
   architecture: Unet     # segmentation model architecture
   backbone: resnet18     # backbone
-  lr: 0.0003             # learning rate
-  mask_iou_share: 0.5   # contribution of masks (vs outline) to overall IOU.
-  freeze_layers: False   # freeze layers (keep only segmentation head trainable)
-  track_running_stats: True # update batch norm layers
+  apply_sigmoid: False   # sigmoid function applied to masks and outlines
+  polygon_config:
+    min_dist: 10 # minimum distnace in pixels between local maxima during feature extraction
+    mask_exp: 2
+    outline_multiplier: 5
+    dist_exp: 0.5
+    area_min: 3 # smaller polygons are discarded
+    sigma: 2 # standard deviation of Gaussian filter during feature extraction
+    label_threshold: 0.5 # minimum height of local maxima during feature extraction
+    binary_threshold: 0.1 # threshold value for the feature map, lower is background
+    simplify: 0.3 # polygon simplification distance, vertices closer than this value are simplified
+  # TODO
+  #postprocessing_config:
+  #  save_prediction: predictions # Enables saving of intermediate neural network predictions in the mentioned folder name.
+  #  subsample: False # if True, polygon extraction works at half the resolution of the model output. Use this for speedup at the cost of accuracy.
+  #  upsample: 1.0 # Input to the network will be upsampled bilinearly by the given factor
+  #  sigmoid: False # if True, sigmoid activation will be applied to masks and outlines
+  #  stride: null # Stride used in applying the network to the image
+  #  log_entropy: True # False by default if left empty, used for active learning (AL) purpose
+  #  save_entropy_heatmaps: True # False by default if left empty, used for active learning (AL) purpose to analyse the results of AL.
+
 logdir: ${hydra.run.dir} # this is where we find logs, trained models, predictions
 model_name: unet-halle # short and memorable model name
 seed: null               # Fix random seed 
@@ -47,13 +64,11 @@ callbacks:
     _target_: lightning.pytorch.callbacks.RichModelSummary
     max_depth: -1
 
-  rich_progress_bar:
-    _target_: lightning.pytorch.callbacks.RichProgressBar
-
 trainer:
   _target_: lightning.Trainer
   devices: 1               # Number of devices (GPUs) to use
   accelerator: auto        # Choose GPU if available
+  enable_progress_bar: False
 
 hydra:
   job:

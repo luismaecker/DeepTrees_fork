@@ -11,12 +11,15 @@ rootutils.set_root(
     cwd=False, # we do not want that with hydra
 )
 
+import time
+
 import torch
 import lightning as L
 from treecrowndelineation.model.segmentation_model import SegmentationModel
 from treecrowndelineation.model.distance_model import DistanceModel
 from treecrowndelineation.modules import metrics
 from treecrowndelineation.modules.losses import BinarySegmentationLossWithLogits
+from treecrowndelineation.modules.postprocessing import extract_polygons
 
 import logging
 log = logging.getLogger(__name__)
@@ -29,7 +32,8 @@ class TreeCrownDelineationModel(L.LightningModule):
                  mask_iou_share=0.5,
                  apply_sigmoid=False,
                  freeze_layers=False,
-                 track_running_stats=True
+                 track_running_stats=True,
+                 polygon_config={}
                  ):
         """Tree crown delineation model
 
@@ -45,6 +49,7 @@ class TreeCrownDelineationModel(L.LightningModule):
             apply_sigmode (bool): TODO
             freeze_layers (bool): If True, freeze all layers but the segmentation head. Default: False.
             track_running_stats (bool): If True, update batch norm layers. If False, keep them frozen. Default: True.
+            polygon_config (Dict[str, Any]): Set of parameters to apply in postprocessing (predict step). Default: {}.
         """
         super().__init__()
         self.seg_model = SegmentationModel(in_channels=in_channels, architecture=architecture, backbone=backbone, lr=lr, mask_loss_share=mask_iou_share)
@@ -52,6 +57,7 @@ class TreeCrownDelineationModel(L.LightningModule):
         self.freeze_layers = freeze_layers
         self.track_running_stats = track_running_stats
         self.mask_iou_share = mask_iou_share
+        self.polygon_config = polygon_config
 
         # freeze all layers but segmentation head
         if self.freeze_layers:
@@ -142,17 +148,27 @@ class TreeCrownDelineationModel(L.LightningModule):
         return output_dict
 
     def predict_step(self, batch, step):
-        x = batch
+        t0 = time.time()
+        x, trafo = batch
         output = self(x)
+        t_inference = time.time() - t0
 
-        output_dict = {'mask': output[:,0],
-                       'outline': output[:,1],
-                       'distance_transform': output[:,2]
-                       }
+        mask = output[:,0].cpu().numpy()
+        outline = output[:,1].cpu().numpy()
+        distance_transform = output[:,2].cpu().numpy()
+
+        # TODO active learning
 
         # add postprocessing here
+        t0 = time.time()
+        polygons = extract_polygons(mask, outline, distance_transform, transform=trafo, **self.polygon_config)
+        t_process = time.time() - t0
 
-        return output_dict
+        log.info(f'Found {len(polygons)} polygons.')
+        log.info(f'Inference time: {t_inference:.2f} seconds')
+        log.info(f'Post-processing time: {t_process:.2f} seconds')
+
+        return {'polygons': polygons}
 
     def configure_optimizers(self):
         if self.freeze_layers:

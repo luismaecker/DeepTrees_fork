@@ -14,12 +14,16 @@ from shapely.geometry import Polygon, mapping, shape
 from osgeo import osr
 from fiona import crs
 import numpy as np
+import xarray
 
 
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
 import os
+
+import logging
+log = logging.getLogger(__name__)
 
 def overlay_heatmap(image, entropy_map, output_path, filename):
     """
@@ -194,6 +198,22 @@ def get_xarray_trafo(arr):
     xskew, yskew = (arr.transform[1], arr.transform[3])
     return xres, xskew, min(xr), yskew, yres, max(yr)
 
+def get_rioxarray_trafo(arr: xarray.DataArray):
+    '''
+    Get the transform from a raster tile
+
+    Args:
+      arr (xarray.DataArray): Raster tile
+      
+    Returns:
+      xres, xskew, xmin, yskew, yres, ymax
+    '''
+    xr = arr.coords['x'].data
+    yr = arr.coords['y'].data
+    xres = np.round(xr[1]-xr[0], 4)
+    yres = np.round(yr[1]-yr[0], 4)
+    xskew, yskew = (0, 0)
+    return xres, xskew, min(xr), yskew, yres, max(yr)
 
 def extent_to_poly(xarr):
     """Returns the bounding box of an xarray as shapely polygon."""
@@ -563,7 +583,7 @@ def predict_on_array(model,
         while patch_idx<patches:
             batchsize_ = min(batchsize_, patches, patches - patch_idx)
             patch_idx += batchsize_
-            if verbose: stdout.write("\r%.2f%%" % (100 * (patch_idx + op_cnt * patches) / (len(operations) * patches)))
+            if verbose: log.info("\r%.2f%%" % (100 * (patch_idx + op_cnt * patches) / (len(operations) * patches)))
 
             batch = np.zeros((batchsize_,) + in_shape, dtype=dtype)
 
@@ -592,7 +612,7 @@ def predict_on_array(model,
         final_output += output
         img = arr[ymin:ymax, xmin:xmax] if no_data is not None else arr
         op_cnt += 1
-        if verbose: stdout.write("\rAugmentation step %d/%d done.\n" % (op_cnt, len(operations)))
+        if verbose: log.info("\rAugmentation step %d/%d done.\n" % (op_cnt, len(operations)))
 
     if verbose: stdout.flush()
 
@@ -738,7 +758,7 @@ def predict_on_array_cf(model,
         while patch_idx < patches:
             batchsize_ = min(batchsize_, patches, patches - patch_idx)
             patch_idx += batchsize_
-            if verbose: stdout.write("\r%.2f%%" % (100 * (patch_idx + op_cnt * patches) / (len(operations) * patches)))
+            if verbose: log.info("\r%.2f%%" % (100 * (patch_idx + op_cnt * patches) / (len(operations) * patches)))
 
             batch = np.zeros((batchsize_,) + in_shape, dtype=dtype)
 
@@ -768,9 +788,7 @@ def predict_on_array_cf(model,
         final_output += output
         img = arr[:, ymin:ymax, xmin:xmax] if no_data is not None else arr
         op_cnt += 1
-        if verbose: stdout.write("\rAugmentation step %d/%d done.\n" % (op_cnt, len(operations)))
-
-    if verbose: stdout.flush()
+        if verbose: log.info("\rAugmentation step %d/%d done.\n" % (op_cnt, len(operations)))
 
     final_output = final_output / len(operations)
 
