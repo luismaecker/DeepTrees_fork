@@ -122,3 +122,15 @@ python rasterize_to_distance_transform.py -i /work/ka1176/shared_data/2024-ufz-d
 ```
 
 6. Check that everything was processed correctly. Run the notebook `notebooks/processing/quick_data_check.ipynb` for a visual inspection.
+
+## Logs
+
+View the MLFlow logs that were created during training.
+
+On a Levante login node in VSCode, run the following command, exchanging the file path to your personal directory.
+
+```bash
+source ~/.bashrc
+conda activate deeptree
+mlflow server --host 127.0.0.1 --port 6006 --backend-store-uri file:///work/ka1176/caroline/gitlab/TreeCrownDelineation/logs/mlruns/
+```

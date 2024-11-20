@@ -22,7 +22,7 @@ import os
 
 import torch
 from lightning import Trainer, seed_everything
-from lightning.pytorch.loggers import TensorBoardLogger
+from lightning.pytorch.loggers import MLFlowLogger
 
 import hydra
 from omegaconf import DictConfig, OmegaConf
@@ -64,10 +64,7 @@ def train(config: DictConfig) -> None:
     # we store the hyperparameters with the trained model and choose a short model name
     model_name = config['model_name']
 
-    # TODO store logs in different directory?
-    #TODO change logger to config
-    logger = TensorBoardLogger(os.getcwd(), name=config['name'],
-                               version=model_name, default_hp_metric=False)
+    logger: MLFlowLogger = hydra.utils.instantiate(config.logger)
 
     callbacks = []
     for key, value in config.callbacks.items():
@@ -90,6 +87,8 @@ def train(config: DictConfig) -> None:
                                                        config['pretrained']['model']))
         model.load_state_dict(pretrained_model.state_dict())
         log.info('Loaded state dict from pretrained model')
+    else:
+        log.info('Training from scratch.')
 
     trainer: Trainer = hydra.utils.instantiate(config.trainer, callbacks=callbacks, logger=logger)
 

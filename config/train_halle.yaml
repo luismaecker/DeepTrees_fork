@@ -1,4 +1,5 @@
 name: train-halle
+original_work_dir: ${hydra:runtime.cwd}
 data:
   _target_: treecrowndelineation.dataloading.datamodule.TreeCrownDelineationDataModule
   rasters: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/tiles  # directory with raster images
@@ -25,15 +26,13 @@ data:
     
   shuffle: True          # shuffle data before train/val split
   augment_train:         # augmentations to use during training
-    RandomCrop:
+    RandomResizedCrop:
       size: 256
     RandomHorizontalFlip:
       p: 0.5
     RandomVerticalFlip:
       p: 0.5
-  augment_eval:          # augmentations to use during validation / testing
-    RandomCrop:
-      size: 256
+  augment_eval: {}         # augmentations to use during validation / testing
   divide_by: 255         # divisor
   dilate_outlines: False # dilate the outlines by number of pixels
   num_workers: 8         # Number of workers in dataloader
@@ -47,7 +46,7 @@ model:
   in_channels: 5         # Number of input channels / bands of the input image
   architecture: Unet     # segmentation model architecture
   backbone: resnet18     # backbone
-  lr: 0.0003             # learning rate
+  lr: 0.0001             # learning rate
   mask_iou_share: 0.5   # contribution of masks (vs outline) to overall IOU.
   freeze_layers: False   # freeze layers (keep only segmentation head trainable)
   track_running_stats: True # update batch norm layers
@@ -91,7 +90,8 @@ trainer:
   _target_: lightning.Trainer
   devices: 1               # Number of devices (GPUs) to use
   accelerator: auto        # Choose GPU if available
-  max_epochs: 100          # maximum number of epochs
+  max_epochs: 10000        # maximum number of epochs
+  log_every_n_steps: 1     # log in training step
   num_sanity_val_steps: 1  # sanity check before training starts
   fast_dev_run: False      # if True, runs one batch of each dataloader
 
@@ -100,3 +100,12 @@ hydra:
     chdir: True
   run:
     dir: experiments/${name}/${now:%Y-%m-%d}_${now:%H-%M-%S}
+
+logger:
+  _target_: lightning.pytorch.loggers.MLFlowLogger
+  experiment_name: ${name}
+  tracking_uri: null
+  tags: null
+  save_dir: ${original_work_dir}/logs/mlruns
+  prefix: ""
+  artifact_location: null
