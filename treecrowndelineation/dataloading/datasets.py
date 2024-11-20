@@ -13,14 +13,14 @@ from numpy.typing import NDArray
 # TODO check if standard map-style dataset wouldn't be sufficient here
 # TODO move to random resized crop for uniform sampling
 # TODO one epoch = one mini-patch out of each larger patch
-from torch.utils.data import Dataset
+from torch.utils.data import IterableDataset
 
 from treecrowndelineation.modules.indices import ndvi
 from treecrowndelineation.modules.utils import dilate_img
 
 import logging
 log = logging.getLogger(__name__)
-class TreeCrownDelineationDataset(Dataset):
+class TreeCrownDelineationDataset(IterableDataset):
     """In memory remote sensing dataset for image segmentation."""
     def __init__(self, 
                  raster_files: list[str], 
@@ -104,10 +104,13 @@ class TreeCrownDelineationDataset(Dataset):
             match key:
                 case 'RandomResizedCrop':
                     joint_transforms.append(v2.RandomResizedCrop(**val))
+                    self.cutout_size = (val['size'], val['size'])
                 case 'RandomCrop':
                     joint_transforms.append(v2.RandomCrop(**val))
+                    self.cutout_size = (val['size'], val['size'])
                 case 'Resize':
                     joint_transforms.append(v2.Resize(**val))
+                    self.cutout_size = (val['size'], val['size'])
                 case 'RandomHorizontalFlip':
                     joint_transforms.append(v2.RandomHorizontalFlip(**val))
                 case 'RandomVerticalFlip':
@@ -133,41 +136,69 @@ class TreeCrownDelineationDataset(Dataset):
             self.augment_target = None
         
         self.augment_raster = v2.Compose(raster_transforms)
-        
-    # these two methods are needed for pytorch dataloaders to work
+
+        # these two methods are needed for pytorch dataloaders to work
     def __len__(self):
-        '''Returns length of the dataset: number of raster files'''
-        return len(self.raster_files)
+        # sum of product of all raster sizes
+        total_pixels = np.sum([np.prod(np.array(r.shape)[self.lateral_ax]) for r in self.rasters])
+        # product of the shape of cutout done by the transformation
+        cutout_pixels = np.prod(np.array(self.cutout_size))
+        return int(total_pixels / cutout_pixels)
 
-    def __getitem__(self, idx):
-        '''__getitem__ 
+    def __iter__(self):
+        i = 0
+        while i < len(self):
+            idx = np.random.choice(np.arange(len(self.rasters)))
+            if self.in_memory: # retrieve preloaded tiles
+                raster = self.rasters[idx].data
+                target = self.targets[idx].data
+            else: # load from disk
+                raster = self.load_raster(self.raster_files[idx])
+                target = self.load_target(self.target_files[idx])
 
-        Return augmented raster and accompanying target
+            raster = tv_tensors.Image(raster, dtype=torch.float32)
+            target = tv_tensors.Mask(target, dtype=torch.float32)
+            raster, target = self.augment_joint(raster, target)
+            raster = self.augment_raster(raster)
+            if self.augment_target is not None:
+                target = self.augment_target(target)
+            i += 1
+            yield raster, target
+        
+    ## these two methods are needed for pytorch dataloaders to work
+    #def __len__(self):
+    #    '''Returns length of the dataset: number of raster files'''
+    #    return len(self.raster_files)
 
-        Args:
-            idx (_type_): _description_
+    #def __getitem__(self, idx):
+    #    '''__getitem__ 
 
-        Returns:
-            _type_: _description_
-        '''
-        if self.in_memory: # retrieve preloaded tiles
-            raster = self.rasters[idx].data
-            target = self.targets[idx].data
-        else: # load from disk
-            raster = self.load_raster(self.raster_files[idx])
-            target = self.load_target(self.target_files[idx])
+    #    Return augmented raster and accompanying target
 
-        # apply transforms (this ensures they are augmented in the same way)
-        # FIXME check with ColorJitter ... we do not want this on targets
-        # FIXME implement this https://pytorch.org/vision/main/auto_examples/transforms/plot_transforms_getting_started.html#detection-segmentation-videos
-        # FIXME we can define joint transform (for cutting etc) and separate transform (for color etc) by following this https://stackoverflow.com/questions/66284850/pytorch-transforms-compose-usage-for-pair-of-images-in-segmentation-tasks/73101141
-        raster = tv_tensors.Image(raster, dtype=torch.float32)
-        target = tv_tensors.Mask(target, dtype=torch.float32)
-        raster, target = self.augment_joint(raster, target)
-        raster = self.augment_raster(raster)
-        if self.augment_target is not None:
-            target = self.augment_target(target)
-        return raster, target
+    #    Args:
+    #        idx (_type_): _description_
+
+    #    Returns:
+    #        _type_: _description_
+    #    '''
+    #    if self.in_memory: # retrieve preloaded tiles
+    #        raster = self.rasters[idx].data
+    #        target = self.targets[idx].data
+    #    else: # load from disk
+    #        raster = self.load_raster(self.raster_files[idx])
+    #        target = self.load_target(self.target_files[idx])
+
+    #    # apply transforms (this ensures they are augmented in the same way)
+    #    # FIXME check with ColorJitter ... we do not want this on targets
+    #    # FIXME implement this https://pytorch.org/vision/main/auto_examples/transforms/plot_transforms_getting_started.html#detection-segmentation-videos
+    #    # FIXME we can define joint transform (for cutting etc) and separate transform (for color etc) by following this https://stackoverflow.com/questions/66284850/pytorch-transforms-compose-usage-for-pair-of-images-in-segmentation-tasks/73101141
+    #    raster = tv_tensors.Image(raster, dtype=torch.float32)
+    #    target = tv_tensors.Mask(target, dtype=torch.float32)
+    #    raster, target = self.augment_joint(raster, target)
+    #    raster = self.augment_raster(raster)
+    #    if self.augment_target is not None:
+    #        target = self.augment_target(target)
+    #    return raster, target
 
     def load_raster(self, file: str, used_bands: list = None):
         """Loads a raster from disk.
