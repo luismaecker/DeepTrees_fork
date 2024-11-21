@@ -28,25 +28,25 @@ model:
   architecture: Unet     # segmentation model architecture
   backbone: resnet18     # backbone
   apply_sigmoid: False   # sigmoid function applied to masks and outlines
-  polygon_config:
+  postprocessing_config:
     min_dist: 10 # minimum distnace in pixels between local maxima during feature extraction
     mask_exp: 2
     outline_multiplier: 5
+    outline_exp: 1
     dist_exp: 0.5
     area_min: 3 # smaller polygons are discarded
     sigma: 2 # standard deviation of Gaussian filter during feature extraction
     label_threshold: 0.5 # minimum height of local maxima during feature extraction
     binary_threshold: 0.1 # threshold value for the feature map, lower is background
     simplify: 0.3 # polygon simplification distance, vertices closer than this value are simplified
+    active_learning: True # calculate entropy heatmap
+    save_entropy_map: True  # save entropy heatmap
+    save_predictions: True  # save predictions (mask, outlines, distance transform)
   # TODO
-  #postprocessing_config:
-  #  save_prediction: predictions # Enables saving of intermediate neural network predictions in the mentioned folder name.
   #  subsample: False # if True, polygon extraction works at half the resolution of the model output. Use this for speedup at the cost of accuracy.
   #  upsample: 1.0 # Input to the network will be upsampled bilinearly by the given factor
   #  sigmoid: False # if True, sigmoid activation will be applied to masks and outlines
   #  stride: null # Stride used in applying the network to the image
-  #  log_entropy: True # False by default if left empty, used for active learning (AL) purpose
-  #  save_entropy_heatmaps: True # False by default if left empty, used for active learning (AL) purpose to analyse the results of AL.
 
 logdir: ${hydra.run.dir} # this is where we find logs, trained models, predictions
 model_name: unet-halle # short and memorable model name

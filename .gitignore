@@ -154,3 +154,5 @@ experiments/
 .vscode
 scripts/tiles.txt
 tmp/dop20rgbi_32_702_5706_2_st_2022_0.sqlite
+logs/
+*.npy
