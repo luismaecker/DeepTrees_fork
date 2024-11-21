@@ -9,6 +9,7 @@ import fiona
 import operator
 from sys import stdout
 from uuid import uuid4
+from skimage import filters
 from skimage.morphology import dilation, square, disk
 from shapely.geometry import Polygon, mapping, shape
 from osgeo import osr
@@ -73,56 +74,6 @@ def overlay_heatmap(image, entropy_map, output_path, filename):
 
     # Save final image with overlaid heatmap
     overlaid_image.save(saved_path)
-
-
-def calculate_entropy(probability_map):
-    """
-    Calculate the entropy of a given probability map.
-
-    This function computes the entropy for each value in the provided `probability_map`.
-    Entropy is a measure of uncertainty or randomness, commonly used in information theory.
-    Here, the binary entropy formula is used, which is defined for probabilities `p` as:
-    
-        H(p) = -[p * log(p) + (1 - p) * log(1 - p)]
-    
-    To avoid issues with log(0), which is undefined, the function clips probability values 
-    to a minimum of `1e-6` and a maximum of `1 - 1e-6`.
-
-    Parameters:
-    ----------
-    probability_map : numpy array
-        A numpy array containing probability values, where each value represents 
-        the probability of an event occurring (0 <= p <= 1).
-    
-    Returns:
-    -------
-    entropy : numpy array
-        A numpy array of the same shape as `probability_map`, containing the entropy 
-        values for each probability in the input array.
-
-    Example:
-    --------
-    >>> probability_map = np.array([0.2, 0.5, 0.8])
-    >>> calculate_entropy(probability_map)
-    array([0.50040242, 0.69314718, 0.50040242])
-    
-    Notes:
-    ------
-    - The formula used here is specifically for binary entropy, which is typically 
-      used when probabilities are defined for binary outcomes.
-    - Values near 0 or 1 have low entropy (low uncertainty), while values near 0.5 
-      have high entropy (high uncertainty).
-
-    """
-    
-    # Ensure the probability map values are within a small tolerance to prevent log(0) errors
-    probability_map = np.clip(probability_map, 1e-6, 1 - 1e-6)
-    
-    # Calculate entropy using the binary entropy formula
-    entropy = - (probability_map * np.log(probability_map) + (1 - probability_map) * np.log(1 - probability_map))
-    
-    return entropy
-
 
 
 def load_model_weights(model, path):
