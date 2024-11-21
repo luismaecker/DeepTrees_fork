@@ -25,8 +25,6 @@ subsample: False # if True, polygon extraction works at half the resolution of t
 upsample: 1.0 # Input to the network will be upsampled bilinearly by the given factor
 sigmoid: False # if True, sigmoid activation will be applied to masks and outlines
 stride: null # Stride used in applying the network to the image
-log_entropy: True # False by default if left empty, used for active learning (AL) purpose
-save_entropy_heatmaps: True # False by default if left empty, used for active learning (AL) purpose to analyse the results of AL.
 hydra:
   job:
     chdir: True

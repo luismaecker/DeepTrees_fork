@@ -1,12 +1,12 @@
 name: inference-halle
 data:
   _target_: treecrowndelineation.dataloading.datamodule.TreeCrownDelineationDataModule
-  rasters: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/tiles  # directory with raster images
+  rasters: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/pool_tiles  # directory with raster images
   masks: null
   outlines: null
   distance_transforms: null
   batch_size: 1          # dataloader batch size
-  test_indices: [10, 11] # set to null to process the whole folder
+  test_indices: null     # set to null to process the whole folder
   ndvi_config:
     concatenate: True    # If True, concatenate NDVI
     rescale: False       # If True, rescale to [0, 1]
