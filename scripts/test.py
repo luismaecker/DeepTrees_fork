@@ -96,9 +96,12 @@ def train(config: DictConfig) -> None:
 
     # additional post processing that works on all polygons
     baumkataster = gpd.read_file(config['baumkataster_file']).to_crs(config['crs'])
-    inters = gpd.GeoDataFrame(all_polygons).sjoin(baumkataster)
-    log.info(f'Saving all polygons that overlap with Baumkataster to {config["polygon_baumkataster_file"]}.')
-    utils.save_polygons(inters, config['polygon_baumkataster_file'], crs=config['crs'])
+    inters = gpd.GeoDataFrame(geometry=all_polygons).set_crs(config['crs']).sjoin(baumkataster)
+    if len(inters) == 0:
+        log.info(f'No polygons found that overlap with Baumkataster.')
+    else:
+        log.info(f'Saving all polygons that overlap with Baumkataster to {config["baumkataster_intersection_file"]}.')
+        utils.save_polygons(inters, config['baumkataster_intersection_file'], crs=config['crs'])
 
 
 if __name__=='__main__':
