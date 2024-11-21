@@ -18,7 +18,6 @@ https://github.com/AWF-GAUG/TreeCrownDelineation (v0.1.0). (c) Max Freudenberg, 
 import warnings
 import logging
 
-import geopandas as gpd
 
 import torch
 from lightning import Trainer, seed_everything
@@ -42,6 +41,8 @@ rootutils.set_root(
 from treecrowndelineation.model.tcd_model import TreeCrownDelineationModel
 from treecrowndelineation.dataloading.datamodule import TreeCrownDelineationDataModule
 from treecrowndelineation.modules import utils
+
+import geopandas as gpd
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 log = logging.getLogger(__name__)
