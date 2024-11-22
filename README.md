@@ -134,3 +134,15 @@ source ~/.bashrc
 conda activate deeptree
 mlflow server --host 127.0.0.1 --port 6006 --backend-store-uri file:///work/ka1176/caroline/gitlab/TreeCrownDelineation/logs/mlruns/
 ```
+
+## Semantic Versioning
+This reposirotry has auto semantic versionining enabled. To create new releases, we need to merge into the default `finetuning-halle` branch. 
+
+Semantic Versionining, or SemVer, is a versioning standard for software ([SemVer website](https://semver.org/)). Given a version number MAJOR.MINOR.PATCH, increment the:
+
+- MAJOR version when you make incompatible API changes
+- MINOR version when you add functionality in a backward compatible manner
+- PATCH version when you make backward compatible bug fixes
+- Additional labels for pre-release and build metad
+
+See the SemVer rules and all possible commit prefixes in the [.releaserc.json](.releaserc.json) file. 
