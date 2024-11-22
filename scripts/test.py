@@ -1,6 +1,5 @@
 '''
-TODO update module docstring
-Train a TreeCrownDelineation model on new data.
+Inference with a trained TreeCrownDelineation model
 
 Follows the example script. 
 
@@ -18,11 +17,11 @@ https://github.com/AWF-GAUG/TreeCrownDelineation (v0.1.0). (c) Max Freudenberg, 
 
 import warnings
 import logging
-import os
+
 
 import torch
 from lightning import Trainer, seed_everything
-from lightning.pytorch.loggers import TensorBoardLogger
+from lightning.pytorch.loggers import MLFlowLogger
 
 import hydra
 from omegaconf import DictConfig, OmegaConf
@@ -41,19 +40,17 @@ rootutils.set_root(
 
 from treecrowndelineation.model.tcd_model import TreeCrownDelineationModel
 from treecrowndelineation.dataloading.datamodule import TreeCrownDelineationDataModule
+from treecrowndelineation.modules import utils
+
+import geopandas as gpd
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 log = logging.getLogger(__name__)
 
 @hydra.main(version_base=None, config_path="../config", config_name="inference_halle")
-def test(config: DictConfig) -> None:
+def train(config: DictConfig) -> None:
     '''
-    Inference with a TreeCrownDelineation segmentation model
-
-    Configuration options include
-    - active learning
-    - database of extracted polygons
-    - overlap of extracted polygons with Baumkataster tree locations
+    Inference with a pretrained tree crown delineation model.
 
     Args:
         config (DictConfig): configuration (provided by hydra)
@@ -63,9 +60,7 @@ def test(config: DictConfig) -> None:
     if config.seed:
         seed_everything(config.seed, workers=True)
 
-    # we store the hyperparameters with the trained model and choose a short model name
-    model_name = config['model_name']
-
+    callbacks = []
     for key, value in config.callbacks.items():
         if value is not None:
             log.info(f'Instantiating {key} callback')
@@ -76,34 +71,39 @@ def test(config: DictConfig) -> None:
     log.info('Instantiating data module ...')
     data: TreeCrownDelineationDataModule = hydra.utils.instantiate(config.data)
     data.prepare_data()
-    data.setup()
+    data.setup(stage='test')
 
     log.info('Instantiating model...')
     model: TreeCrownDelineationModel = hydra.utils.instantiate(config.model)
 
-    if config['pretrained']['model'] is not None:
-        pretrained_model = torch.jit.load(os.path.join(config['pretrained']['path'],
-                                                       config['pretrained']['model']))
+    if config['pretrained_model'] is None:
+        raise ValueError("Inference requires a pretrained model")
+    else:
+        pretrained_model = torch.jit.load(config['pretrained_model'])
         model.load_state_dict(pretrained_model.state_dict())
         log.info('Loaded state dict from pretrained model')
 
-    trainer: Trainer = hydra.utils.instantiate(config.trainer, callbacks=callbacks, logger=logger)
+    trainer: Trainer = hydra.utils.instantiate(config.trainer, callbacks=callbacks)
 
-    log.info('Starting model fit')
-    trainer.fit(model, data)
+    log.info('Starting predictions ...')
+    output_dict = trainer.predict(model, data)
 
-    # save the trained model
-    log.info('Saving trained model')
-    model.to('cpu')
-    input_sample = torch.rand(1,
-                              config['model']['in_channels'],
-                              config['data']['width'],
-                              config['data']['width'],
-                              dtype=torch.float32)
-    torch.jit.save(model.to_torchscript(method='trace', example_inputs=input_sample),
-                   os.path.join(os.getcwd(), f'{model_name}_jitted.pt'))
-    log.info(f'Saved torchscript to {os.getcwd():s}/{model_name:s}_jitted.pt')
-    log.info('Completed!')
+    all_polygons = []
+    for dd in output_dict:
+        all_polygons.extend(dd['polygons'])
+
+    log.info(f'Saving all polygons to {config["polygon_file"]}.')
+    utils.save_polygons(all_polygons, config['polygon_file'], crs=config['crs'])
+
+    # additional post processing that works on all polygons
+    baumkataster = gpd.read_file(config['baumkataster_file']).to_crs(config['crs'])
+    inters = gpd.GeoDataFrame(geometry=all_polygons).set_crs(config['crs']).sjoin(baumkataster)
+    if len(inters) == 0:
+        log.info(f'No polygons found that overlap with Baumkataster.')
+    else:
+        log.info(f'Saving all polygons that overlap with Baumkataster to {config["baumkataster_intersection_file"]}.')
+        utils.save_polygons(inters, config['baumkataster_intersection_file'], crs=config['crs'])
+
 
 if __name__=='__main__':
-    test()
+    train()

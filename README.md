@@ -1,153 +1,136 @@
-![](https://media.springernature.com/full/springer-static/image/art%3A10.1007%2Fs00521-022-07640-4/MediaObjects/521_2022_7640_Fig3_HTML.png?as=webp)
-![](https://media.springernature.com/full/springer-static/image/art%3A10.1007%2Fs00521-022-07640-4/MediaObjects/521_2022_7640_Fig5_HTML.png?as=webp)
+# Training
 
-# Individual Tree Crown Delineation via Neural Networks
+This document outlines the steps for working with the TreeCrownDelineation model on Levante.
 
-This package performs automatic delineation of individual tree crowns in remote sensing imagery. It has been tested with 30cm WordView-3 images, as well as 5cm aerial images. 
-The contained method is ready for large scale application and has been published [here](https://link.springer.com/article/10.1007/s00521-022-07640-4).
+## Setup
 
-This package is under development and feedback, reported issues and contributions are very welcome!
+### Code
 
-***Update:*** Model weights can be downloaded [here](https://owncloud.gwdg.de/index.php/s/9cUza134XSOwZsB)
+Check out branch `finetune-halle` from the forked TreeCrownDelineation repository (https://codebase.helmholtz.cloud/ai-consultants-dkrz/TreeCrownDelineation/).
 
-## 1 Installation
-Currently there is no pypi or conda package to install from. You therefore have to clone the package and install manually. Gdal is needed for the installation, which is easiest to install via conda. Currently, you also have to install pytorch via conda, as the pip version seems broken as of 2024-01-12.
+### Environment
 
-```
-# (optional) create new conda env
-conda create -n <env-name>
-conda activate <env-name>
-# install gdal and pytorch upfront, adapt to the latest cuda version if needed
-conda install gdal pytorch torchvision pytorch-cuda=11.8 -c pytorch -c nvidia
+Install the required libraries in a conda environment:
 
-# now there are two options: installation via pip or manual
+```bash
+conda create -n deeptree python=3.12
+conda activate deeptree
 
-# 1) install via pip, including the remaining dependencies
-pip install git+https://git@github.com/AWF-GAUG/TreeCrownDelineation.git
-
-# 2) manual install with latest source
-cd <path where you want to keep the package> 
-git clone git@github.com:AWF-GAUG/TreeCrownDelineation.git
-cd ./TreeCrownDelineation
-
-# run the package installation, which will also install the dependencies
-python ./setup.py install
+conda install -c conda-forge gdal==3.9.2 pip
+pip install -r requirements_levante.txt
 ```
 
-## 2 Training a model from scratch
+## Preprocessing
 
-The package is designed to work with georeferenced imagery and vector data and the training data generation workflow is adapted to that. The neural network expects raster images as input and we need to generate a tree cover mask, tree crown outlines and a distance transform as traning targets. Departing from your target imagery, the workflow looks as follows (we used QGIS):
+### Directory structure
 
-### 2.1 Training data generation
-1. Select training data plots, e.g. rectangular tiles of 100m x 100m
-2. Create a vector layer containing the plot outlines and save it as ESRI shapefile or similar.
-3. Delineate all trees within the tiles, if possible. Tree groups can be labeled as one polygon, but there should be e.g. a 'class' column which could for example be set to 0 for trees and 1 for groups or similar.
-4. Save the vector data as ESRI shapefile, sqlite or similar.
-5. Now you have to generate four types of raster imagery by using the provided scripts (see steps 6-9):
-   1. The image tiles
-   2. The tree cover masks
-   3. The tree crown outlines
-   4. The distance transform
-   
-   Prepare following folder structure:
-    ```
-    data/
-    ├── tiles/
-    │   ├── tile_1.tif
-    │   ├── tile_2.tif
-    │   └── ...
-    ├── masks/
-    │   ├── mask_1.tif
-    │   └── ...
-    ├── outlines/
-    │   ├── outline_1.tif
-    │   └── ...
-    └── dist_trafo/
-        ├── dist_trafo_1.tif
-        └── ...
-    ```
-   The partition in training and validation data will happen later, on the fly.
-6. To create the raster image tiles you can either clip them using QGIS, or use the script provided in `scripts/` like so:
+The root folder is `/work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/`. Sync the folder `tiles` and `labels` with the labeled tiles provided by UFZ. The unlabeled tiles go into `pool_tiles`.
 
-   `python clip_image.py -i <path to your source raster> -o <path to data folder>/data/tiles/tile_ -shp <path to shapefile with plots>`
-7. Now we rasterize the delineated tree crowns:
-
-   `rasterize.py -i <path to data folder>/tiles/* -o <path to data folder>/masks/mask_ -shp <path to delineated crowns shapefile>`
-
-8. Now the outlines, very similar:
-
-   `rasterize.py -i <path to data folder>/tiles/* -o <path to data folder>/outlines/outline_ -shp <path to delineated crowns shapefile> --outlines`
-
-9. And lastly, the distance transform:
-
-   `rasterize_to_distance_transform.py -i <path to data folder>/tiles/* -o <path to data folder>/dist_trafo/dist_trafo_ -shp <path to delineated crowns shapefile>`
-
-The scripts provide some further options e.g. for parallel processing or rasterizing only polygons of a certain class. And yes, the process could be simplified...
-
-### 2.2 Training the model
-
-The `training_example.py` file in `examples/` showcases how to use the freshly generated data to train a model from scratch. Currently, the script assumes your entire training data fits into memory, because often, hand labelled remote sensing data sets are small. If that's not the case with your data, create an issue.
-
-The most notable options apart from the number of training steps, batch size etc. is whether the NDVI should be appended to the image stack and which image bands contain red and NIR. Furthermore, the NDVI can be rescaled to the interval 0..1 and the outlines can be dilated (widened) by a certain number of pixels, which influences the network performance wrt finding them. For further reference, the documentation of the respective functions should provide more info.
-
-### 2.3 Optimizing polygon extraction
-To do
-
-## 3 Using pre-trained models
-The weights of pre-trained models can be found [here](https://owncloud.gwdg.de/index.php/s/9cUza134XSOwZsB). You have to download them manually. The weights can be used by the inference script described below. Apart from that you can load the model via `torch.jit.load()`.
-
-## 4 Application / Inference
-Applying a trained neural network is rather simple by using the `inference.py` script, although the number of command line arguments is a bit overwhelming. We have to tell the script, which polygon extraction setting we want to use; look at the script's documentation to find out more by typing `inference.py -h`. It is possible to use several models at once, averaging the results, which improves performance.
-
-Optional parameters (look at the paper for more info):
-- `-ndvi` whether or not to concat the NDVI
-- `-red` red band index (starting from 0)
-- `-nir` nir band index (starting from 0)
-- `--min-dist` minimum distance between trees in pixels
-- `-sigma` Gaussian blur standard deviation in pixels
-- `-l` label threshold
-- `-b` binary masking threshold
-- `--divide-by` divide input by this value
-- `--rescale-ndvi` rescale the NDVI to the intercal 0..1
-
-Example call for a RGB-NIR image, appending the NDVI and dividing the input by 255:
-
-`inference.py -i <large input image here> -o <output file path and name> -m <path to model file(s)> -ndvi -red 0 -ndvi 3 --divide-by 255`
-
-## 5 Evaluation
-To do
-
-
-## Semantic Versioning
-This reposirotry has auto semantic versionining enabled. To create new releases, we need to merge into the default `finetuning-halle` branch. 
-
-Semantic Versionining, or SemVer, is a versioning standard for software ([SemVer website](https://semver.org/)). Given a version number MAJOR.MINOR.PATCH, increment the:
-
-- MAJOR version when you make incompatible API changes
-- MINOR version when you add functionality in a backward compatible manner
-- PATCH version when you make backward compatible bug fixes
-- Additional labels for pre-release and build metad
-
-See the SemVer rules and all possible commit prefixes in the [.releaserc.json](.releaserc.json) file. 
-
-| Prefix | Explanation                                                                                                                                                                                                                                     | Example                                                                                              |
-| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| feat   | A new feature was implemented as part of the commit, <br>so the [Minor](https://mobiuscode.dev/posts/Automatic-Semantic-Versioning-for-GitLab-Projects/#minor) part of the version will be increased once <br>this is merged to the main branch | feat: model training updated                                            |
-| fix    | A bug was fixed, so the [Patch](https://mobiuscode.dev/posts/Automatic-Semantic-Versioning-for-GitLab-Projects/#patch) part of the version will be <br>increased once this is merged to the main branch                                         | fix: fix a bug that causes the user to not <br>be properly informed when a job<br>finishes |
-
-The implementation is based on. https://mobiuscode.dev/posts/Automatic-Semantic-Versioning-for-GitLab-Projects/
-
-
-
-## Citation
-If you use this work in any way, please mention this citation:
 ```
-@article{freudenberg2022individual,
-  title={Individual tree crown delineation in high-resolution remote sensing images based on U-Net},
-  author={Freudenberg, Maximilian and Magdon, Paul and Nölke, Nils},
-  journal={NCAA},
-  year={2022},
-  publisher={Springer},
-  doi={https://doi.org/10.1007/s00521-022-07640-4}
-}
+|-- tiles
+|   |-- tile_0_0.tif
+|   |-- tile_0_1.tif
+|   |-- ...
+|-- labels
+|   |-- label_tile_0_0.shp
+|   |-- label_tile_0_1.shp
+|   |-- ...
+|-- pool_tiles
+|   |-- tile_4_7.tif
+|   |-- tile_4_8.tif
+|   |-- ...
+```
+
+Create the new empty directories
+
+```
+|-- masks
+|-- outlines
+|-- dist_trafo
+```
+
+### Preparation
+
+We will follow the instructions in the TreeCrownDelineation repository to fine tune the models. Link: https://github.com/AWF-GAUG/TreeCrownDelineation
+
+## Training
+
+Adapt your own config file based on the defaults in `train_halle.yaml` as needed. For inspiration for a derived config file for finetuning, check `finetune_halle.yaml`.
+
+Run the script like this:
+
+```bash
+python scripts/train.py # this is the default config that trains from scratch
+python scripts/train.py --config-name=finetune_halle # finetune with pretrained model
+python scripts/train.py --config-name=yourconfig # with your own config
+```
+
+To re-generate the ground truth for training, make sure to pass the label directory in `data.ground_truth_labels`. To turn it off, pass `data.ground_truth_labels=null`.
+
+You can overwrite individual parameters on the command line, e.g.
+
+```bash
+python scripts/train.py trainer.fast_dev_run=True
+```
+
+To resume training from a checkpoint, take care to pass the hydra arguments in quotes to avoid the shell intercepting the string (pretrained model contains `=`):
+
+```bash
+python scripts/train.py 'model.pretrained_model="Unet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=0_jitted.pt"'
+```
+
+## Inference
+
+Run the inference script with the corresponding config file. Adjust as needed.
+
+```bash
+python scripts/test.py --config-name=inference_halle
+```
+
+## Separate ground truth data generation
+
+1. Combine all labels into one shapefile `all_labels.shp`. Make sure the coordinate reference system is `EPSG:25832` to comply with the tiles.
+
+```python
+import glob
+import pandas as pd
+import geopandas as gpd
+
+shapes = np.sort(glob.glob('/work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/labels/label_tile_*.shp'))
+all_polygons = pd.concat([gpd.read_file(shape).set_crs(epsg=4326).to_crs(epsg=25832) for shape in shapes])
+all_polygons.to_file('/work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/labels/all_labels.shp')
+```
+
+2. Create the raster image tiles: skip, they are provided by UFZ. These files should be in `tiles`.
+
+3. Rasterize the delineated tree crowns. We are working in `~treecrowndelineation/scripts`.
+
+```python
+python rasterize.py -i /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/tiles/* -o /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/masks/mask_ -shp /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/labels/all_labels.shp
+```
+
+4. Create the outlines.
+
+```python
+python rasterize.py -i /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/tiles/* -o /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/outlines/outline_ -shp /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/labels/all_labels.shp --outlines
+```
+
+5. Create the distance transform.
+
+```python
+python rasterize_to_distance_transform.py -i /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/tiles/* -o /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/dist_trafo/dist_trafo_ -shp /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/labels/all_labels.shp
+```
+
+6. Check that everything was processed correctly. Run the notebook `notebooks/processing/quick_data_check.ipynb` for a visual inspection.
+
+## Logs
+
+View the MLFlow logs that were created during training.
+
+On a Levante login node in VSCode, run the following command, exchanging the file path to your personal directory.
+
+```bash
+source ~/.bashrc
+conda activate deeptree
+mlflow server --host 127.0.0.1 --port 6006 --backend-store-uri file:///work/ka1176/caroline/gitlab/TreeCrownDelineation/logs/mlruns/
 ```

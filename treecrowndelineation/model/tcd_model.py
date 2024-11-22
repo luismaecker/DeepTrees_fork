@@ -11,12 +11,16 @@ rootutils.set_root(
     cwd=False, # we do not want that with hydra
 )
 
+import time
+
+import numpy as np
 import torch
 import lightning as L
 from treecrowndelineation.model.segmentation_model import SegmentationModel
 from treecrowndelineation.model.distance_model import DistanceModel
 from treecrowndelineation.modules import metrics
 from treecrowndelineation.modules.losses import BinarySegmentationLossWithLogits
+from treecrowndelineation.modules import postprocessing as tcdpp
 
 import logging
 log = logging.getLogger(__name__)
@@ -29,7 +33,8 @@ class TreeCrownDelineationModel(L.LightningModule):
                  mask_iou_share=0.5,
                  apply_sigmoid=False,
                  freeze_layers=False,
-                 track_running_stats=True
+                 track_running_stats=True,
+                 postprocessing_config={}
                  ):
         """Tree crown delineation model
 
@@ -45,6 +50,7 @@ class TreeCrownDelineationModel(L.LightningModule):
             apply_sigmode (bool): TODO
             freeze_layers (bool): If True, freeze all layers but the segmentation head. Default: False.
             track_running_stats (bool): If True, update batch norm layers. If False, keep them frozen. Default: True.
+            postprocessing_config (Dict[str, Any]): Set of parameters to apply in postprocessing (predict step). Default: {}.
         """
         super().__init__()
         self.seg_model = SegmentationModel(in_channels=in_channels, architecture=architecture, backbone=backbone, lr=lr, mask_loss_share=mask_iou_share)
@@ -52,6 +58,7 @@ class TreeCrownDelineationModel(L.LightningModule):
         self.freeze_layers = freeze_layers
         self.track_running_stats = track_running_stats
         self.mask_iou_share = mask_iou_share
+        self.postprocessing_config = postprocessing_config
 
         # freeze all layers but segmentation head
         if self.freeze_layers:
@@ -130,14 +137,86 @@ class TreeCrownDelineationModel(L.LightningModule):
         self.log('val/iou_outline' , iou_outline  , on_step = False, on_epoch = True, sync_dist = True)
         return loss
 
+    def test_step(self, batch, step):
+        x = batch
+        output = self(x)
+
+        output_dict = {'mask': output[:,0],
+                       'outline': output[:,1],
+                       'distance_transform': output[:,2]
+                       }
+
+        return output_dict
+
+    def predict_step(self, batch, step):
+        t0 = time.time()
+        x, trafo = batch
+        output = self(x)
+        t_inference = time.time() - t0
+
+        mask = output[:,0].cpu().numpy().squeeze()
+        outline = output[:,1].cpu().numpy().squeeze()
+        distance_transform = output[:,2].cpu().numpy().squeeze()
+
+        # TODO use the raster tile name here
+        # TODO rasterize them (my gdal was not working ...)
+        if self.postprocessing_config['save_predictions']:
+            np.save(f'mask_{step}', mask)
+            np.save(f'outline_{step}', outline)
+            np.save(f'distance_transform_{step}', distance_transform)
+
+        # active learning
+        if self.postprocessing_config['active_learning']:
+            pmap = tcdpp.calculate_probability_map(mask, outline, distance_transform, 
+                                                mask_exp=self.postprocessing_config['mask_exp'],
+                                                outline_multiplier=self.postprocessing_config['outline_multiplier'],
+                                                outline_exp=self.postprocessing_config['outline_exp'],
+                                                dist_exp=self.postprocessing_config['dist_exp'],
+                                                sigma=self.postprocessing_config['sigma'],
+                                                binary_threshold=self.postprocessing_config['binary_threshold']) 
+            entropy_map = tcdpp.calculate_entropy(pmap)
+            log.info(f'Mean entropy: {np.mean(entropy_map):.4f}')
+            log.info(f'Median entropy: {np.median(entropy_map):.4f}')
+
+            # TODO use the raster tile name here
+            # TODO rasterize them (my gdal was not working ...)
+            if self.postprocessing_config['save_entropy_map']:
+                np.save(f'entropy_heatmap_{step}', entropy_map)
+
+        # add postprocessing here
+        t0 = time.time()
+        polygons = tcdpp.extract_polygons(mask, outline, distance_transform, 
+                                          transform=trafo,
+                                          mask_exp=self.postprocessing_config['mask_exp'],
+                                          outline_multiplier=self.postprocessing_config['outline_multiplier'],
+                                          outline_exp=self.postprocessing_config['outline_exp'],
+                                          dist_exp=self.postprocessing_config['dist_exp'],
+                                          sigma=self.postprocessing_config['sigma'],
+                                          binary_threshold=self.postprocessing_config['binary_threshold'],
+                                          min_dist=self.postprocessing_config['min_dist'],
+                                          label_threshold=self.postprocessing_config['label_threshold'],
+                                          area_min=self.postprocessing_config['area_min'],
+                                          simplify=self.postprocessing_config['simplify'])
+
+        t_process = time.time() - t0
+
+        log.info(f'Found {len(polygons)} polygons.')
+        log.info(f'Inference time: {t_inference:.2f} seconds')
+        log.info(f'Post-processing time: {t_process:.2f} seconds')
+
+        if self.postprocessing_config['active_learning']:
+            return {'polygons': polygons, 'mean_entropy': np.mean(entropy_map), 'median_entropy': np.median(entropy_map)}
+        return {'polygons': polygons}
+
     def configure_optimizers(self):
         if self.freeze_layers:
             for name, param in self.named_parameters():
                 if param.requires_grad:
                     log.info(f'Parameters in {name} will be trained')
         optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.parameters()), lr=self.lr)
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, 30, 2)
-        return [optimizer], [scheduler]
+        #scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, 30, 2)
+        #return [optimizer], [scheduler]
+        return [optimizer]
 
     @classmethod
     def from_checkpoint(cls, path: str,
