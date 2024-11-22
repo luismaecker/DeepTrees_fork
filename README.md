@@ -146,3 +146,12 @@ Semantic Versionining, or SemVer, is a versioning standard for software ([SemVer
 - Additional labels for pre-release and build metad
 
 See the SemVer rules and all possible commit prefixes in the [.releaserc.json](.releaserc.json) file. 
+
+| Prefix | Explanation                                                                                                                                                                                                                                     | Example                                                                                              |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| feat   | A new feature was implemented as part of the commit, <br>so the [Minor](https://mobiuscode.dev/posts/Automatic-Semantic-Versioning-for-GitLab-Projects/#minor) part of the version will be increased once <br>this is merged to the main branch | feat: model training updated                                            |
+| fix    | A bug was fixed, so the [Patch](https://mobiuscode.dev/posts/Automatic-Semantic-Versioning-for-GitLab-Projects/#patch) part of the version will be <br>increased once this is merged to the main branch                                         | fix: fix a bug that causes the user to not <br>be properly informed when a job<br>finishes |
+
+The implementation is based on. https://mobiuscode.dev/posts/Automatic-Semantic-Versioning-for-GitLab-Projects/
+
+
