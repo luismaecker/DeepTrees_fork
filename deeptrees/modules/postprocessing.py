@@ -22,8 +22,8 @@ from hyperopt import fmin, tpe, hp, STATUS_OK
 from rasterio.transform import IDENTITY
 from rasterio.features import shapes
 
-from treecrowndelineation.modules import utils
-from treecrowndelineation.modules import polygon_metrics as pm
+from deeptrees.modules import utils
+from deeptrees.modules import polygon_metrics as pm
 
 
 def find_treecrowns(mask, contour,

@@ -1,3 +1,8 @@
+# DeepTrees
+
+This repository is based on https://github.com/AWF-GAUG/TreeCrownDelineation.
+
+
 # Training
 
 This document outlines the steps for working with the TreeCrownDelineation model on Levante.
@@ -155,3 +160,7 @@ See the SemVer rules and all possible commit prefixes in the [.releaserc.json](.
 The implementation is based on. https://mobiuscode.dev/posts/Automatic-Semantic-Versioning-for-GitLab-Projects/
 
 
+
+# Sources
+
+M. Freudenberg, P. Magdon, and N. Nölke: Individual tree crown delineation in high-resolution remote sensing images based on U-Net, NCAA, Springer, 2022, https://doi.org/10.1007/s00521-022-07640-4.

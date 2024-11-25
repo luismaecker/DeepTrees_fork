@@ -8,9 +8,9 @@ import pandas as pd
 import geopandas as gpd
 
 from torch.utils.data import DataLoader
-from treecrowndelineation.dataloading import datasets as ds
-from treecrowndelineation.modules.utils import dilate_img, fix_crs
-from treecrowndelineation.dataloading.preprocessing import MaskOutlinesGenerator, DistanceTransformGenerator
+from deeptrees.dataloading import datasets as ds
+from deeptrees.modules.utils import dilate_img, fix_crs
+from deeptrees.dataloading.preprocessing import MaskOutlinesGenerator, DistanceTransformGenerator
 
 import logging
 log = logging.getLogger(__name__)

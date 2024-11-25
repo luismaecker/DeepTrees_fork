@@ -12,12 +12,12 @@ from shutil import rmtree
 from setuptools import find_packages, setup, Command
 
 # Package meta-data.
-NAME = 'treecrowndelineation'
-DESCRIPTION = 'Individual tree crown delineation via neural networks'
-URL = 'https://github.com/AWF-GAUG/TreeCrownDelineation'
-AUTHOR = 'Max Freudenberg'
+NAME = 'deeptrees'
+DESCRIPTION = 'AI-based delineation and analysis of individual tree crowns'
+URL = 'https://codebase.helmholtz.cloud/ai-consultants-dkrz/DeepTrees'
+AUTHOR = 'Caroline Arnold, Harsh Grover, Taimur Khan, Jasmin Krebs'
 EMAIL = ""
-REQUIRES_PYTHON = '>=3.0.0'
+REQUIRES_PYTHON = '>=3.10.0'
 VERSION = None
 LICENSE = "GPLv3+"
 REQUIREMENTS = "requirements.txt"

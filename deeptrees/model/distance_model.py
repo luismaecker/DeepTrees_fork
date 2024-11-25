@@ -1,7 +1,7 @@
 import torch
 import segmentation_models_pytorch as smp
 import lightning as L
-from treecrowndelineation.modules import utils
+from deeptrees.modules import utils
 
 class DistanceModel(L.LightningModule):
     def __init__(self, in_channels: int, architecture: str = "Unet", backbone: str = "resnet18"):

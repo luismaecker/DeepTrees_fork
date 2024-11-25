@@ -1,7 +1,7 @@
 name: train-halle
 original_work_dir: ${hydra:runtime.cwd}
 data:
-  _target_: treecrowndelineation.dataloading.datamodule.TreeCrownDelineationDataModule
+  _target_: deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule
   rasters: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/tiles  # directory with raster images
   masks: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/masks # directory with masks
   outlines: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/outlines # directory with outlines
@@ -44,7 +44,7 @@ pretrained:
   model: null # Pass e.g. Unet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=0_jitted.pt 
   
 model:
-  _target_: treecrowndelineation.model.tcd_model.TreeCrownDelineationModel
+  _target_: deeptrees.model.tcd_model.TreeCrownDelineationModel
   in_channels: 5         # Number of input channels / bands of the input image
   architecture: Unet     # segmentation model architecture
   backbone: resnet18     # backbone

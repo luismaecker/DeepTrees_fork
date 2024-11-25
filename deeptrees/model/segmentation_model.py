@@ -2,9 +2,9 @@ import torch
 import segmentation_models_pytorch as smp
 
 import lightning as L
-from treecrowndelineation.modules import utils
-from treecrowndelineation.modules import metrics
-from treecrowndelineation.modules.losses import BinarySegmentationLossWithLogits
+from deeptrees.modules import utils
+from deeptrees.modules import metrics
+from deeptrees.modules.losses import BinarySegmentationLossWithLogits
 
 class SegmentationModel(L.LightningModule):
     def __init__(self,

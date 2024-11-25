@@ -19,11 +19,11 @@ import torch.nn.functional as F
 import lightning as L
 from torchmetrics.functional.segmentation import mean_iou
 
-from treecrowndelineation.model.segmentation_model import SegmentationModel
-from treecrowndelineation.model.distance_model import DistanceModel
-from treecrowndelineation.modules import metrics
-from treecrowndelineation.modules.losses import BinarySegmentationLossWithLogits
-from treecrowndelineation.modules import postprocessing as tcdpp
+from deeptrees.model.segmentation_model import SegmentationModel
+from deeptrees.model.distance_model import DistanceModel
+from deeptrees.modules import metrics
+from deeptrees.modules.losses import BinarySegmentationLossWithLogits
+from deeptrees.modules import postprocessing as tcdpp
 
 import logging
 log = logging.getLogger(__name__)

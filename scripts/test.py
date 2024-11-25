@@ -38,9 +38,9 @@ rootutils.set_root(
     cwd=False, # we do not want that with hydra
 )
 
-from treecrowndelineation.model.tcd_model import TreeCrownDelineationModel
-from treecrowndelineation.dataloading.datamodule import TreeCrownDelineationDataModule
-from treecrowndelineation.modules import utils
+from deeptrees.model.tcd_model import TreeCrownDelineationModel
+from deeptrees.dataloading.datamodule import TreeCrownDelineationDataModule
+from deeptrees.modules import utils
 
 import geopandas as gpd
 
