@@ -20,7 +20,7 @@ data:
   ground_truth_config:
     labels: null
   num_workers: 8         # Number of workers in dataloader
-pretrained_model: /work/ka1176/caroline/gitlab/TreeCrownDelineation/experiments/finetune-halle/2024-11-20_12-47-31/unet-halle_jitted.pt
+pretrained_model: /work/ka1176/caroline/gitlab/TreeCrownDelineation/experiments/finetune-halle/2024-11-25_09-32-21/unet-halle_jitted.pt
   
 model:
   _target_: treecrowndelineation.model.tcd_model.TreeCrownDelineationModel
@@ -40,7 +40,7 @@ model:
     binary_threshold: 0.1 # threshold value for the feature map, lower is background
     simplify: 0.3 # polygon simplification distance, vertices closer than this value are simplified
     active_learning: True # calculate entropy heatmap
-    save_entropy_map: True  # save entropy heatmap
+    save_entropy_maps: True  # save entropy heatmap
     save_predictions: True  # save predictions (mask, outlines, distance transform)
   # TODO
   #  subsample: False # if True, polygon extraction works at half the resolution of the model output. Use this for speedup at the cost of accuracy.

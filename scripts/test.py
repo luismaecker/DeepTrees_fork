@@ -17,7 +17,7 @@ https://github.com/AWF-GAUG/TreeCrownDelineation (v0.1.0). (c) Max Freudenberg, 
 
 import warnings
 import logging
-
+import os
 
 import torch
 from lightning import Trainer, seed_everything
@@ -85,6 +85,14 @@ def train(config: DictConfig) -> None:
 
     trainer: Trainer = hydra.utils.instantiate(config.trainer, callbacks=callbacks)
 
+    # Directories for saving output
+    if config['model']['postprocessing_config']['save_predictions']:
+        if not os.path.exists('predictions'):
+            os.mkdir('predictions')
+    if config['model']['postprocessing_config']['save_entropy_maps']:
+        if not os.path.exists('entropy_maps'):
+            os.mkdir('entropy_maps')
+
     log.info('Starting predictions ...')
     output_dict = trainer.predict(model, data)
 
@@ -102,7 +110,7 @@ def train(config: DictConfig) -> None:
         log.info(f'No polygons found that overlap with Baumkataster.')
     else:
         log.info(f'Saving all polygons that overlap with Baumkataster to {config["baumkataster_intersection_file"]}.')
-        utils.save_polygons(inters, config['baumkataster_intersection_file'], crs=config['crs'])
+        utils.save_polygons(inters['geometry'], config['baumkataster_intersection_file'], crs=config['crs'])
 
 
 if __name__=='__main__':

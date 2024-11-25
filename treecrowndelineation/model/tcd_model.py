@@ -161,9 +161,9 @@ class TreeCrownDelineationModel(L.LightningModule):
         # TODO use the raster tile name here
         # TODO rasterize them (my gdal was not working ...)
         if self.postprocessing_config['save_predictions']:
-            np.save(f'mask_{step}', mask)
-            np.save(f'outline_{step}', outline)
-            np.save(f'distance_transform_{step}', distance_transform)
+            np.save(f'./predictions/mask_{step}', mask)
+            np.save(f'./predictions/outline_{step}', outline)
+            np.save(f'./predictions/distance_transform_{step}', distance_transform)
 
         # active learning
         if self.postprocessing_config['active_learning']:
@@ -180,8 +180,8 @@ class TreeCrownDelineationModel(L.LightningModule):
 
             # TODO use the raster tile name here
             # TODO rasterize them (my gdal was not working ...)
-            if self.postprocessing_config['save_entropy_map']:
-                np.save(f'entropy_heatmap_{step}', entropy_map)
+            if self.postprocessing_config['save_entropy_maps']:
+                np.save(f'./entropy_maps/entropy_heatmap_{step}', entropy_map)
 
         # add postprocessing here
         t0 = time.time()
