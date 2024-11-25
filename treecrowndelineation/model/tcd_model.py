@@ -15,7 +15,10 @@ import time
 
 import numpy as np
 import torch
+import torch.nn.functional as F
 import lightning as L
+from torchmetrics.functional.segmentation import mean_iou
+
 from treecrowndelineation.model.segmentation_model import SegmentationModel
 from treecrowndelineation.model.distance_model import DistanceModel
 from treecrowndelineation.modules import metrics
@@ -87,7 +90,7 @@ class TreeCrownDelineationModel(L.LightningModule):
         else:
             return torch.cat((mask_and_outline, dist), dim=1)
 
-    def shared_step(self, batch):
+    def shared_step(self, batch, iou_feature_map=False):
         x, y = batch
         output = self(x)
 
@@ -104,7 +107,7 @@ class TreeCrownDelineationModel(L.LightningModule):
 
         loss_mask = BinarySegmentationLossWithLogits(reduction="mean")(mask, mask_t)
         loss_outline = BinarySegmentationLossWithLogits(reduction="mean")(outline, outline_t)
-        loss_distance = torch.mean((dist - dist_t) ** 2)
+        loss_distance = F.mse_loss(dist, dist_t)
 
         # lower mask loss results in unlearning the masks
         # lower distance loss results in artifacts in the distance transform
@@ -112,6 +115,12 @@ class TreeCrownDelineationModel(L.LightningModule):
         loss = loss_mask + loss_outline + loss_distance
 
         iou = self.mask_iou_share * iou_mask + (1.0 - self.mask_iou_share) * iou_outline
+
+        if iou_feature_map:
+            fmap_pred = tcdpp.calculate_feature_map(mask, outline, dist)
+            fmap_target = tcdpp.calculate_feature_map(mask_t, outline_t, dist_t)
+            iou_fmap = metrics.iou(fmap_pred, fmap_target)
+            return loss, loss_mask, loss_outline, loss_distance, iou, iou_mask, iou_outline, iou_fmap
 
         return loss, loss_mask, loss_outline, loss_distance, iou, iou_mask, iou_outline
 
@@ -127,7 +136,7 @@ class TreeCrownDelineationModel(L.LightningModule):
         return loss
 
     def validation_step(self, batch, step):
-        loss, loss_mask, loss_outline, loss_distance, iou, iou_mask, iou_outline = self.shared_step(batch)
+        loss, loss_mask, loss_outline, loss_distance, iou, iou_mask, iou_outline, iou_fmap = self.shared_step(batch, iou_feature_map=True)
         self.log('val/loss'        , loss         , on_step = False, on_epoch = True, sync_dist = True)
         self.log('val/loss_mask'   , loss_mask    , on_step = False, on_epoch = True, sync_dist = True)
         self.log('val/loss_outline', loss_outline , on_step = False, on_epoch = True, sync_dist = True)
@@ -135,6 +144,7 @@ class TreeCrownDelineationModel(L.LightningModule):
         self.log('val/iou'         , iou,           on_step = False, on_epoch = True, sync_dist = True)
         self.log('val/iou_mask'    , iou_mask     , on_step = False, on_epoch = True, sync_dist = True)
         self.log('val/iou_outline' , iou_outline  , on_step = False, on_epoch = True, sync_dist = True)
+        self.log('val/iou_feature_map', iou_fmap, on_step=False, on_epoch=True, sync_dist=True)
         return loss
 
     def test_step(self, batch, step):
@@ -172,8 +182,7 @@ class TreeCrownDelineationModel(L.LightningModule):
                                                 outline_multiplier=self.postprocessing_config['outline_multiplier'],
                                                 outline_exp=self.postprocessing_config['outline_exp'],
                                                 dist_exp=self.postprocessing_config['dist_exp'],
-                                                sigma=self.postprocessing_config['sigma'],
-                                                binary_threshold=self.postprocessing_config['binary_threshold']) 
+                                                sigma=self.postprocessing_config['sigma'])
             entropy_map = tcdpp.calculate_entropy(pmap)
             log.info(f'Mean entropy: {np.mean(entropy_map):.4f}')
             log.info(f'Median entropy: {np.median(entropy_map):.4f}')
@@ -200,13 +209,21 @@ class TreeCrownDelineationModel(L.LightningModule):
 
         t_process = time.time() - t0
 
+        # TODO add option to extract the masked raster files of the polygons
+
         log.info(f'Found {len(polygons)} polygons.')
         log.info(f'Inference time: {t_inference:.2f} seconds')
         log.info(f'Post-processing time: {t_process:.2f} seconds')
+        
+        output_dict = {'polygons': polygons}
 
         if self.postprocessing_config['active_learning']:
-            return {'polygons': polygons, 'mean_entropy': np.mean(entropy_map), 'median_entropy': np.median(entropy_map)}
-        return {'polygons': polygons}
+            output_dict['mean_entropy'] = np.mean(entropy_map)
+            output_dict['median_entropy'] = np.median(entropy_map)
+
+        # TODO add traits
+
+        return output_dict
 
     def configure_optimizers(self):
         if self.freeze_layers:

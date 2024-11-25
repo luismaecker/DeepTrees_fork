@@ -19,5 +19,10 @@ data:
   val_indices: [8, 9]
   shuffle: False # should not be used with fixed indices
 
+callbacks:
+  early_stopping:
+    monitor: "val/iou_mask" # name of the logged metric which determines when model is improving
+    mode: "max"
+
 trainer:
   devices: 1 

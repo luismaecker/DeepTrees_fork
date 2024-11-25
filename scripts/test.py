@@ -48,7 +48,7 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 log = logging.getLogger(__name__)
 
 @hydra.main(version_base=None, config_path="../config", config_name="inference_halle")
-def train(config: DictConfig) -> None:
+def test(config: DictConfig) -> None:
     '''
     Inference with a pretrained tree crown delineation model.
 
@@ -114,4 +114,4 @@ def train(config: DictConfig) -> None:
 
 
 if __name__=='__main__':
-    train()
+    test()
