@@ -100,7 +100,7 @@ def train(config: DictConfig) -> None:
     for dd in output_dict:
         all_polygons.extend(dd['polygons'])
 
-    log.info(f'Saving all polygons to {config["polygon_file"]}.')
+    log.info(f'Saving all polygons to {os.path.join(os.getcwd(), config["polygon_file"])}.')
     utils.save_polygons(all_polygons, config['polygon_file'], crs=config['crs'])
 
     # additional post processing that works on all polygons
@@ -109,7 +109,7 @@ def train(config: DictConfig) -> None:
     if len(inters) == 0:
         log.info(f'No polygons found that overlap with Baumkataster.')
     else:
-        log.info(f'Saving all polygons that overlap with Baumkataster to {config["baumkataster_intersection_file"]}.')
+        log.info(f'Saving all polygons that overlap with Baumkataster to {os.path.join(os.getcwd(), config["baumkataster_intersection_file"])}.')
         utils.save_polygons(inters['geometry'], config['baumkataster_intersection_file'], crs=config['crs'])
 
 

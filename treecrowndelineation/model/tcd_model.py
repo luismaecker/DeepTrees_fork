@@ -154,9 +154,9 @@ class TreeCrownDelineationModel(L.LightningModule):
         output = self(x)
         t_inference = time.time() - t0
 
-        mask = output[:,0].cpu().numpy().squeeze()
-        outline = output[:,1].cpu().numpy().squeeze()
-        distance_transform = output[:,2].cpu().numpy().squeeze()
+        mask = output[:,0,6:-6,6:-6].cpu().numpy().squeeze()
+        outline = output[:,1,6:-6,6:-6].cpu().numpy().squeeze()
+        distance_transform = output[:,2,6:-6,6:-6].cpu().numpy().squeeze()
 
         # TODO use the raster tile name here
         # TODO rasterize them (my gdal was not working ...)
