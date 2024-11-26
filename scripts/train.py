@@ -85,7 +85,7 @@ def train(config: DictConfig) -> None:
     if config['pretrained']['model'] is not None:
         pretrained_model = torch.jit.load(os.path.join(config['pretrained']['path'],
                                                        config['pretrained']['model']))
-        model.load_state_dict(pretrained_model.state_dict())
+        model.tcd_backbone.load_state_dict(pretrained_model.state_dict())
         log.info('Loaded state dict from pretrained model')
     else:
         log.info('Training from scratch.')
@@ -99,7 +99,7 @@ def train(config: DictConfig) -> None:
     log.info('Saving trained model')
     model.to('cpu')
     input_sample = torch.rand(1, config['model']['in_channels'], 256, 256, dtype=torch.float32)
-    torch.jit.save(model.to_torchscript(method='trace', example_inputs=input_sample),
+    torch.jit.save(model.tcd_backbone.to_torchscript(method='trace', example_inputs=input_sample),
                    os.path.join(os.getcwd(), f'{model_name}_jitted.pt'))
     log.info(f'Saved torchscript to {os.getcwd():s}/{model_name:s}_jitted.pt')
     log.info('Completed!')

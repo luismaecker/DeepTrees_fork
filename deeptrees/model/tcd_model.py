@@ -16,6 +16,7 @@ import os
 
 import numpy as np
 import torch
+from torch import nn
 import torch.nn.functional as F
 import lightning as L
 from torchmetrics.functional.segmentation import mean_iou
@@ -37,9 +38,6 @@ class TreeCrownDelineationModel(L.LightningModule):
                  lr=1E-4,
                  mask_iou_share=0.5,
                  apply_sigmoid=False,
-                 freeze_layers=False,
-                 track_running_stats=True,
-                 postprocessing_config={}
                  ):
         """Tree crown delineation model
 
@@ -52,17 +50,63 @@ class TreeCrownDelineationModel(L.LightningModule):
             architecture (str): segmentation model architecture
             backbone (str): segmentation model backbone
             lr: learning rate
-            apply_sigmode (bool): TODO
-            freeze_layers (bool): If True, freeze all layers but the segmentation head. Default: False.
-            track_running_stats (bool): If True, update batch norm layers. If False, keep them frozen. Default: True.
-            postprocessing_config (Dict[str, Any]): Set of parameters to apply in postprocessing (predict step). Default: {}.
+            apply_sigmoid (bool): If True, apply sigmoid function to mask/outline outputs. Defaults to False.
         """
         super().__init__()
         self.seg_model = SegmentationModel(in_channels=in_channels, architecture=architecture, backbone=backbone, lr=lr, mask_loss_share=mask_iou_share)
         self.dist_model = DistanceModel(in_channels=in_channels + 2, architecture=architecture, backbone=backbone)
+        self.apply_sigmoid = apply_sigmoid
+
+    def forward(self, img):
+        mask_and_outline = self.seg_model(img)
+        dist = self.dist_model(img, mask_and_outline, from_logits=True)
+        # dist = dist * mask_and_outline[:, [0]]
+        if self.apply_sigmoid:
+            return torch.cat((torch.sigmoid(mask_and_outline), dist), dim=1)
+        else:
+            return torch.cat((mask_and_outline, dist), dim=1)
+class DeepTreesModel(L.LightningModule):
+    def __init__(self, in_channels,
+                 architecture='Unet',
+                 backbone='resnet18',
+                 lr=1E-4,
+                 mask_iou_share=0.5,
+                 apply_sigmoid=False,
+                 freeze_layers=False,
+                 track_running_stats=True,
+                 num_backbones=1,
+                 postprocessing_config={}
+                 ):
+        """DeepTrees Model
+
+        The model consists of a TreeCrownDelineation backbon, plus added functionalities for training, fine-tuning, and prediction.
+
+        Args:
+            in_channels: Number of input channels / bands of the input image
+            architecture (str): segmentation model architecture
+            backbone (str): segmentation model backbone
+            lr: learning rate
+            apply_sigmode (bool): TODO
+            freeze_layers (bool): If True, freeze all layers but the segmentation head. Default: False.
+            track_running_stats (bool): If True, update batch norm layers. If False, keep them frozen. Default: True.
+            num_backbones (int): If > 1, instantiate several TCD backbones and average the model predictions across all of them. Defaults to 1.
+            postprocessing_config (Dict[str, Any]): Set of parameters to apply in postprocessing (predict step). Default: {}.
+        """
+        super().__init__()
+        self.num_backbones = num_backbones
+        if self.num_backbones == 1:
+            self.tcd_backbone = TreeCrownDelineationModel(in_channels=in_channels, architecture=architecture, backbone=backbone, lr=lr, mask_iou_share=mask_iou_share, apply_sigmoid=apply_sigmoid)
+        else:
+            tcd_dict = {}
+            for i in range(self.num_backbones):
+                tcd_dict[f'model_{i}'] = TreeCrownDelineationModel(in_channels=in_channels, architecture=architecture, backbone=backbone, lr=lr, mask_iou_share=mask_iou_share, apply_sigmoid=apply_sigmoid)
+            self.tcd_backbone = nn.ModuleDict(tcd_dict)
+
         self.freeze_layers = freeze_layers
         self.track_running_stats = track_running_stats
         self.mask_iou_share = mask_iou_share
+        self.lr = lr
+        self.apply_sigmoid = apply_sigmoid
         self.postprocessing_config = postprocessing_config
 
         # freeze all layers but segmentation head
@@ -80,17 +124,17 @@ class TreeCrownDelineationModel(L.LightningModule):
                     module.eval()
                     module.track_running_stats = False
 
-        self.lr = lr
-        self.apply_sigmoid = apply_sigmoid
-
     def forward(self, img):
-        mask_and_outline = self.seg_model(img)
-        dist = self.dist_model(img, mask_and_outline, from_logits=True)
-        # dist = dist * mask_and_outline[:, [0]]
-        if self.apply_sigmoid:
-            return torch.cat((torch.sigmoid(mask_and_outline), dist), dim=1)
+        if self.num_backbones == 1:
+            return self.tcd_backbone(img)
         else:
-            return torch.cat((mask_and_outline, dist), dim=1)
+            outputs = []
+            for i in range(self.num_backbones):
+                output = self.tcd_backbone[f'model_{i}'](img)
+                outputs.append(output)
+            
+            outputs = torch.stack(outputs)
+            return torch.mean(outputs, axis=0)
 
     def shared_step(self, batch, iou_feature_map=False):
         x, y = batch
