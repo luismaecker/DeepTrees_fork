@@ -34,12 +34,12 @@ import numpy as np
 from torch.nn import DataParallel
 from torch.nn import UpsamplingBilinear2d, Sequential
 import time
-from treecrowndelineation.modules import utils
-from treecrowndelineation.modules.indices import ndvi
-from treecrowndelineation.modules.postprocessing import extract_polygons
-from treecrowndelineation.modules.utils import get_crs
-from treecrowndelineation.model.inference_model import InferenceModel
-from treecrowndelineation.model.averaging_model import AveragingModel
+from deeptrees.modules import utils
+from deeptrees.modules.indices import ndvi
+from deeptrees.modules.postprocessing import extract_polygons
+from deeptrees.modules.utils import get_crs
+from deeptrees.model.inference_model import InferenceModel
+from deeptrees.model.averaging_model import AveragingModel
 
 from baal import ModelWrapper
 from baal.active import get_heuristic, ActiveLearningLoop

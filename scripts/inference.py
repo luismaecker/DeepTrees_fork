@@ -39,8 +39,8 @@ rootutils.set_root(
     cwd=False, # we do not want that with hydra
 )
 
-from treecrowndelineation.model.tcd_model import TreeCrownDelineationModel
-from treecrowndelineation.dataloading.datamodule import TreeCrownDelineationDataModule
+from deeptrees.model.tcd_model import TreeCrownDelineationModel
+from deeptrees.dataloading.datamodule import TreeCrownDelineationDataModule
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 log = logging.getLogger(__name__)

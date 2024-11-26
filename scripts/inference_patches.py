@@ -14,12 +14,11 @@ from torch.nn import UpsamplingBilinear2d, Sequential
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from time import time
 from fiona import crs
-from treecrowndelineation.modules import utils
-from treecrowndelineation.modules.indices import ndvi
-from treecrowndelineation.modules.postprocessing import extract_polygons
-from treecrowndelineation.model.inference_model import InferenceModel
-from treecrowndelineation.model.averaging_model import AveragingModel
-
+from deeptrees.modules import utils
+from deeptrees.modules.indices import ndvi
+from deeptrees.modules.postprocessing import extract_polygons
+from deeptrees.model.inference_model import InferenceModel
+from deeptrees.model.averaging_model import AveragingModel
 
 #%%
 def get_parser():

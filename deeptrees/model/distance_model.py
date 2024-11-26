@@ -65,6 +65,18 @@ class DistanceModel(L.LightningModule):
         return self.model(x)
 
     def shared_step(self, batch):
+        """
+        Compute the loss for a given batch of data.
+        Args:
+            batch (tuple): A tuple containing the input data and target values.
+                - img (Tensor): The input raster image.
+                - y (Tensor): The target values, including mask, outline, and distance transform.
+                    - y[:, [0, 1]]: The mask and outline.
+                    - y[:, [2]]: The distance transform.
+        Returns:
+            Tensor: The computed loss value.
+        """
+        
         # x: raster
         # y: mask, outline, distance transform
         img, y = batch
