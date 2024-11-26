@@ -1,6 +1,6 @@
 {
     "branches": [
-      "finetuning-halle"
+      "main"
     ],
     "plugins": [
       ["@semantic-release/commit-analyzer", {
@@ -21,7 +21,7 @@
       }],
       "@semantic-release/release-notes-generator",
       ["@semantic-release/gitlab", {
-        "gitlabUrl": "https://codebase.helmholtz.cloud/ai-consultants-dkrz/TreeCrownDelineation"
+        "gitlabUrl": "https://codebase.helmholtz.cloud/ai-consultants-dkrz/DeepTrees"
       }]
     ]
   }
