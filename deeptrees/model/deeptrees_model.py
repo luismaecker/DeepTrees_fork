@@ -53,7 +53,7 @@ class TreeCrownDelineationModel(L.LightningModule):
             apply_sigmoid (bool): If True, apply sigmoid function to mask/outline outputs. Defaults to False.
         """
         super().__init__()
-        self.seg_model = SegmentationModel(in_channels=in_channels, architecture=architecture, backbone=backbone, lr=lr, mask_loss_share=mask_iou_share)
+        self.seg_model = SegmentationModel(in_channels=in_channels, architecture=architecture, backbone=backbone)
         self.dist_model = DistanceModel(in_channels=in_channels + 2, architecture=architecture, backbone=backbone)
         self.apply_sigmoid = apply_sigmoid
 
