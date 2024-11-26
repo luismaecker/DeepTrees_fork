@@ -214,6 +214,9 @@ class DeepTreesModel(L.LightningModule):
         raster_name = raster_dict['raster_id'][0]
         raster_suffix = os.path.basename(raster_name).replace('tile_', '')
         output = self(x)
+        
+        log.info(f'Predicting on {raster_name} ...')
+
         t_inference = time.time() - t0
 
         mask = output[:,0,6:-6,6:-6].cpu().numpy().squeeze()

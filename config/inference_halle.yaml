@@ -1,4 +1,6 @@
 name: inference-halle
+output_dir: results
+
 data:
   _target_: deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule
   rasters: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/pool_tiles  # directory with raster images
@@ -70,4 +72,4 @@ hydra:
   job:
     chdir: True
   run:
-    dir: results/${name}/${now:%Y-%m-%d}_${now:%H-%M-%S}
+    dir: outputs/${output_dir}/${name}/${now:%Y-%m-%d}_${now:%H-%M-%S}

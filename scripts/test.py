@@ -39,7 +39,6 @@ rootutils.set_root(
 )
 
 from deeptrees.model.deeptrees_model import DeepTreesModel
-from deeptrees.model.averaging_model import AveragingModel
 from deeptrees.dataloading.datamodule import TreeCrownDelineationDataModule
 from deeptrees.modules import utils
 
