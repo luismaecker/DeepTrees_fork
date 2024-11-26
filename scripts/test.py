@@ -38,7 +38,7 @@ rootutils.set_root(
     cwd=False, # we do not want that with hydra
 )
 
-from deeptrees.model.tcd_model import DeepTreesModel
+from deeptrees.model.deeptrees_model import DeepTreesModel
 from deeptrees.model.averaging_model import AveragingModel
 from deeptrees.dataloading.datamodule import TreeCrownDelineationDataModule
 from deeptrees.modules import utils

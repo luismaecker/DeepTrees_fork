@@ -5,4 +5,4 @@ from . import model
 from . import modules
 from . import dataloading
 
-from .model.tcd_model import TreeCrownDelineationModel
+from .model.deeptrees_model import TreeCrownDelineationModel
