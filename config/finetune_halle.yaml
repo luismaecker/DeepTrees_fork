@@ -21,7 +21,7 @@ data:
 
 callbacks:
   early_stopping:
-    monitor: "val/iou_mask" # name of the logged metric which determines when model is improving
+    monitor: "val/iou_feature_map" # name of the logged metric which determines when model is improving
     mode: "max"
 
 trainer:

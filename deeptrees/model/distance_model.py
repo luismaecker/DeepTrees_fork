@@ -63,28 +63,3 @@ class DistanceModel(L.LightningModule):
 
         x = torch.cat((img, mask_and_outline), dim=1)
         return self.model(x)
-
-    def shared_step(self, batch):
-        # x: raster
-        # y: mask, outline, distance transform
-        img, y = batch
-        mask_and_outline = y[:, [0, 1]]
-        distance_transform = y[:, [2]]
-        y_pred = self(img, mask_and_outline)
-        loss = torch.mean((y_pred - distance_transform) ** 2)
-        return loss
-
-    def training_step(self, batch, step):
-        loss = self.shared_step(batch)
-        self.log("train/loss_dist", loss, on_step=False, on_epoch=True, sync_dist=True)
-        return loss
-
-    def validation_step(self, batch, step):
-        loss = self.shared_step(batch)
-        self.log("val/loss_dist", loss, on_step=False, on_epoch=True, sync_dist=True)
-        return loss
-
-    def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1E-4, weight_decay=1E-3)
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, 30, 2)
-        return [optimizer], [scheduler]

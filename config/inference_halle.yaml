@@ -1,4 +1,6 @@
 name: inference-halle
+output_dir: results
+
 data:
   _target_: deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule
   rasters: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/pool_tiles  # directory with raster images
@@ -23,7 +25,8 @@ data:
 pretrained_model: /work/ka1176/caroline/gitlab/deeptrees/experiments/finetune-halle/2024-11-25_09-32-21/unet-halle_jitted.pt
   
 model:
-  _target_: deeptrees.model.tcd_model.TreeCrownDelineationModel
+  _target_: deeptrees.model.deeptrees_model.DeepTreesModel
+  num_backbones: 1
   in_channels: 5         # Number of input channels / bands of the input image
   architecture: Unet     # segmentation model architecture
   backbone: resnet18     # backbone
@@ -69,4 +72,4 @@ hydra:
   job:
     chdir: True
   run:
-    dir: results/${name}/${now:%Y-%m-%d}_${now:%H-%M-%S}
+    dir: outputs/${output_dir}/${name}/${now:%Y-%m-%d}_${now:%H-%M-%S}

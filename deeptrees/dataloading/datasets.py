@@ -1,6 +1,7 @@
 from abc import ABC
 from typing import Dict, Any
 import time
+import os
 
 import xarray as xr
 import rioxarray
@@ -336,15 +337,18 @@ class TreeCrownDelineationInferenceDataset(TreeCrownDelineationBaseDataset, Data
         return len(self.raster_files)
 
     def __getitem__(self, idx):
-        '''__getitem__ 
+        '''
 
-        Return raster
-
+        Get one sample into the test/predict pipeline.
+        
         Args:
-            idx (_type_): _description_
+            idx (int): Index.
 
         Returns:
-            _type_: _description_
+            - *raster*: Raster for making the prediction. Can be augmented.
+            - Dictionary with the keys
+               *trafo*:  Coordinates of current raster for post-processing.
+               *raster_id*: File name to be used in post-processing.
         '''
         log.info(f'Predicting on {self.raster_files[idx]}')
         if self.in_memory: # retrieve preloaded tiles
@@ -352,8 +356,11 @@ class TreeCrownDelineationInferenceDataset(TreeCrownDelineationBaseDataset, Data
         else: # load from disk
             raster = self.load_raster(self.raster_files[idx])
 
-        trafo = get_rioxarray_trafo(raster)
+        output_dict = {'trafo': np.array(get_rioxarray_trafo(raster)),
+                       'raster_id': self.raster_files[idx]}
+
 
         raster = tv_tensors.Image(raster.data, dtype=torch.float32)
-        
-        return self.augment_raster(raster), trafo
+        raster = self.augment_raster(raster)
+                
+        return raster, output_dict

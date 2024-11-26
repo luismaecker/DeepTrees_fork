@@ -38,8 +38,7 @@ rootutils.set_root(
     cwd=False, # we do not want that with hydra
 )
 
-from deeptrees.model.tcd_model import TreeCrownDelineationModel
-from deeptrees.model.averaging_model import AveragingModel
+from deeptrees.model.deeptrees_model import DeepTreesModel
 from deeptrees.dataloading.datamodule import TreeCrownDelineationDataModule
 from deeptrees.modules import utils
 
@@ -75,25 +74,20 @@ def test(config: DictConfig) -> None:
     data.setup(stage='test')
 
     log.info('Instantiating model...')
-    model: TreeCrownDelineationModel = hydra.utils.instantiate(config.model)
 
     if isinstance(config['pretrained_model'], str):
+        model: DeepTreesModel = hydra.utils.instantiate(config.model)
         pretrained_model = torch.jit.load(config['pretrained_model'])
-        model.load_state_dict(pretrained_model.state_dict())
+        model.tcd_backbone.load_state_dict(pretrained_model.state_dict())
         log.info('Loaded state dict from pretrained model')
-    elif isinstance(config['pretrained_model'], ListConfig) or isinstance(config['pretrained_model'], list):
-        pretrained_models = [torch.jit.load(m) for m in config['pretrained_model']]
-        averaged_state_dict = {}
-        for key, val in model.state_dict().items():
-            if key.endswith('num_batches_tracked'):
-                continue
-            mval = [pm.state_dict()[key] for pm in pretrained_models]
-            mval = torch.stack(mval, axis=0)
-            mval = torch.mean(mval, axis=0)
-            averaged_state_dict[key] = mval.to(val.dtype)
 
-        model.load_state_dict(averaged_state_dict)
-        log.info(f'Loaded state dict from pretrained models, averaging the weights of {len(config["pretrained_model"])} models.')
+    elif isinstance(config['pretrained_model'], ListConfig) or isinstance(config['pretrained_model'], list):
+        model: DeepTreesModel = hydra.utils.instantiate(config.model, num_backbones=len(config['pretrained_model']))
+        for i in range(len(config['pretrained_model'])):
+            pretrained_model = torch.jit.load(config['pretrained_model'][i])
+            model.tcd_backbone[f'model_{i}'].load_state_dict(pretrained_model.state_dict())
+
+        log.info(f'Loaded state dict from pretrained models, creating a total of {len(config["pretrained_model"])} TCD backbones.')
     else:
         raise ValueError("Inference requires a pretrained model")
 

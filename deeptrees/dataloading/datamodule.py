@@ -163,8 +163,10 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
             if self.shuffle: 
                 if self.val_indices is not None or self.train_indices is not None:
                     raise ValueError('Cannot use shuffled dataset split together with prescribed train/val indices')
-                for x in (self.rasters, *self.targets):
-                    np.random.shuffle(x)  # in-place
+                shuffle_idx = np.arange(len(self.rasters)).astype(int)
+                np.random.shuffle(shuffle_idx)
+                self.rasters = self.rasters[shuffle_idx]
+                self.targets = [tt[shuffle_idx] for tt in self.targets]
 
             # split into training and validation set
             data = (self.rasters, *self.targets)

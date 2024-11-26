@@ -12,9 +12,11 @@ rootutils.set_root(
 )
 
 import time
+import os
 
 import numpy as np
 import torch
+from torch import nn
 import torch.nn.functional as F
 import lightning as L
 from torchmetrics.functional.segmentation import mean_iou
@@ -24,6 +26,7 @@ from deeptrees.model.distance_model import DistanceModel
 from deeptrees.modules import metrics
 from deeptrees.modules.losses import BinarySegmentationLossWithLogits
 from deeptrees.modules import postprocessing as tcdpp
+from deeptrees.modules import utils
 
 import logging
 log = logging.getLogger(__name__)
@@ -35,15 +38,48 @@ class TreeCrownDelineationModel(L.LightningModule):
                  lr=1E-4,
                  mask_iou_share=0.5,
                  apply_sigmoid=False,
-                 freeze_layers=False,
-                 track_running_stats=True,
-                 postprocessing_config={}
                  ):
         """Tree crown delineation model
 
         The model consists of two sub-netoworks (two U-Nets with ResNet backbone). The first network calculates a tree
         cover mask and the tree outlines, the second calculates the distance transform of the masks (distance to next
-        background pixel). The first net receives the input image, the second one receives the input image and the output of network 1.SK_SK_
+        background pixel). The first net receives the input image, the second one receives the input image and the output of network 1.
+
+        Args:
+            in_channels: Number of input channels / bands of the input image
+            architecture (str): segmentation model architecture
+            backbone (str): segmentation model backbone
+            lr: learning rate
+            apply_sigmoid (bool): If True, apply sigmoid function to mask/outline outputs. Defaults to False.
+        """
+        super().__init__()
+        self.seg_model = SegmentationModel(in_channels=in_channels, architecture=architecture, backbone=backbone)
+        self.dist_model = DistanceModel(in_channels=in_channels + 2, architecture=architecture, backbone=backbone)
+        self.apply_sigmoid = apply_sigmoid
+
+    def forward(self, img):
+        mask_and_outline = self.seg_model(img)
+        dist = self.dist_model(img, mask_and_outline, from_logits=True)
+        # dist = dist * mask_and_outline[:, [0]]
+        if self.apply_sigmoid:
+            return torch.cat((torch.sigmoid(mask_and_outline), dist), dim=1)
+        else:
+            return torch.cat((mask_and_outline, dist), dim=1)
+class DeepTreesModel(L.LightningModule):
+    def __init__(self, in_channels,
+                 architecture='Unet',
+                 backbone='resnet18',
+                 lr=1E-4,
+                 mask_iou_share=0.5,
+                 apply_sigmoid=False,
+                 freeze_layers=False,
+                 track_running_stats=True,
+                 num_backbones=1,
+                 postprocessing_config={}
+                 ):
+        """DeepTrees Model
+
+        The model consists of a TreeCrownDelineation backbon, plus added functionalities for training, fine-tuning, and prediction.
 
         Args:
             in_channels: Number of input channels / bands of the input image
@@ -53,14 +89,24 @@ class TreeCrownDelineationModel(L.LightningModule):
             apply_sigmode (bool): TODO
             freeze_layers (bool): If True, freeze all layers but the segmentation head. Default: False.
             track_running_stats (bool): If True, update batch norm layers. If False, keep them frozen. Default: True.
+            num_backbones (int): If > 1, instantiate several TCD backbones and average the model predictions across all of them. Defaults to 1.
             postprocessing_config (Dict[str, Any]): Set of parameters to apply in postprocessing (predict step). Default: {}.
         """
         super().__init__()
-        self.seg_model = SegmentationModel(in_channels=in_channels, architecture=architecture, backbone=backbone, lr=lr, mask_loss_share=mask_iou_share)
-        self.dist_model = DistanceModel(in_channels=in_channels + 2, architecture=architecture, backbone=backbone)
+        self.num_backbones = num_backbones
+        if self.num_backbones == 1:
+            self.tcd_backbone = TreeCrownDelineationModel(in_channels=in_channels, architecture=architecture, backbone=backbone, lr=lr, mask_iou_share=mask_iou_share, apply_sigmoid=apply_sigmoid)
+        else:
+            tcd_dict = {}
+            for i in range(self.num_backbones):
+                tcd_dict[f'model_{i}'] = TreeCrownDelineationModel(in_channels=in_channels, architecture=architecture, backbone=backbone, lr=lr, mask_iou_share=mask_iou_share, apply_sigmoid=apply_sigmoid)
+            self.tcd_backbone = nn.ModuleDict(tcd_dict)
+
         self.freeze_layers = freeze_layers
         self.track_running_stats = track_running_stats
         self.mask_iou_share = mask_iou_share
+        self.lr = lr
+        self.apply_sigmoid = apply_sigmoid
         self.postprocessing_config = postprocessing_config
 
         # freeze all layers but segmentation head
@@ -78,17 +124,17 @@ class TreeCrownDelineationModel(L.LightningModule):
                     module.eval()
                     module.track_running_stats = False
 
-        self.lr = lr
-        self.apply_sigmoid = apply_sigmoid
-
     def forward(self, img):
-        mask_and_outline = self.seg_model(img)
-        dist = self.dist_model(img, mask_and_outline, from_logits=True)
-        # dist = dist * mask_and_outline[:, [0]]
-        if self.apply_sigmoid:
-            return torch.cat((torch.sigmoid(mask_and_outline), dist), dim=1)
+        if self.num_backbones == 1:
+            return self.tcd_backbone(img)
         else:
-            return torch.cat((mask_and_outline, dist), dim=1)
+            outputs = []
+            for i in range(self.num_backbones):
+                output = self.tcd_backbone[f'model_{i}'](img)
+                outputs.append(output)
+            
+            outputs = torch.stack(outputs)
+            return torch.mean(outputs, axis=0)
 
     def shared_step(self, batch, iou_feature_map=False):
         x, y = batch
@@ -160,20 +206,27 @@ class TreeCrownDelineationModel(L.LightningModule):
 
     def predict_step(self, batch, step):
         t0 = time.time()
-        x, trafo = batch
+        x, raster_dict = batch
+
+        # predict step assumes batch size is 1 - extract first list entry
+        assert x.shape[0] == 1, print("Predict batch size must be 1")
+        trafo = raster_dict['trafo'][0]
+        raster_name = raster_dict['raster_id'][0]
+        raster_suffix = os.path.basename(raster_name).replace('tile_', '')
         output = self(x)
+        
+        log.info(f'Predicting on {raster_name} ...')
+
         t_inference = time.time() - t0
 
         mask = output[:,0,6:-6,6:-6].cpu().numpy().squeeze()
         outline = output[:,1,6:-6,6:-6].cpu().numpy().squeeze()
         distance_transform = output[:,2,6:-6,6:-6].cpu().numpy().squeeze()
 
-        # TODO use the raster tile name here
-        # TODO rasterize them (my gdal was not working ...)
         if self.postprocessing_config['save_predictions']:
-            np.save(f'./predictions/mask_{step}', mask)
-            np.save(f'./predictions/outline_{step}', outline)
-            np.save(f'./predictions/distance_transform_{step}', distance_transform)
+            utils.array_to_tif(mask, f'./predictions/mask_{raster_suffix}', src_raster=raster_name)
+            utils.array_to_tif(outline, f'./predictions/outline_{raster_suffix}', src_raster=raster_name)
+            utils.array_to_tif(distance_transform, f'./predictions/distance_transform_{raster_suffix}', src_raster=raster_name)
 
         # active learning
         if self.postprocessing_config['active_learning']:
@@ -187,10 +240,8 @@ class TreeCrownDelineationModel(L.LightningModule):
             log.info(f'Mean entropy: {np.mean(entropy_map):.4f}')
             log.info(f'Median entropy: {np.median(entropy_map):.4f}')
 
-            # TODO use the raster tile name here
-            # TODO rasterize them (my gdal was not working ...)
             if self.postprocessing_config['save_entropy_maps']:
-                np.save(f'./entropy_maps/entropy_heatmap_{step}', entropy_map)
+                utils.array_to_tif(entropy_map, f'./entropy_maps/entropy_heatmap_{raster_suffix}', src_raster=raster_name)
 
         # add postprocessing here
         t0 = time.time()
