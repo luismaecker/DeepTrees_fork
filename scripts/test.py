@@ -24,7 +24,7 @@ from lightning import Trainer, seed_everything
 from lightning.pytorch.loggers import MLFlowLogger
 
 import hydra
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import DictConfig, OmegaConf, ListConfig
 import rootutils
 
 path = rootutils.find_root(search_from=__file__, indicator=".project-root")
@@ -39,6 +39,7 @@ rootutils.set_root(
 )
 
 from deeptrees.model.tcd_model import TreeCrownDelineationModel
+from deeptrees.model.averaging_model import AveragingModel
 from deeptrees.dataloading.datamodule import TreeCrownDelineationDataModule
 from deeptrees.modules import utils
 
@@ -76,12 +77,25 @@ def test(config: DictConfig) -> None:
     log.info('Instantiating model...')
     model: TreeCrownDelineationModel = hydra.utils.instantiate(config.model)
 
-    if config['pretrained_model'] is None:
-        raise ValueError("Inference requires a pretrained model")
-    else:
+    if isinstance(config['pretrained_model'], str):
         pretrained_model = torch.jit.load(config['pretrained_model'])
         model.load_state_dict(pretrained_model.state_dict())
         log.info('Loaded state dict from pretrained model')
+    elif isinstance(config['pretrained_model'], ListConfig) or isinstance(config['pretrained_model'], list):
+        pretrained_models = [torch.jit.load(m) for m in config['pretrained_model']]
+        averaged_state_dict = {}
+        for key, val in model.state_dict().items():
+            if key.endswith('num_batches_tracked'):
+                continue
+            mval = [pm.state_dict()[key] for pm in pretrained_models]
+            mval = torch.stack(mval, axis=0)
+            mval = torch.mean(mval, axis=0)
+            averaged_state_dict[key] = mval.to(val.dtype)
+
+        model.load_state_dict(averaged_state_dict)
+        log.info(f'Loaded state dict from pretrained models, averaging the weights of {len(config["pretrained_model"])} models.')
+    else:
+        raise ValueError("Inference requires a pretrained model")
 
     trainer: Trainer = hydra.utils.instantiate(config.trainer, callbacks=callbacks)
 
