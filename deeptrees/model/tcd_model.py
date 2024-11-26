@@ -12,6 +12,7 @@ rootutils.set_root(
 )
 
 import time
+import os
 
 import numpy as np
 import torch
@@ -24,6 +25,7 @@ from deeptrees.model.distance_model import DistanceModel
 from deeptrees.modules import metrics
 from deeptrees.modules.losses import BinarySegmentationLossWithLogits
 from deeptrees.modules import postprocessing as tcdpp
+from deeptrees.modules import utils
 
 import logging
 log = logging.getLogger(__name__)
@@ -43,7 +45,7 @@ class TreeCrownDelineationModel(L.LightningModule):
 
         The model consists of two sub-netoworks (two U-Nets with ResNet backbone). The first network calculates a tree
         cover mask and the tree outlines, the second calculates the distance transform of the masks (distance to next
-        background pixel). The first net receives the input image, the second one receives the input image and the output of network 1.SK_SK_
+        background pixel). The first net receives the input image, the second one receives the input image and the output of network 1.
 
         Args:
             in_channels: Number of input channels / bands of the input image
@@ -160,7 +162,13 @@ class TreeCrownDelineationModel(L.LightningModule):
 
     def predict_step(self, batch, step):
         t0 = time.time()
-        x, trafo = batch
+        x, raster_dict = batch
+
+        # predict step assumes batch size is 1 - extract first list entry
+        assert x.shape[0] == 1, print("Predict batch size must be 1")
+        trafo = raster_dict['trafo'][0]
+        raster_name = raster_dict['raster_id'][0]
+        raster_suffix = os.path.basename(raster_name).replace('tile_', '')
         output = self(x)
         t_inference = time.time() - t0
 
@@ -168,12 +176,10 @@ class TreeCrownDelineationModel(L.LightningModule):
         outline = output[:,1,6:-6,6:-6].cpu().numpy().squeeze()
         distance_transform = output[:,2,6:-6,6:-6].cpu().numpy().squeeze()
 
-        # TODO use the raster tile name here
-        # TODO rasterize them (my gdal was not working ...)
         if self.postprocessing_config['save_predictions']:
-            np.save(f'./predictions/mask_{step}', mask)
-            np.save(f'./predictions/outline_{step}', outline)
-            np.save(f'./predictions/distance_transform_{step}', distance_transform)
+            utils.array_to_tif(mask, f'./predictions/mask_{raster_suffix}', src_raster=raster_name)
+            utils.array_to_tif(outline, f'./predictions/outline_{raster_suffix}', src_raster=raster_name)
+            utils.array_to_tif(distance_transform, f'./predictions/distance_transform_{raster_suffix}', src_raster=raster_name)
 
         # active learning
         if self.postprocessing_config['active_learning']:
@@ -187,10 +193,8 @@ class TreeCrownDelineationModel(L.LightningModule):
             log.info(f'Mean entropy: {np.mean(entropy_map):.4f}')
             log.info(f'Median entropy: {np.median(entropy_map):.4f}')
 
-            # TODO use the raster tile name here
-            # TODO rasterize them (my gdal was not working ...)
             if self.postprocessing_config['save_entropy_maps']:
-                np.save(f'./entropy_maps/entropy_heatmap_{step}', entropy_map)
+                utils.array_to_tif(entropy_map, f'./entropy_maps/entropy_heatmap_{raster_suffix}', src_raster=raster_name)
 
         # add postprocessing here
         t0 = time.time()
