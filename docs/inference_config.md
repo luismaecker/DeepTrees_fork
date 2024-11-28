@@ -1,0 +1,80 @@
+# JSON Schema
+
+## Definitions
+
+- <a id="definitions/Inference%20default%20configuration"></a>**`Inference default configuration`** *(object)*: Cannot contain additional properties.
+  - **`name`** *(string, required)*: Identifier for the run. Will be used in folder names and logs. Default: `"inference-halle"`.
+  - **`output_dir`** *(string, required)*: Output folder. Default: `"results"`.
+  - **`pretrained_model`** *(string, required)*: Path to pretrained model(s). You can pass a single model or a list of pretrained models. In the latter case, their predictions will be averaged. Default: `"/work/ka1176/caroline/gitlab/deeptrees/experiments/finetune-halle/2024-11-25_09-32-21/unet-halle_jitted.pt"`.
+  - **`logdir`** *(string, required)*: Set by hydra. This is where we find logs and results. Default: `"${hydra.run.dir}"`.
+  - **`model_name`** *(string, required)*: Short and memorable model name. Default: `"unet-halle"`.
+  - **`seed`** *(null, required)*: Random seed. If null, it is not fixed. Default: `null`.
+  - **`crs`** *(string, required)*: Coordinate reference system. Default: `"EPSG:25832"`.
+  - **`polygon_file`** *(string, required)*: Output file to store the segmented polygons. Default: `"treecrowns.sqlite"`.
+  - **`baumkataster_file`** *(string, required)*: Path to the file containing the Baumkataster ground truth. Default: `"/work/ka1176/shared_data/2024-ufz-deeptree/halle-baumkataster/itc005211130105323_point.shp"`.
+  - **`baumkataster_intersection_file`** *(string, required)*: Output file to store the polygons that intersect with Baumkataster. Default: `"treecrowns_baumkataster.sqlite"`.
+  - **`callbacks`**: Refer to *[#/definitions/Callbacks](#definitions/Callbacks)*.
+  - **`data`**: Refer to *[#/definitions/Data](#definitions/Data)*.
+  - **`model`**: Refer to *[#/definitions/Model](#definitions/Model)*.
+  - **`trainer`**: Refer to *[#/definitions/Trainer](#definitions/Trainer)*.
+  - **`hydra`**: Refer to *[#/definitions/Hydra](#definitions/Hydra)*.
+- <a id="definitions/Callbacks"></a>**`Callbacks`** *(object)*: Callbacks to pass to the trainer during inference. Cannot contain additional properties.
+- <a id="definitions/Data"></a>**`Data`** *(object)*: Cannot contain additional properties.
+  - **`_target_`** *(string, required)*: class to instantiate. Default: `"deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule"`.
+  - **`rasters`** *(string, required)*: Path to folder containing the raster tiles. Default: `"/work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/pool_tiles"`.
+  - **`masks`** *(string, required)*: Only for consistency. Default: `null`.
+  - **`outlines`** *(string, required)*: Only for consistency. Default: `null`.
+  - **`distance_transforms`** *(string, required)*: Only for consistency. Default: `null`.
+  - **`batch_size`** *(integer, required)*: Test batch size (must be 1). Default: `1`.
+  - **`test_indices`** *(array, required)*: Optional list of test indices. If given, only these rasters are used for prediction. Default: `null`.
+  - **`divide_by`** *(integer, required)*: Value by which to divide the input rasters. Default: `255`.
+  - **`dilate_outlines`** *(integer, required)*: Number of pixels by which to dilate the outlines. Default: `0`.
+  - **`num_workers`** *(integer, required)*: Number of workers in the Pytorch DataLoader. Default: `8`.
+  - **`ndvi_config`**: Refer to *[#/definitions/NdviConfig](#definitions/NdviConfig)*.
+  - **`augment_eval`**: Refer to *[#/definitions/AugmentEval](#definitions/AugmentEval)*.
+  - **`ground_truth_config`**: Refer to *[#/definitions/GroundTruthConfig](#definitions/GroundTruthConfig)*.
+- <a id="definitions/AugmentEval"></a>**`AugmentEval`** *(object)*: Cannot contain additional properties.
+  - **`Pad`**: Refer to *[#/definitions/Pad](#definitions/Pad)*.
+- <a id="definitions/Pad"></a>**`Pad`** *(object)*: Cannot contain additional properties.
+  - **`padding`** *(integer, required)*: Padding to apply to all sides of the input raster. This is currently hard-coded 500-> 512! Default: `6`.
+- <a id="definitions/GroundTruthConfig"></a>**`GroundTruthConfig`** *(object)*: Cannot contain additional properties.
+  - **`labels`** *(string, required)*: Only for consistency. Default: `null`.
+- <a id="definitions/NdviConfig"></a>**`NdviConfig`** *(object)*: Cannot contain additional properties.
+  - **`concatenate`** *(boolean, required)*: Concatenate NDVI to RGBI. Default: `true`.
+  - **`rescale`** *(boolean, required)*: Rescale NDVI to [0, 1]. Default: `false`.
+  - **`red`** *(integer, required)*: Index of red channel in raster. Default: `0`.
+  - **`nir`** *(integer, required)*: Index of infrared channel in raster. Default: `3`.
+- <a id="definitions/Model"></a>**`Model`** *(object)*: Cannot contain additional properties.
+  - **`_target_`** *(string, required)*: Class to instantiate. Default: `"deeptrees.model.deeptrees_model.DeepTreesModel"`.
+  - **`num_backbones`** *(integer, required)*: Number of models to average. This will be overwritten if pretrained_model is a list. Default: `1`.
+  - **`in_channels`** *(integer, required)*: Number of input channels (e.g. RGBI+NDVI). Default: `5`.
+  - **`architecture`** *(string, required)*: TreeCrownDelineation architecture. Default: `"Unet"`.
+  - **`backbone`** *(string, required)*: TreeCrownDelineation backbone. Default: `"resnet18"`.
+  - **`apply_sigmoid`** *(boolean, required)*: If True, apply sigmoid to mask and outline outputs to return probability maps. Default: `false`.
+  - **`postprocessing_config`**: Refer to *[#/definitions/PostprocessingConfig](#definitions/PostprocessingConfig)*.
+- <a id="definitions/PostprocessingConfig"></a>**`PostprocessingConfig`** *(object)*: Cannot contain additional properties.
+  - **`min_dist`** *(integer, required)*: Minimum distance between neighbouring tree crowns. Default: `10`.
+  - **`mask_exp`** *(integer, required)*: Parameter for feature extraction. Default: `2`.
+  - **`outline_multiplier`** *(integer, required)*: Parameter for feature extraction. Default: `5`.
+  - **`outline_exp`** *(integer, required)*: Parameter for feature extraction. Default: `1`.
+  - **`dist_exp`** *(number, required)*: Parameter for feature extraction. Default: `0.5`.
+  - **`area_min`** *(integer, required)*: Minimum area for a polygon to be considered. Default: `3`.
+  - **`sigma`** *(integer, required)*: Gaussian filter standard deviation in feature extraction. Default: `2`.
+  - **`label_threshold`** *(number, required)*: Minimum height of local maxima during feature extraction. Default: `0.5`.
+  - **`binary_threshold`** *(number, required)*: Threshold value for the feature map, lower is background. Default: `0.1`.
+  - **`simplify`** *(number, required)*: Polygon simplification distance, vertices closer than this value are simplified. Default: `0.3`.
+  - **`active_learning`** *(boolean, required)*: Calculate mean entropy per tile. Default: `true`.
+  - **`save_entropy_maps`** *(boolean, required)*: Save the entropy heatmaps. Default: `true`.
+  - **`save_predictions`** *(boolean, required)*: Save the predictions (mask, outline, distance transform). Default: `true`.
+- <a id="definitions/Trainer"></a>**`Trainer`** *(object)*: Cannot contain additional properties.
+  - **`_target_`** *(string, required)*
+  - **`devices`** *(integer, required)*: Number of GPUs to use in parallel. Default: `1`.
+  - **`accelerator`** *(string, required)*: Choose GPU if available. Default: `"auto"`.
+  - **`enable_progress_bar`** *(boolean, required)*
+- <a id="definitions/Hydra"></a>**`Hydra`** *(object)*: Cannot contain additional properties.
+  - **`job`**: Refer to *[#/definitions/Job](#definitions/Job)*.
+  - **`run`**: Refer to *[#/definitions/Run](#definitions/Run)*.
+- <a id="definitions/Job"></a>**`Job`** *(object)*: Cannot contain additional properties.
+  - **`chdir`** *(boolean, required)*
+- <a id="definitions/Run"></a>**`Run`** *(object)*: Cannot contain additional properties.
+  - **`dir`** *(string, required)*
