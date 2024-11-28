@@ -24,7 +24,7 @@ from lightning import Trainer, seed_everything
 from lightning.pytorch.loggers import MLFlowLogger
 
 import hydra
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import DictConfig, OmegaConf, ListConfig
 import rootutils
 
 path = rootutils.find_root(search_from=__file__, indicator=".project-root")
@@ -38,7 +38,7 @@ rootutils.set_root(
     cwd=False, # we do not want that with hydra
 )
 
-from deeptrees.model.tcd_model import TreeCrownDelineationModel
+from deeptrees.model.deeptrees_model import DeepTreesModel
 from deeptrees.dataloading.datamodule import TreeCrownDelineationDataModule
 from deeptrees.modules import utils
 
@@ -74,14 +74,22 @@ def test(config: DictConfig) -> None:
     data.setup(stage='test')
 
     log.info('Instantiating model...')
-    model: TreeCrownDelineationModel = hydra.utils.instantiate(config.model)
 
-    if config['pretrained_model'] is None:
-        raise ValueError("Inference requires a pretrained model")
-    else:
+    if isinstance(config['pretrained_model'], str):
+        model: DeepTreesModel = hydra.utils.instantiate(config.model)
         pretrained_model = torch.jit.load(config['pretrained_model'])
-        model.load_state_dict(pretrained_model.state_dict())
+        model.tcd_backbone.load_state_dict(pretrained_model.state_dict())
         log.info('Loaded state dict from pretrained model')
+
+    elif isinstance(config['pretrained_model'], ListConfig) or isinstance(config['pretrained_model'], list):
+        model: DeepTreesModel = hydra.utils.instantiate(config.model, num_backbones=len(config['pretrained_model']))
+        for i in range(len(config['pretrained_model'])):
+            pretrained_model = torch.jit.load(config['pretrained_model'][i])
+            model.tcd_backbone[f'model_{i}'].load_state_dict(pretrained_model.state_dict())
+
+        log.info(f'Loaded state dict from pretrained models, creating a total of {len(config["pretrained_model"])} TCD backbones.')
+    else:
+        raise ValueError("Inference requires a pretrained model")
 
     trainer: Trainer = hydra.utils.instantiate(config.trainer, callbacks=callbacks)
 
