@@ -15,7 +15,7 @@ from setuptools import find_packages, setup, Command
 NAME = 'deeptrees'
 DESCRIPTION = 'AI-based delineation and analysis of individual tree crowns'
 URL = 'https://codebase.helmholtz.cloud/ai-consultants-dkrz/DeepTrees'
-AUTHOR = 'Caroline Arnold, Harsh Grover, Taimur Khan, Jasmin Krebs'
+AUTHOR = 'Caroline Arnold, Harsh Grover, Jasmin Krebs, Taimur Khan'
 EMAIL = ""
 REQUIRES_PYTHON = '>=3.10.0'
 VERSION = None

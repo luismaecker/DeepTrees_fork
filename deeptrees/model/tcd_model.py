@@ -1,6 +1,8 @@
 import rootutils
+import os
 
-path = rootutils.find_root(search_from=__file__, indicator=".project-root")
+# path = rootutils.find_root(search_from=__file__, indicator=".project-root")
+path = rootutils.find_root(search_from=os.path.abspath(""), indicator=".project-root")
 
 # set root directory
 rootutils.set_root(
