@@ -42,7 +42,7 @@ def load_labels(zip_filename):
         url: The URL of the file to download.
         filename: The name of the file to save the downloaded content to.
     """
-    url = "https://syncandshare.desy.de/index.php/s/3WcwXYZLNSJxbE/download/labels.zip"
+    url = "https://syncandshare.desy.de/index.php/s/C3WcwXYZLNSJxbE/download/labels.zip"
     response = requests.get(url, stream=True)
     response.raise_for_status()  # Raise an exception for bad status codes
 
