@@ -102,7 +102,9 @@
             "additionalProperties": false,
             "properties": {
                 "_target_": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "class to instantiate",
+                    "default": "deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule"
                 },
                 "rasters": {
                     "type": "string",
@@ -193,7 +195,9 @@
             "additionalProperties": false,
             "properties": {
                 "padding": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "Padding to apply to all sides of the input raster. This is currently hard-coded 500-> 512!",
+                    "default": 6
                 }
             },
             "required": [
@@ -206,7 +210,9 @@
             "additionalProperties": false,
             "properties": {
                 "labels": {
-                    "type": "null"
+                    "type": "string",
+                    "description": "Only for consistency",
+                    "default": null
                 }
             },
             "required": [
@@ -219,16 +225,24 @@
             "additionalProperties": false,
             "properties": {
                 "concatenate": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Concatenate NDVI to RGBI",
+                    "default": true
                 },
                 "rescale": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Rescale NDVI to [0, 1]",
+                    "default": false
                 },
                 "red": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "Index of red channel in raster",
+                    "default": 0
                 },
                 "nir": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "Index of infrared channel in raster",
+                    "default": 3
                 }
             },
             "required": [
@@ -238,6 +252,171 @@
                 "rescale"
             ],
             "title": "NdviConfig"
+        },
+        "Model": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "_target_": {
+                    "type": "string",
+                    "description": "Class to instantiate",
+                    "default": "deeptrees.model.deeptrees_model.DeepTreesModel"
+                },
+                "num_backbones": {
+                    "type": "integer",
+                    "description": "Number of models to average. This will be overwritten if pretrained_model is a list.",
+                    "default": 1
+                },
+                "in_channels": {
+                    "type": "integer",
+                    "description": "Number of input channels (e.g. RGBI+NDVI)",
+                    "default": 5
+                },
+                "architecture": {
+                    "type": "string",
+                    "description": "TreeCrownDelineation architecture",
+                    "default": "Unet"
+                },
+                "backbone": {
+                    "type": "string",
+                    "description": "TreeCrownDelineation backbone",
+                    "default": "resnet18"
+                },
+                "apply_sigmoid": {
+                    "type": "boolean",
+                    "description": "If True, apply sigmoid to mask and outline outputs to return probability maps",
+                    "default": false
+                },
+                "postprocessing_config": {
+                    "$ref": "#/definitions/PostprocessingConfig"
+                }
+            },
+            "required": [
+                "_target_",
+                "apply_sigmoid",
+                "architecture",
+                "backbone",
+                "in_channels",
+                "num_backbones",
+                "postprocessing_config"
+            ],
+            "title": "Model"
+        },
+        "PostprocessingConfig": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "min_dist": {
+                    "type": "integer",
+                    "description": "Minimum distance between neighbouring tree crowns",
+                    "default": 10
+                },
+                "mask_exp": {
+                    "type": "integer",
+                    "description": "Parameter for feature extraction",
+                    "default": 2
+                },
+                "outline_multiplier": {
+                    "type": "integer",
+                    "description": "Parameter for feature extraction",
+                    "default": 5
+                },
+                "outline_exp": {
+                    "type": "integer",
+                    "description": "Parameter for feature extraction",
+                    "default": 1
+                },
+                "dist_exp": {
+                    "type": "number",
+                    "description": "Parameter for feature extraction",
+                    "default": 0.5
+                },
+                "area_min": {
+                    "type": "integer",
+                    "description": "Minimum area for a polygon to be considered",
+                    "default": 3
+                },
+                "sigma": {
+                    "type": "integer",
+                    "description": "Gaussian filter standard deviation in feature extraction",
+                    "default": 2
+                },
+                "label_threshold": {
+                    "type": "number",
+                    "description": "Minimum height of local maxima during feature extraction",
+                    "default": 0.5
+                },
+                "binary_threshold": {
+                    "type": "number",
+                    "description": "Threshold value for the feature map, lower is background",
+                    "default": 0.1
+                },
+                "simplify": {
+                    "type": "number",
+                    "description": "Polygon simplification distance, vertices closer than this value are simplified",
+                    "default": 0.3
+                },
+                "active_learning": {
+                    "type": "boolean",
+                    "description": "Calculate mean entropy per tile",
+                    "default": true
+                },
+                "save_entropy_maps": {
+                    "type": "boolean",
+                    "description": "Save the entropy heatmaps",
+                    "default": true
+                },
+                "save_predictions": {
+                    "type": "boolean",
+                    "description": "Save the predictions (mask, outline, distance transform)",
+                    "default": true
+                }
+            },
+            "required": [
+                "active_learning",
+                "area_min",
+                "binary_threshold",
+                "dist_exp",
+                "label_threshold",
+                "mask_exp",
+                "min_dist",
+                "outline_exp",
+                "outline_multiplier",
+                "save_entropy_maps",
+                "save_predictions",
+                "sigma",
+                "simplify"
+            ],
+            "title": "PostprocessingConfig"
+        },
+        "Trainer": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "_target_": {
+                    "type": "string"
+                },
+                "devices": {
+                    "type": "integer",
+                    "description": "Number of GPUs to use in parallel",
+                    "default": 1
+                },
+                "accelerator": {
+                    "type": "string",
+                    "description": "Choose GPU if available",
+                    "default": "auto"
+                },
+                "enable_progress_bar": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "_target_",
+                "accelerator",
+                "devices",
+                "enable_progress_bar"
+            ],
+            "title": "Trainer"
         },
         "Hydra": {
             "type": "object",
@@ -281,129 +460,6 @@
                 "dir"
             ],
             "title": "Run"
-        },
-        "Model": {
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-                "_target_": {
-                    "type": "string"
-                },
-                "num_backbones": {
-                    "type": "integer"
-                },
-                "in_channels": {
-                    "type": "integer"
-                },
-                "architecture": {
-                    "type": "string"
-                },
-                "backbone": {
-                    "type": "string"
-                },
-                "apply_sigmoid": {
-                    "type": "boolean"
-                },
-                "postprocessing_config": {
-                    "$ref": "#/definitions/PostprocessingConfig"
-                }
-            },
-            "required": [
-                "_target_",
-                "apply_sigmoid",
-                "architecture",
-                "backbone",
-                "in_channels",
-                "num_backbones",
-                "postprocessing_config"
-            ],
-            "title": "Model"
-        },
-        "PostprocessingConfig": {
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-                "min_dist": {
-                    "type": "integer"
-                },
-                "mask_exp": {
-                    "type": "integer"
-                },
-                "outline_multiplier": {
-                    "type": "integer"
-                },
-                "outline_exp": {
-                    "type": "integer"
-                },
-                "dist_exp": {
-                    "type": "number"
-                },
-                "area_min": {
-                    "type": "integer"
-                },
-                "sigma": {
-                    "type": "integer"
-                },
-                "label_threshold": {
-                    "type": "number"
-                },
-                "binary_threshold": {
-                    "type": "number"
-                },
-                "simplify": {
-                    "type": "number"
-                },
-                "active_learning": {
-                    "type": "boolean"
-                },
-                "save_entropy_maps": {
-                    "type": "boolean"
-                },
-                "save_predictions": {
-                    "type": "boolean"
-                }
-            },
-            "required": [
-                "active_learning",
-                "area_min",
-                "binary_threshold",
-                "dist_exp",
-                "label_threshold",
-                "mask_exp",
-                "min_dist",
-                "outline_exp",
-                "outline_multiplier",
-                "save_entropy_maps",
-                "save_predictions",
-                "sigma",
-                "simplify"
-            ],
-            "title": "PostprocessingConfig"
-        },
-        "Trainer": {
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-                "_target_": {
-                    "type": "string"
-                },
-                "devices": {
-                    "type": "integer"
-                },
-                "accelerator": {
-                    "type": "string"
-                },
-                "enable_progress_bar": {
-                    "type": "boolean"
-                }
-            },
-            "required": [
-                "_target_",
-                "accelerator",
-                "devices",
-                "enable_progress_bar"
-            ],
-            "title": "Trainer"
         }
     }
 }
