@@ -3,8 +3,8 @@ defaults:
 
 name: inference-labeled-pretrained-halle
 data:
-  rasters: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/tiles  # directory with raster images
-  test_indices: [10, 11] # set to null to process the whole folder
+  rasters: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/test_tiles  # directory with raster images
+  test_indices: null  # set to null to process the whole folder
 pretrained_model:
   - /work/ka1176/shared_data/2024-ufz-deeptree/pretrained_models/tcd-20cm-RGBI-v1/Unet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=0_jitted.pt
   - /work/ka1176/shared_data/2024-ufz-deeptree/pretrained_models/tcd-20cm-RGBI-v1/Unet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=1_jitted.pt

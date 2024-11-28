@@ -1,7 +1,7 @@
 from abc import ABC
 from typing import Dict, Any
 import time
-import os
+import re
 
 import xarray as xr
 import rioxarray
@@ -250,10 +250,10 @@ class TreeCrownDelineationDataset(TreeCrownDelineationBaseDataset, IterableDatas
                 raise RuntimeError("The length of the given lists must be equal.")
             for j, r in enumerate(raster_files):
                 # FIXME that does not comply with our way of naming the tiles!
-                raster_file_index = r.split('.')[-2].split('_')[-1]
-                mask_file_index = m[j].split('.')[-2].split('_')[-1]
-                if raster_file_index != mask_file_index:
-                    raise RuntimeError("The raster and mask lists must be sorted equally.")
+                raster_file_index = re.search(r'(_\d+_\d+.tif)', r).group()
+                if not m[j].endswith(raster_file_index):
+                    print(r, m[j])
+                    raise RuntimeError(f"The raster and mask lists must be sorted equally.")
 
     def __len__(self):
         # sum of product of all raster sizes

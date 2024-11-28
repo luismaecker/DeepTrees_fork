@@ -32,11 +32,11 @@ model:
   backbone: resnet18     # backbone
   apply_sigmoid: False   # sigmoid function applied to masks and outlines
   postprocessing_config:
-    min_dist: 10 # minimum distnace in pixels between local maxima during feature extraction
-    mask_exp: 2
-    outline_multiplier: 5
-    outline_exp: 1
-    dist_exp: 0.5
+    min_dist: 10 # minimum distance in pixels between local maxima during feature extraction
+    mask_exp: 2             # parameter for feature map extraction
+    outline_multiplier: 5   # parameter for feature map extraction
+    outline_exp: 1          # parameter for feature map extraction
+    dist_exp: 0.5           # parameter for feature map extraction
     area_min: 3 # smaller polygons are discarded
     sigma: 2 # standard deviation of Gaussian filter during feature extraction
     label_threshold: 0.5 # minimum height of local maxima during feature extraction

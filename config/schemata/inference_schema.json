@@ -1,0 +1,465 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/Inference Config File",
+    "definitions": {
+        "Inference default configuration": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Identifier for the run. Will be used in folder names and logs.",
+                    "default": "inference-halle"
+                },
+                "output_dir": {
+                    "type": "string",
+                    "description": "Output folder.",
+                    "default": "results"
+                },
+                "pretrained_model": {
+                    "type": "string",
+                    "description": "Path to pretrained model(s). You can pass a single model or a list of pretrained models. In the latter case, their predictions will be averaged.",
+                    "default": "/work/ka1176/caroline/gitlab/deeptrees/experiments/finetune-halle/2024-11-25_09-32-21/unet-halle_jitted.pt"
+                },
+                "logdir": {
+                    "type": "string",
+                    "description": "Set by hydra. This is where we find logs and results.",
+                    "default": "${hydra.run.dir}"
+                },
+                "model_name": {
+                    "type": "string",
+                    "description": "Short and memorable model name.",
+                    "default": "unet-halle"
+                },
+                "seed": {
+                    "type": "null",
+                    "description": "Random seed. If null, it is not fixed.",
+                    "default": null
+                },
+                "crs": {
+                    "type": "string",
+                    "description": "Coordinate reference system", 
+                    "default": "EPSG:25832"
+                },
+                "polygon_file": {
+                    "type": "string",
+                    "description": "Output file to store the segmented polygons.",
+                    "default": "treecrowns.sqlite"
+                },
+                "baumkataster_file": {
+                    "type": "string",
+                    "description": "Path to the file containing the Baumkataster ground truth.",
+                    "default": "/work/ka1176/shared_data/2024-ufz-deeptree/halle-baumkataster/itc005211130105323_point.shp"
+                },
+                "baumkataster_intersection_file": {
+                    "type": "string",
+                    "description": "Output file to store the polygons that intersect with Baumkataster.",
+                    "default": "treecrowns_baumkataster.sqlite"
+                },
+                "callbacks": {
+                    "$ref": "#/definitions/Callbacks"
+                },
+                "data": {
+                    "$ref": "#/definitions/Data"
+                },
+                "model": {
+                    "$ref": "#/definitions/Model"
+                },
+                "trainer": {
+                    "$ref": "#/definitions/Trainer"
+                },
+                "hydra": {
+                    "$ref": "#/definitions/Hydra"
+                }
+            },
+            "required": [
+                "baumkataster_file",
+                "baumkataster_intersection_file",
+                "callbacks",
+                "crs",
+                "data",
+                "hydra",
+                "logdir",
+                "model",
+                "model_name",
+                "name",
+                "output_dir",
+                "polygon_file",
+                "pretrained_model",
+                "seed",
+                "trainer"
+            ],
+            "title": "Inference Default Configuration"
+        },
+        "Callbacks": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Callbacks",
+            "description": "Callbacks to pass to the trainer during inference."
+        },
+        "Data": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "_target_": {
+                    "type": "string",
+                    "description": "class to instantiate",
+                    "default": "deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule"
+                },
+                "rasters": {
+                    "type": "string",
+                    "default": "/work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/pool_tiles",
+                    "description": "Path to folder containing the raster tiles"
+                },
+                "masks": {
+                    "type": "string",
+                    "description": "Only for consistency.",
+                    "default": null
+                },
+                "outlines": {
+                    "type": "string",
+                    "description": "Only for consistency.",
+                    "default": null
+                },
+                "distance_transforms": {
+                    "type": "string",
+                    "description": "Only for consistency.",
+                    "default": null
+                },
+                "batch_size": {
+                    "type": "integer",
+                    "default": 1,
+                    "description": "Test batch size (must be 1)."
+                },
+                "test_indices": {
+                    "type": "array",
+                    "description": "Optional list of test indices. If given, only these rasters are used for prediction.",
+                    "default": null
+                },
+                "divide_by": {
+                    "type": "integer",
+                    "description": "Value by which to divide the input rasters.",
+                    "default": 255
+                },
+                "dilate_outlines": {
+                    "type": "integer",
+                    "description": "Number of pixels by which to dilate the outlines",
+                    "default": 0
+                },
+                "num_workers": {
+                    "type": "integer",
+                    "description": "Number of workers in the Pytorch DataLoader",
+                    "default": 8
+                },
+                "ndvi_config": {
+                    "$ref": "#/definitions/NdviConfig"
+                },
+                "augment_eval": {
+                    "$ref": "#/definitions/AugmentEval"
+                },
+                "ground_truth_config": {
+                    "$ref": "#/definitions/GroundTruthConfig"
+                }
+            },
+            "required": [
+                "_target_",
+                "augment_eval",
+                "batch_size",
+                "dilate_outlines",
+                "distance_transforms",
+                "divide_by",
+                "ground_truth_config",
+                "masks",
+                "ndvi_config",
+                "num_workers",
+                "outlines",
+                "rasters",
+                "test_indices"
+            ],
+            "title": "Data"
+        },
+        "AugmentEval": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "Pad": {
+                    "$ref": "#/definitions/Pad"
+                }
+            },
+            "required": [
+            ],
+            "title": "AugmentEval"
+        },
+        "Pad": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "padding": {
+                    "type": "integer",
+                    "description": "Padding to apply to all sides of the input raster. This is currently hard-coded 500-> 512!",
+                    "default": 6
+                }
+            },
+            "required": [
+                "padding"
+            ],
+            "title": "Pad"
+        },
+        "GroundTruthConfig": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "labels": {
+                    "type": "string",
+                    "description": "Only for consistency",
+                    "default": null
+                }
+            },
+            "required": [
+                "labels"
+            ],
+            "title": "GroundTruthConfig"
+        },
+        "NdviConfig": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "concatenate": {
+                    "type": "boolean",
+                    "description": "Concatenate NDVI to RGBI",
+                    "default": true
+                },
+                "rescale": {
+                    "type": "boolean",
+                    "description": "Rescale NDVI to [0, 1]",
+                    "default": false
+                },
+                "red": {
+                    "type": "integer",
+                    "description": "Index of red channel in raster",
+                    "default": 0
+                },
+                "nir": {
+                    "type": "integer",
+                    "description": "Index of infrared channel in raster",
+                    "default": 3
+                }
+            },
+            "required": [
+                "concatenate",
+                "nir",
+                "red",
+                "rescale"
+            ],
+            "title": "NdviConfig"
+        },
+        "Model": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "_target_": {
+                    "type": "string",
+                    "description": "Class to instantiate",
+                    "default": "deeptrees.model.deeptrees_model.DeepTreesModel"
+                },
+                "num_backbones": {
+                    "type": "integer",
+                    "description": "Number of models to average. This will be overwritten if pretrained_model is a list.",
+                    "default": 1
+                },
+                "in_channels": {
+                    "type": "integer",
+                    "description": "Number of input channels (e.g. RGBI+NDVI)",
+                    "default": 5
+                },
+                "architecture": {
+                    "type": "string",
+                    "description": "TreeCrownDelineation architecture",
+                    "default": "Unet"
+                },
+                "backbone": {
+                    "type": "string",
+                    "description": "TreeCrownDelineation backbone",
+                    "default": "resnet18"
+                },
+                "apply_sigmoid": {
+                    "type": "boolean",
+                    "description": "If True, apply sigmoid to mask and outline outputs to return probability maps",
+                    "default": false
+                },
+                "postprocessing_config": {
+                    "$ref": "#/definitions/PostprocessingConfig"
+                }
+            },
+            "required": [
+                "_target_",
+                "apply_sigmoid",
+                "architecture",
+                "backbone",
+                "in_channels",
+                "num_backbones",
+                "postprocessing_config"
+            ],
+            "title": "Model"
+        },
+        "PostprocessingConfig": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "min_dist": {
+                    "type": "integer",
+                    "description": "Minimum distance between neighbouring tree crowns",
+                    "default": 10
+                },
+                "mask_exp": {
+                    "type": "integer",
+                    "description": "Parameter for feature extraction",
+                    "default": 2
+                },
+                "outline_multiplier": {
+                    "type": "integer",
+                    "description": "Parameter for feature extraction",
+                    "default": 5
+                },
+                "outline_exp": {
+                    "type": "integer",
+                    "description": "Parameter for feature extraction",
+                    "default": 1
+                },
+                "dist_exp": {
+                    "type": "number",
+                    "description": "Parameter for feature extraction",
+                    "default": 0.5
+                },
+                "area_min": {
+                    "type": "integer",
+                    "description": "Minimum area for a polygon to be considered",
+                    "default": 3
+                },
+                "sigma": {
+                    "type": "integer",
+                    "description": "Gaussian filter standard deviation in feature extraction",
+                    "default": 2
+                },
+                "label_threshold": {
+                    "type": "number",
+                    "description": "Minimum height of local maxima during feature extraction",
+                    "default": 0.5
+                },
+                "binary_threshold": {
+                    "type": "number",
+                    "description": "Threshold value for the feature map, lower is background",
+                    "default": 0.1
+                },
+                "simplify": {
+                    "type": "number",
+                    "description": "Polygon simplification distance, vertices closer than this value are simplified",
+                    "default": 0.3
+                },
+                "active_learning": {
+                    "type": "boolean",
+                    "description": "Calculate mean entropy per tile",
+                    "default": true
+                },
+                "save_entropy_maps": {
+                    "type": "boolean",
+                    "description": "Save the entropy heatmaps",
+                    "default": true
+                },
+                "save_predictions": {
+                    "type": "boolean",
+                    "description": "Save the predictions (mask, outline, distance transform)",
+                    "default": true
+                }
+            },
+            "required": [
+                "active_learning",
+                "area_min",
+                "binary_threshold",
+                "dist_exp",
+                "label_threshold",
+                "mask_exp",
+                "min_dist",
+                "outline_exp",
+                "outline_multiplier",
+                "save_entropy_maps",
+                "save_predictions",
+                "sigma",
+                "simplify"
+            ],
+            "title": "PostprocessingConfig"
+        },
+        "Trainer": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "_target_": {
+                    "type": "string"
+                },
+                "devices": {
+                    "type": "integer",
+                    "description": "Number of GPUs to use in parallel",
+                    "default": 1
+                },
+                "accelerator": {
+                    "type": "string",
+                    "description": "Choose GPU if available",
+                    "default": "auto"
+                },
+                "enable_progress_bar": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "_target_",
+                "accelerator",
+                "devices",
+                "enable_progress_bar"
+            ],
+            "title": "Trainer"
+        },
+        "Hydra": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "job": {
+                    "$ref": "#/definitions/Job"
+                },
+                "run": {
+                    "$ref": "#/definitions/Run"
+                }
+            },
+            "required": [
+                "job",
+                "run"
+            ],
+            "title": "Hydra"
+        },
+        "Job": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "chdir": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "chdir"
+            ],
+            "title": "Job"
+        },
+        "Run": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "dir": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "dir"
+            ],
+            "title": "Run"
+        }
+    }
+}

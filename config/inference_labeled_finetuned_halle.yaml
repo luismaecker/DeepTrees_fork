@@ -1,0 +1,13 @@
+defaults:
+  - inference_halle.yaml
+
+name: inference-labeled-finetuned-halle
+data:
+  rasters: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/test_tiles  # directory with raster images
+  test_indices: null  # set to null to process the whole folder
+pretrained_model:
+  - /work/ka1176/caroline/gitlab/deeptrees/outputs/experiments/finetune-symposium-split-1/2024-11-27_14-00-12/unet-halle_jitted.pt
+  - /work/ka1176/caroline/gitlab/deeptrees/outputs/experiments/finetune-symposium-split-2/2024-11-27_14-01-53/unet-halle_jitted.pt
+  - /work/ka1176/caroline/gitlab/deeptrees/outputs/experiments/finetune-symposium-split-3/2024-11-27_14-11-57/unet-halle_jitted.pt
+  - /work/ka1176/caroline/gitlab/deeptrees/outputs/experiments/finetune-symposium-split-4/2024-11-27_14-13-53/unet-halle_jitted.pt
+  - /work/ka1176/caroline/gitlab/deeptrees/outputs/experiments/finetune-symposium-split-5/2024-11-27_14-14-51/unet-halle_jitted.pt
