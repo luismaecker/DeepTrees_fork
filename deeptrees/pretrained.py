@@ -2,20 +2,21 @@ import requests
 import tqdm
 import os
 
+
 def freudenberg2022(filename):
     """
     Downloads model weights for a pre-trained model on 20cm imagery from a URL with a progress bar.
-    
+
     Original paper:
-    Freudenberg, M., Magdon, P. and Nölke, N., 2022. 
-    Individual tree crown delineation in high-resolution remote sensing images based on U-Net. 
+    Freudenberg, M., Magdon, P. and Nölke, N., 2022.
+    Individual tree crown delineation in high-resolution remote sensing images based on U-Net.
     Neural Computing and Applications, 34(24), pp.22197-22207.
 
     Args:
         url: The URL of the file to download.
         filename: The name of the file to save the downloaded content to.
     """
-    url = "https://syncandshare.desy.de/index.php/s/3WcwXYZLNSJxbE/download/labels.zip"
+    url = "https://syncandshare.desy.de/index.php/s/NcFgPM4gX2dtSQq/download/lUnet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=3_jitted.pt"
     response = requests.get(url, stream=True)
     response.raise_for_status()  # Raise an exception for bad status codes
 
@@ -23,7 +24,9 @@ def freudenberg2022(filename):
     block_size = 1024  # 1KB
 
     print("Downloading label shape files tile # 32_704_5708_2...")
-    print("Freudenberg, M., Magdon, P. and Nölke, N., 2022. \nIndividual tree crown delineation in high-resolution remote sensing images based on U-Net. \nNeural Computing and Applications, 34(24), pp.22197-22207.")
+    print(
+        "Freudenberg, M., Magdon, P. and Nölke, N., 2022. \nIndividual tree crown delineation in high-resolution remote sensing images based on U-Net. \nNeural Computing and Applications, 34(24), pp.22197-22207. \nhttps://doi.org/10.1007/s00521-022-07640-4"
+    )
 
     progress_bar = tqdm.tqdm(total=total_size, unit="iB", unit_scale=True)
 
