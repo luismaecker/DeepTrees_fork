@@ -1,11 +1,9 @@
-# @title Download model weights, DOP20 tiles, halle baumkataster (tree inventory) and config file
-
 import requests
 import tqdm
 import os
 
 
-def load_tiles(filename):
+def load_tiles(zip_filename):
     """
     Downloads subtiles of DOP20 tile # 32_704_5708_2 from a URL with a progress bar.
 
@@ -25,7 +23,7 @@ def load_tiles(filename):
     )
     progress_bar = tqdm.tqdm(total=total_size, unit="iB", unit_scale=True)
 
-    with open(filename, "wb") as file:
+    with open(zip_filename, "wb") as file:
         for data in response.iter_content(block_size):
             progress_bar.update(len(data))
             file.write(data)
@@ -36,7 +34,7 @@ def load_tiles(filename):
         print("ERROR, something went wrong")
 
 
-def load_labels(filename):
+def load_labels(zip_filename):
     """
     Downloads all the labels ESRI shape files from a URL with a progress bar.
 
@@ -56,7 +54,7 @@ def load_labels(filename):
 
     progress_bar = tqdm.tqdm(total=total_size, unit="iB", unit_scale=True)
 
-    with open(filename, "wb") as file:
+    with open(zip_filename, "wb") as file:
         for data in response.iter_content(block_size):
             progress_bar.update(len(data))
             file.write(data)
