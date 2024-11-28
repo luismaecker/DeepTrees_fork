@@ -10,33 +10,39 @@ import geopandas as gpd
 from torch.utils.data import DataLoader
 from deeptrees.dataloading import datasets as ds
 from deeptrees.modules.utils import dilate_img, fix_crs
-from deeptrees.dataloading.preprocessing import MaskOutlinesGenerator, DistanceTransformGenerator
+from deeptrees.dataloading.preprocessing import (
+    MaskOutlinesGenerator,
+    DistanceTransformGenerator,
+)
 
 import logging
+
 log = logging.getLogger(__name__)
 
+
 class TreeCrownDelineationDataModule(L.LightningDataModule):
-    def __init__(self,
-                 rasters: Union[str, list],
-                 masks: Union[str, list],
-                 outlines: Union[str, list],
-                 distance_transforms: Union[str, list],
-                 training_split: float = 0.7,
-                 batch_size: int = 16,
-                 val_batch_size: int = 2,
-                 num_workers: int = 8,
-                 augment_train: Dict[str, Any] = {},
-                 augment_eval: Dict[str, Any] = {},
-                 ndvi_config: Dict[str, Any] = {'concatenate': False},
-                 divide_by: float = 1,
-                 dilate_outlines: int = 0,
-                 shuffle: bool = True,
-                 train_indices: list[int] = None,
-                 val_indices: list[int] = None,
-                 test_indices: list[int] = None,
-                 ground_truth_config: Dict[str, Any] = {'labels': None},
-                 ):
-        '''
+    def __init__(
+        self,
+        rasters: Union[str, list],
+        masks: Union[str, list],
+        outlines: Union[str, list],
+        distance_transforms: Union[str, list],
+        training_split: float = 0.7,
+        batch_size: int = 16,
+        val_batch_size: int = 2,
+        num_workers: int = 8,
+        augment_train: Dict[str, Any] = {},
+        augment_eval: Dict[str, Any] = {},
+        ndvi_config: Dict[str, Any] = {"concatenate": False},
+        divide_by: float = 1,
+        dilate_outlines: int = 0,
+        shuffle: bool = True,
+        train_indices: list[int] = None,
+        val_indices: list[int] = None,
+        test_indices: list[int] = None,
+        ground_truth_config: Dict[str, Any] = {"labels": None},
+    ):
+        """
         TreeCrownDelineationDataModule
 
         Datamodule to hold the different datasets, apply preprocessing, and return DataLoaders.
@@ -60,7 +66,7 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
             val_indices (list[int], optional): List of indices of files to be used for validation. Cannot be used with shuffle. Defaults to None.
             test_indices (list[int], optional): List of indices of files to be used for testing. Cannot be used with shuffle. Defaults to None.
             ground_truth_config (Dict[str, Any], optional): Dictionary defining the ground truth preprocessing settings. Defaults to {'labels': None}.
-        '''
+        """
         super().__init__()
         if type(rasters) in (list, tuple, np.ndarray):
             self.rasters = rasters
@@ -89,21 +95,23 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
         self.val_ds = None
         self.test_ds = None
 
-        self.targets = None # will be assigned in setup_data
+        self.targets = None  # will be assigned in setup_data
 
     def prepare_data(self) -> None:
-        '''prepare_data
-        
+        """prepare_data
+
         Prepare the ground truth masks, outlines, and distance transforms from
         ground truth labels.
-        '''
+        """
 
         if self.ground_truth_config.labels is None:
-            log.info('No ground truth labels provided. Proceed with existing ground truth ...')
-            log.info(f'Masks: {self.masks}')
-            log.info(f'Outlines: {self.outlines}')
-            log.info(f'Distance transforms: {self.distance_transforms}')
-    
+            log.info(
+                "No ground truth labels provided. Proceed with existing ground truth ..."
+            )
+            log.info(f"Masks: {self.masks}")
+            log.info(f"Outlines: {self.outlines}")
+            log.info(f"Distance transforms: {self.distance_transforms}")
+
             return
 
         # prepare ground truth from labels
@@ -111,56 +119,73 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
             ground_truth = gpd.read_file(self.ground_truth_config.labels)
         elif os.path.isdir(self.ground_truth_config.labels):
             # combine all the ground truth labels
-            shapes = np.sort(glob.glob(f'{self.ground_truth_config.labels}/label_*.shp'))
-            ground_truth = pd.concat([fix_crs(gpd.read_file(shape)).assign(tile=shape) for shape in shapes])
-            log.info(f'Combining all polygons in {os.path.join(self.ground_truth_config.labels, 'all_labels.shp')}')
-            ground_truth.drop(columns='tile').to_file(os.path.join(self.ground_truth_config.labels, 'all_labels.shp'))
+            shapes = np.sort(
+                glob.glob(f"{self.ground_truth_config.labels}/label_*.shp")
+            )
+            ground_truth = pd.concat(
+                [fix_crs(gpd.read_file(shape)).assign(tile=shape) for shape in shapes]
+            )
+            log.info(
+                f'Combining all polygons in {os.path.join(self.ground_truth_config.labels, "all_labels.shp")}'
+            )
+            ground_truth.drop(columns="tile").to_file(
+                os.path.join(self.ground_truth_config.labels, "all_labels.shp")
+            )
 
         # generate masks
-        mask_generator = MaskOutlinesGenerator(rasters=self.rasters,
-                                               output_path=self.masks,
-                                               output_file_prefix='mask',
-                                               ground_truth_labels=ground_truth,
-                                               valid_class_ids=self.ground_truth_config.valid_class_ids,
-                                               class_column_name=self.ground_truth_config.class_column_name,
-                                               crs=self.ground_truth_config.crs,
-                                               nproc=self.ground_truth_config.nproc,
-                                               generate_outlines=False)
+        mask_generator = MaskOutlinesGenerator(
+            rasters=self.rasters,
+            output_path=self.masks,
+            output_file_prefix="mask",
+            ground_truth_labels=ground_truth,
+            valid_class_ids=self.ground_truth_config.valid_class_ids,
+            class_column_name=self.ground_truth_config.class_column_name,
+            crs=self.ground_truth_config.crs,
+            nproc=self.ground_truth_config.nproc,
+            generate_outlines=False,
+        )
         mask_generator.apply_process()
 
         # generate outlines
-        outlines_generator = MaskOutlinesGenerator(rasters=self.rasters,
-                                                   output_path=self.outlines,
-                                                   output_file_prefix='outline',
-                                                   ground_truth_labels=ground_truth,
-                                                   valid_class_ids=self.ground_truth_config.valid_class_ids,
-                                                   class_column_name=self.ground_truth_config.class_column_name,
-                                                   crs=self.ground_truth_config.crs,
-                                                   nproc=self.ground_truth_config.nproc,
-                                                   generate_outlines=True)
+        outlines_generator = MaskOutlinesGenerator(
+            rasters=self.rasters,
+            output_path=self.outlines,
+            output_file_prefix="outline",
+            ground_truth_labels=ground_truth,
+            valid_class_ids=self.ground_truth_config.valid_class_ids,
+            class_column_name=self.ground_truth_config.class_column_name,
+            crs=self.ground_truth_config.crs,
+            nproc=self.ground_truth_config.nproc,
+            generate_outlines=True,
+        )
         outlines_generator.apply_process()
 
         # generate distance transforms
-        dist_trafo_generator = DistanceTransformGenerator(rasters=self.rasters,
-                                                   output_path=self.distance_transforms,
-                                                   output_file_prefix='dist_trafo',
-                                                   ground_truth_labels=ground_truth,
-                                                   valid_class_ids=self.ground_truth_config.valid_class_ids,
-                                                   class_column_name=self.ground_truth_config.class_column_name,
-                                                   crs=self.ground_truth_config.crs,
-                                                   nproc=self.ground_truth_config.nproc)
+        dist_trafo_generator = DistanceTransformGenerator(
+            rasters=self.rasters,
+            output_path=self.distance_transforms,
+            output_file_prefix="dist_trafo",
+            ground_truth_labels=ground_truth,
+            valid_class_ids=self.ground_truth_config.valid_class_ids,
+            class_column_name=self.ground_truth_config.class_column_name,
+            crs=self.ground_truth_config.crs,
+            nproc=self.ground_truth_config.nproc,
+        )
         dist_trafo_generator.apply_process()
 
     def setup(self, stage=None):  # throws error if arg is removed
-        if stage == 'fit':
+        if stage == "fit":
             targets = [self.masks, self.outlines, self.distance_transforms]
 
             if type(targets[0]) in (list, tuple, np.ndarray):
                 self.targets = [np.sort(file_list) for file_list in targets]
             else:
-                self.targets = [np.sort(glob.glob(os.path.abspath(file_list) + "/*.tif")) for file_list in targets]
+                self.targets = [
+                    np.sort(glob.glob(os.path.abspath(file_list) + "/*.tif"))
+                    for file_list in targets
+                ]
 
-            if self.shuffle: 
+            if self.shuffle:
                 if self.val_indices is not None or self.train_indices is not None:
                     raise ValueError('Cannot use shuffled dataset split together with prescribed train/val indices')
                 shuffle_idx = np.arange(len(self.rasters)).astype(int)
@@ -173,58 +198,88 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
 
             # if training and validation indices are given, use them
             if self.train_indices is None:
-                training_data = [r[:int(len(r) * self.training_split)] for r in data]
+                training_data = [r[: int(len(r) * self.training_split)] for r in data]
             else:
                 training_data = [r[self.train_indices] for r in data]
 
             if self.val_indices is None:
-                validation_data = [r[int(len(r) * self.training_split):] for r in data]
+                validation_data = [r[int(len(r) * self.training_split) :] for r in data]
             else:
                 validation_data = [r[self.val_indices] for r in data]
 
-            log.info('Tiles in training data')
+            log.info("Tiles in training data")
             for t in training_data[0]:
                 log.info(t)
-            log.info('Tiles in validation data')
+            log.info("Tiles in validation data")
             for t in validation_data[0]:
                 log.info(t)
 
             # load the data into a custom dataset format
-            self.train_ds = ds.TreeCrownDelineationDataset(training_data[0],
-                                                    training_data[1:],
-                                                    augmentation=self.augment_train,
-                                                    ndvi_config=self.ndvi_config,
-                                                    dilate_outlines=self.dilate_outlines,
-                                                    divide_by=self.divide_by)
+            self.train_ds = ds.TreeCrownDelineationDataset(
+                training_data[0],
+                training_data[1:],
+                augmentation=self.augment_train,
+                ndvi_config=self.ndvi_config,
+                dilate_outlines=self.dilate_outlines,
+                divide_by=self.divide_by,
+            )
 
             if self.training_split < 1 or self.val_indices is not None:
-                self.val_ds = ds.TreeCrownDelineationDataset(validation_data[0],
-                                                        validation_data[1:],
-                                                        augmentation=self.augment_eval,
-                                                        ndvi_config=self.ndvi_config,
-                                                        dilate_outlines=self.dilate_outlines,
-                                                        divide_by=self.divide_by)
+                self.val_ds = ds.TreeCrownDelineationDataset(
+                    validation_data[0],
+                    validation_data[1:],
+                    augmentation=self.augment_eval,
+                    ndvi_config=self.ndvi_config,
+                    dilate_outlines=self.dilate_outlines,
+                    divide_by=self.divide_by,
+                )
 
-        elif stage == 'test':
+        elif stage == "test":
             if self.test_indices is not None:
                 self.rasters = self.rasters[self.test_indices]
-            self.test_ds = ds.TreeCrownDelineationInferenceDataset(self.rasters,
-                                                    augmentation=self.augment_eval,
-                                                    ndvi_config=self.ndvi_config,
-                                                    dilate_outlines=self.dilate_outlines,
-                                                    in_memory=False,
-                                                    divide_by=self.divide_by)
+            self.test_ds = ds.TreeCrownDelineationInferenceDataset(
+                self.rasters,
+                augmentation=self.augment_eval,
+                ndvi_config=self.ndvi_config,
+                dilate_outlines=self.dilate_outlines,
+                in_memory=False,
+                divide_by=self.divide_by,
+            )
 
     def train_dataloader(self):
-        return DataLoader(self.train_ds, batch_size=self.batch_size, num_workers=self.num_workers, drop_last=True, pin_memory=True)
+        return DataLoader(
+            self.train_ds,
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+            drop_last=True,
+            pin_memory=True,
+        )
 
     def val_dataloader(self):
         if self.val_ds is None:
             return None
-        return DataLoader(self.val_ds, batch_size=self.val_batch_size, num_workers=self.num_workers, drop_last=True, pin_memory=True)
+        return DataLoader(
+            self.val_ds,
+            batch_size=self.val_batch_size,
+            num_workers=self.num_workers,
+            drop_last=True,
+            pin_memory=True,
+        )
 
     def test_dataloader(self):
-        return DataLoader(self.test_ds, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=False, drop_last=False)
+        return DataLoader(
+            self.test_ds,
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+            shuffle=False,
+            drop_last=False,
+        )
 
     def predict_dataloader(self):
-        return DataLoader(self.test_ds, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=False, drop_last=False)
+        return DataLoader(
+            self.test_ds,
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+            shuffle=False,
+            drop_last=False,
+        )

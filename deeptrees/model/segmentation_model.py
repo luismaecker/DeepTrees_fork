@@ -3,6 +3,7 @@ import segmentation_models_pytorch as smp
 import lightning as L
 from deeptrees.modules import utils
 
+
 class SegmentationModel(L.LightningModule):
     def __init__(self,
                  in_channels: int = 4,
@@ -25,28 +26,26 @@ class SegmentationModel(L.LightningModule):
 
         # architectures should be static
         match architecture:
-            case 'Unet':
+            case "Unet":
                 arch = smp.Unet
-            case 'Unet++':
+            case "Unet++":
                 arch = smp.UnetPlusPlus
-            case 'Linknet':
+            case "Linknet":
                 arch = smp.Linknet
-            case 'FPN':
+            case "FPN":
                 arch = smp.FPN
-            case 'PSPNet':
+            case "PSPNet":
                 arch = smp.PSPNet
-            case 'PAN':
+            case "PAN":
                 arch = smp.PAN
-            case 'DeepLabV3':
+            case "DeepLabV3":
                 arch = smp.DeepLabV3
-            case 'DeepLabV3+':
+            case "DeepLabV3+":
                 arch = smp.DeepLabV3Plus
             case _:
                 raise ValueError(f"Unsupported architecture: {architecture}")
 
-        self.model = arch(in_channels=in_channels,
-                          classes=2,
-                          encoder_name=backbone)
+        self.model = arch(in_channels=in_channels, classes=2, encoder_name=backbone)
         # set batchnorm momentum to tensorflow standard, which works better
         utils.set_batchnorm_momentum(self.model, 0.99)
 
