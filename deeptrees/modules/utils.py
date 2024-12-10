@@ -1,5 +1,6 @@
 import os
 import time
+import itertools
 import osgeo.gdal as gdal
 import osgeo.gdalnumeric as gdn
 import numpy as np
@@ -718,6 +719,7 @@ def predict_on_array_cf(model,
 
             with torch.no_grad():
                 prediction = model(torch.from_numpy(batch).to(device=device, dtype=torch.float32))
+                print('batch', batch.shape)
                 if aggregate_metric:
                     metric += prediction[1].cpu().numpy()
                     prediction = prediction[0]
@@ -801,3 +803,102 @@ def fix_crs(shape, is_crs=4326, target_crs=25832):
         shape.crs = is_crs
 
     return shape.to_crs(epsg=target_crs)
+
+
+def predict_with_tiles(model, raster_tensor, max_patch_size=256, tiled_batch_size=32, stride=None):
+    '''
+    Predict on a raster of arbitrary size using smaller tiles where the predictions are then averaged.
+
+    Args:
+        model: Trained DeepTrees model.
+        raster_tensor (torch.tensor): Tensor with the values of the raster tile.
+        max_patch_size (int, optional): Maximum patch size used in inference. Defaults to 256.
+        tiled_batch_size (int, optional): Length of the batch of patches. Defaults to 32.
+        stride (int, optional): Apply patches in a strided manner. Defaults to None.
+
+    Returns:
+        Model output for the input raster.
+    '''
+    # create the patch idxs
+    batch_size = raster_tensor.shape[0] # batch size
+    Sx = raster_tensor.shape[-2] # raster edge length
+    Sy = raster_tensor.shape[-1] # raster edge length
+    S = min(Sx, Sy) # shortest edge length
+
+    # outputs are stored here
+    output = torch.zeros(batch_size, 3, Sx, Sy)
+    weight = torch.zeros(Sx, Sy) + 1e-9
+
+    if Sx < 32 or Sy < 32:
+        raise ValueError('Image smaller than 32x32 must be padded to work with SegmentationModel')
+
+    # small patch size that is used in inference
+    patch_size = max(32, min(S, max_patch_size))
+
+    print('Patch size in inference', patch_size)
+
+    patch_weight = compute_pyramid_patch_weight_loss(patch_size, patch_size)#create_gaussian_weight_mask(patch_size)
+
+    # start and end indices of patches in x/y
+    ix0_x = 0
+    ix1_x = Sx - patch_size
+    ix0_y = 0
+    ix1_y = Sy - patch_size
+
+    # stride defines how many patches we create
+    if stride is None:
+        stride = patch_size
+
+    # number of patches along x/y
+    np_x = int(np.ceil(Sx / stride))
+    np_y = int(np.ceil(Sy / stride))
+
+    # indices of patches along x/y
+    patch_ixs_x = np.linspace(ix0_x, ix1_x, np_x).astype(int)
+    patch_ixs_y = np.linspace(ix0_y, ix1_y, np_y).astype(int)
+
+    # combine in one list
+    patch_ixs = list(itertools.product(patch_ixs_x, patch_ixs_y))
+
+    n_patches = np_x * np_y
+    
+    # process patches as batches
+    n_batches = int(np.ceil(len(patch_ixs) / tiled_batch_size))
+    print('Number of patches', n_patches, ', with x', np_x, 'y', np_y)
+    print('Number of batches', n_batches, 'with batch size', tiled_batch_size)
+
+    for i in range(n_batches):
+        # handle last batch being shorter than the others (potentially)
+        if i == n_batches - 1 and len(patch_ixs) % tiled_batch_size > 0:
+            tiled_batch_size = len(patch_ixs) % tiled_batch_size
+        print('Processing batch of tiles', i, 'with length', tiled_batch_size)
+        # create a batch of small patches
+        batch_of_patches = []
+        for j in range(tiled_batch_size):
+            (x_start, y_start) = patch_ixs[i * tiled_batch_size + j]
+            x_end   = x_start + patch_size
+            y_end   = y_start + patch_size
+
+            batch_of_patches.append(raster_tensor[:, :, x_start:x_end, y_start:y_end])
+        
+        batch_of_patches = torch.concat(batch_of_patches)
+
+        # run inference on this batch of patches
+        with torch.no_grad():
+            batch_outputs = model(batch_of_patches)
+
+        # store predictions in output array
+        for j in range(tiled_batch_size):
+            (x_start, y_start) = patch_ixs[i * tiled_batch_size + j]
+            x_end = x_start + patch_size
+            y_end = y_start + patch_size
+
+            # add weighted patch output
+            output[:, :, x_start:x_end, y_start:y_end] += batch_outputs[j] * patch_weight
+            # keep track of all weights
+            weight[x_start:x_end, y_start:y_end] += patch_weight
+
+    # divide output by weights
+    scaled_output = output / weight
+
+    return output, scaled_output, weight
