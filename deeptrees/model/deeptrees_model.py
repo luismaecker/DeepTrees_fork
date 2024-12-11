@@ -367,8 +367,8 @@ class DeepTreesModel(L.LightningModule):
         log.info(f'Predicting on {raster_name} ...')
 
         # We need to apply this patch-wise to fulfil the requirement that edge length // 32 == 0
-        t_inference = time.time() - t0
         output = utils.predict_on_tile(self, x)
+        t_inference = time.time() - t0
 
         mask = output[:,0].cpu().numpy().squeeze()
         outline = output[:,1].cpu().numpy().squeeze()
