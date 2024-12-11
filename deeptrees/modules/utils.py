@@ -832,7 +832,7 @@ def create_batch_of_patches(input_tensor, patch_size, patch_ixs, offset, local_b
     return batch_of_patches
 
 
-def predict_on_tile(model, input_tensor, max_patch_size=256, local_batch_size=32, stride=128):
+def predict_on_tile(model, input_tensor, patch_size=256, local_batch_size=32, stride=128):
     '''
     Predict on a single tile of arbitrary dimension.
 
@@ -846,7 +846,7 @@ def predict_on_tile(model, input_tensor, max_patch_size=256, local_batch_size=32
     Args:
         model: Trained DeepTrees model.
         input_tensor (torch.tensor): Tensor with the values of the raster tile.
-        max_patch_size (int, optional): Maximum patch size used in inference. Defaults to 256.
+        patch_size (int, optional): Patch size used in inference. Defaults to 256.
         local_batch_size (int, optional): Length of the batch of patches. Defaults to 32.
         stride (int, optional): Apply patches in a strided manner. Defaults to 128.
 
@@ -864,17 +864,21 @@ def predict_on_tile(model, input_tensor, max_patch_size=256, local_batch_size=32
     S = min(Sx, Sy) # shortest edge length
 
     # outputs are stored here
-    output = torch.zeros(1, 3, Sx, Sy)
-    accumulated_weight = torch.zeros(Sx, Sy) + 1e-9
+    output = torch.zeros(1, 3, Sx, Sy, device=model.device)
+    # accumulated weight matrix for normalization
+    accumulated_weight = torch.zeros(Sx, Sy, device=model.device)
 
     if Sx < 32 or Sy < 32:
         raise ValueError('Image smaller than 32x32 must be padded to work with SegmentationModel')
 
     # small patch size that is used in inference
-    if S < max_patch_size:
-        max_patch_size = (int(S // 32) * 32)
-    patch_size = max(32, max_patch_size)
-    patch_weight = compute_pyramid_patch_weight_loss(patch_size, patch_size)
+    if S < patch_size:
+        patch_size = (int(S // 32) * 32)
+    patch_size = max(32, patch_size)
+
+    # weight applied to patch
+    patch_weight = torch.from_numpy(compute_pyramid_patch_weight_loss(patch_size, patch_size))
+    patch_weight = patch_weight.to(model.device)
 
     # start and end indices of patches in x/y
     ix0_x = 0
@@ -883,7 +887,7 @@ def predict_on_tile(model, input_tensor, max_patch_size=256, local_batch_size=32
     ix1_y = Sy - patch_size
 
     # stride defines how many patches we create
-    if stride > max_patch_size:
+    if stride > patch_size:
         log.warning('Stride exceeded patch size, resetting to patch size')
         stride = patch_size
 

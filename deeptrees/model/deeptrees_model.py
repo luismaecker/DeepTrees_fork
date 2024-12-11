@@ -370,14 +370,14 @@ class DeepTreesModel(L.LightningModule):
         t_inference = time.time() - t0
         output = utils.predict_on_tile(self, x)
 
-        mask = output.cpu().numpy().squeeze()
-        outline = output.cpu().numpy().squeeze()
-        distance_transform = output.cpu().numpy().squeeze()
+        mask = output[:,0].cpu().numpy().squeeze()
+        outline = output[:,1].cpu().numpy().squeeze()
+        distance_transform = output[:,2].cpu().numpy().squeeze()
 
         if self.postprocessing_config['save_predictions']:
-            utils.array_to_tif(mask, f'./predictions/mask_{raster_suffix}', src_raster=raster_name)
-            utils.array_to_tif(outline, f'./predictions/outline_{raster_suffix}', src_raster=raster_name)
-            utils.array_to_tif(distance_transform, f'./predictions/distance_transform_{raster_suffix}', src_raster=raster_name)
+            utils.array_to_tif(mask, f'./predictions/mask_{raster_suffix}', src_raster=raster_name, num_bands='single')
+            utils.array_to_tif(outline, f'./predictions/outline_{raster_suffix}', src_raster=raster_name, num_bands='single')
+            utils.array_to_tif(distance_transform, f'./predictions/distance_transform_{raster_suffix}', src_raster=raster_name, num_bands='single')
 
         # active learning
         if self.postprocessing_config["active_learning"]:
