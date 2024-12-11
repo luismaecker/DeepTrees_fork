@@ -805,39 +805,76 @@ def fix_crs(shape, is_crs=4326, target_crs=25832):
     return shape.to_crs(epsg=target_crs)
 
 
-def predict_with_tiles(model, raster_tensor, max_patch_size=256, tiled_batch_size=32, stride=None):
+def create_batch_of_patches(input_tensor, patch_size, patch_ixs, offset, local_batch_size):
     '''
-    Predict on a raster of arbitrary size using smaller tiles where the predictions are then averaged.
+    Helper function to create a batch of small patches.
+
+    Args:
+        input_tensor (torch.Tensor): Original input tensor.
+        patch_size (int): Small patch size.
+        patch_ixs (list): List of tuples specifying (x_start, y_start) for the small patches in the input tensor.
+        offset (int): Offset of current batch in patch_ixs
+        local_batch_size (int): Size of the batch of small patches.
+
+    Returns:
+        torch.Tensor: One batch of small patches to be used in inference.
+    '''
+
+    batch_of_patches = []
+    for j in range(local_batch_size):
+        (x_start, y_start) = patch_ixs[offset * local_batch_size + j]
+        x_end   = x_start + patch_size
+        y_end   = y_start + patch_size
+
+        batch_of_patches.append(input_tensor[:, :, x_start:x_end, y_start:y_end])
+        
+    batch_of_patches = torch.concat(batch_of_patches)
+    return batch_of_patches
+
+
+def predict_on_tile(model, input_tensor, max_patch_size=256, local_batch_size=32, stride=128):
+    '''
+    Predict on a single tile of arbitrary dimension.
+
+    The tile is split into smaller patches that satisfy the criterion given by the segmentation model
+    that edge length must be divisible by 32. The stride parameter controls the overlap of these small patches.
+    Inference is run on all small patches in a memory-efficient way. The output is collected and weighted
+    with the pyramid weight function to reduce artefacts where the patches overlap.
+
+    The output tensor contains mask, outline, and distance transform in the same shape as the input tensor.
 
     Args:
         model: Trained DeepTrees model.
-        raster_tensor (torch.tensor): Tensor with the values of the raster tile.
+        input_tensor (torch.tensor): Tensor with the values of the raster tile.
         max_patch_size (int, optional): Maximum patch size used in inference. Defaults to 256.
-        tiled_batch_size (int, optional): Length of the batch of patches. Defaults to 32.
-        stride (int, optional): Apply patches in a strided manner. Defaults to None.
+        local_batch_size (int, optional): Length of the batch of patches. Defaults to 32.
+        stride (int, optional): Apply patches in a strided manner. Defaults to 128.
 
     Returns:
         Model output for the input raster.
     '''
-    # create the patch idxs
-    batch_size = raster_tensor.shape[0] # batch size
-    Sx = raster_tensor.shape[-2] # raster edge length
-    Sy = raster_tensor.shape[-1] # raster edge length
+
+    # set model to evaluation mode
+    model.eval()
+
+    # retrieve input shapes
+    input_shape = input_tensor.shape
+    Sx = input_tensor.shape[-2] # raster edge length
+    Sy = input_tensor.shape[-1] # raster edge length
     S = min(Sx, Sy) # shortest edge length
 
     # outputs are stored here
-    output = torch.zeros(batch_size, 3, Sx, Sy)
-    weight = torch.zeros(Sx, Sy) + 1e-9
+    output = torch.zeros(1, 3, Sx, Sy)
+    accumulated_weight = torch.zeros(Sx, Sy) + 1e-9
 
     if Sx < 32 or Sy < 32:
         raise ValueError('Image smaller than 32x32 must be padded to work with SegmentationModel')
 
     # small patch size that is used in inference
-    patch_size = max(32, min(S, max_patch_size))
-
-    print('Patch size in inference', patch_size)
-
-    patch_weight = compute_pyramid_patch_weight_loss(patch_size, patch_size)#create_gaussian_weight_mask(patch_size)
+    if S < max_patch_size:
+        max_patch_size = (int(S // 32) * 32)
+    patch_size = max(32, max_patch_size)
+    patch_weight = compute_pyramid_patch_weight_loss(patch_size, patch_size)
 
     # start and end indices of patches in x/y
     ix0_x = 0
@@ -846,7 +883,8 @@ def predict_with_tiles(model, raster_tensor, max_patch_size=256, tiled_batch_siz
     ix1_y = Sy - patch_size
 
     # stride defines how many patches we create
-    if stride is None:
+    if stride > max_patch_size:
+        log.warning('Stride exceeded patch size, resetting to patch size')
         stride = patch_size
 
     # number of patches along x/y
@@ -860,45 +898,34 @@ def predict_with_tiles(model, raster_tensor, max_patch_size=256, tiled_batch_siz
     # combine in one list
     patch_ixs = list(itertools.product(patch_ixs_x, patch_ixs_y))
 
-    n_patches = np_x * np_y
-    
     # process patches as batches
-    n_batches = int(np.ceil(len(patch_ixs) / tiled_batch_size))
-    print('Number of patches', n_patches, ', with x', np_x, 'y', np_y)
-    print('Number of batches', n_batches, 'with batch size', tiled_batch_size)
+    n_batches = int(np.ceil(len(patch_ixs) / local_batch_size))
 
     for i in range(n_batches):
         # handle last batch being shorter than the others (potentially)
-        if i == n_batches - 1 and len(patch_ixs) % tiled_batch_size > 0:
-            tiled_batch_size = len(patch_ixs) % tiled_batch_size
-        print('Processing batch of tiles', i, 'with length', tiled_batch_size)
+        if i == n_batches - 1 and len(patch_ixs) % local_batch_size > 0:
+            local_batch_size = len(patch_ixs) % local_batch_size
         # create a batch of small patches
-        batch_of_patches = []
-        for j in range(tiled_batch_size):
-            (x_start, y_start) = patch_ixs[i * tiled_batch_size + j]
-            x_end   = x_start + patch_size
-            y_end   = y_start + patch_size
-
-            batch_of_patches.append(raster_tensor[:, :, x_start:x_end, y_start:y_end])
-        
-        batch_of_patches = torch.concat(batch_of_patches)
+        batch_of_patches = create_batch_of_patches(input_tensor, patch_size, patch_ixs, i, local_batch_size)
 
         # run inference on this batch of patches
         with torch.no_grad():
             batch_outputs = model(batch_of_patches)
 
-        # store predictions in output array
-        for j in range(tiled_batch_size):
-            (x_start, y_start) = patch_ixs[i * tiled_batch_size + j]
+        # update predictions in output array
+        for j in range(local_batch_size):
+            (x_start, y_start) = patch_ixs[i * local_batch_size + j]
             x_end = x_start + patch_size
             y_end = y_start + patch_size
 
             # add weighted patch output
             output[:, :, x_start:x_end, y_start:y_end] += batch_outputs[j] * patch_weight
             # keep track of all weights
-            weight[x_start:x_end, y_start:y_end] += patch_weight
+            accumulated_weight[x_start:x_end, y_start:y_end] += patch_weight
 
     # divide output by weights
-    scaled_output = output / weight
+    output = output / accumulated_weight
 
-    return output, scaled_output, weight
+    if len(input_shape) == 4:
+        return output
+    return output.squeeze(0)

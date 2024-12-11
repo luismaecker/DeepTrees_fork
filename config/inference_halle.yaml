@@ -16,9 +16,7 @@ data:
     nir: 3               # Index of Infrared channel
   divide_by: 255         # divisor
   dilate_outlines: False # dilate the outlines by number of pixels
-  augment_eval:
-    Pad:
-      padding: 6 
+  augment_eval: {}
   ground_truth_config:
     labels: null
   num_workers: 8         # Number of workers in dataloader
