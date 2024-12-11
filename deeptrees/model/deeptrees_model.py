@@ -364,20 +364,20 @@ class DeepTreesModel(L.LightningModule):
         trafo = raster_dict['trafo'][0]
         raster_name = raster_dict['raster_id'][0]
         raster_suffix = os.path.basename(raster_name).replace('tile_', '')
-        output = self(x)
-        
         log.info(f'Predicting on {raster_name} ...')
 
+        # We need to apply this patch-wise to fulfil the requirement that edge length // 32 == 0
+        output = utils.predict_on_tile(self, x)
         t_inference = time.time() - t0
 
-        mask = output[:, 0, 6:-6, 6:-6].cpu().numpy().squeeze()
-        outline = output[:, 1, 6:-6, 6:-6].cpu().numpy().squeeze()
-        distance_transform = output[:, 2, 6:-6, 6:-6].cpu().numpy().squeeze()
+        mask = output[:,0].cpu().numpy().squeeze()
+        outline = output[:,1].cpu().numpy().squeeze()
+        distance_transform = output[:,2].cpu().numpy().squeeze()
 
         if self.postprocessing_config['save_predictions']:
-            utils.array_to_tif(mask, f'./predictions/mask_{raster_suffix}', src_raster=raster_name)
-            utils.array_to_tif(outline, f'./predictions/outline_{raster_suffix}', src_raster=raster_name)
-            utils.array_to_tif(distance_transform, f'./predictions/distance_transform_{raster_suffix}', src_raster=raster_name)
+            utils.array_to_tif(mask, f'./predictions/mask_{raster_suffix}', src_raster=raster_name, num_bands='single')
+            utils.array_to_tif(outline, f'./predictions/outline_{raster_suffix}', src_raster=raster_name, num_bands='single')
+            utils.array_to_tif(distance_transform, f'./predictions/distance_transform_{raster_suffix}', src_raster=raster_name, num_bands='single')
 
         # active learning
         if self.postprocessing_config["active_learning"]:
@@ -392,8 +392,8 @@ class DeepTreesModel(L.LightningModule):
                 sigma=self.postprocessing_config["sigma"],
             )
             entropy_map = tcdpp.calculate_entropy(pmap)
-            log.info(f"Mean entropy: {np.mean(entropy_map):.4f}")
-            log.info(f"Median entropy: {np.median(entropy_map):.4f}")
+            log.info(f"Mean entropy in {os.path.basename(raster_name)}: {np.mean(entropy_map):.4f}")
+            log.info(f"Max entropy in {os.path.basename(raster_name)}: {np.max(entropy_map):.4f}")
 
             if self.postprocessing_config['save_entropy_maps']:
                 utils.array_to_tif(entropy_map, f'./entropy_maps/entropy_heatmap_{raster_suffix}', src_raster=raster_name)

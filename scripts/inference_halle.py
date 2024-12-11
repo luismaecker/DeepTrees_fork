@@ -39,7 +39,6 @@ from deeptrees.modules.indices import ndvi
 from deeptrees.modules.postprocessing import extract_polygons
 from deeptrees.modules.utils import get_crs
 from deeptrees.model.inference_model import InferenceModel
-from deeptrees.model.averaging_model import AveragingModel
 
 import hydra
 from omegaconf import DictConfig, OmegaConf
@@ -47,7 +46,7 @@ from omegaconf import DictConfig, OmegaConf
 import logging
 log = logging.getLogger(__name__)
 
-@hydra.main(version_base=None, config_path="../config", config_name="inference_halle")
+@hydra.main(version_base=None, config_path="../config", config_name="inference_scripted_halle")
 def test(config: DictConfig) -> None:
     print(OmegaConf.to_yaml(config))
 
@@ -65,10 +64,6 @@ def test(config: DictConfig) -> None:
     
     if isinstance(config.model_path, str):
         model = torch.jit.load(config.model_path).to(config.device)
-
-    elif isinstance(config.model_path, list):
-        models = [torch.jit.load(m).to(config.device) for m in config.model_path]
-        model = AveragingModel(models)
     else:
         raise RuntimeError('Model loading failed')
 
@@ -129,12 +124,10 @@ def test(config: DictConfig) -> None:
                     n = (n + 1) / 2
                 data = np.concatenate((data, n), axis=0)
 
-            np.save('/work/ka1176/caroline/gitlab/TreeCrownDelineation/notebooks/development/data', data)
-            print('data_mean', data.mean())
-
             t2 = time.time()
             disk_loading_time += t2 - t1
             log.info("Starting prediction on chunk {}/{}".format(idx, nchunks))
+            print(data.shape)
             result = utils.predict_on_array_cf(model,
                                                 data,
                                                 in_shape=(nbands + config.ndvi, config.width,
@@ -148,7 +141,6 @@ def test(config: DictConfig) -> None:
                                                 no_data=0,
                                                 verbose=True)
 
-            np.save('/work/ka1176/caroline/gitlab/TreeCrownDelineation/notebooks/development/result', result)
             t3 = time.time()
             inference_time += t3 - t2
 
