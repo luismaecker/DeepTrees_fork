@@ -20,7 +20,24 @@ import logging
 log = logging.getLogger(__name__)
 
 class TreeCrownDelineationBaseDataset(ABC):
-    """In memory remote sensing dataset for image segmentation."""
+    """
+    In-memory remote sensing dataset for image segmentation.
+
+    This base dataset class handles the loading and preprocessing of raster and target files for
+    tree crown delineation, and image segmentation task.
+
+    Parameters:
+    - raster_files (list[str]): List of file paths to the raster images.
+    - target_files (list[str]): List of file paths to the target images.
+    - augmentation (Dict[str, Any]): Dictionary containing augmentation configurations.
+    - ndvi_config (Dict[str, Any], optional): Configuration for NDVI, default is {'concatenate': False}.
+    - dilate_outlines (int, optional): Number of pixels to dilate the outlines, default is 0.
+    - overwrite_nan_with_zeros (bool, optional): Whether to overwrite NaN values with zeros, default is True.
+    - in_memory (bool, optional): Whether to load the data into memory, default is True.
+    - dim_ordering (str, optional): Dimension ordering, default is "CHW".
+    - dtype (str, optional): Data type of the raster images, default is "float32".
+    - divide_by (int, optional): Value to divide the raster data by, default is 1.
+    """
     def __init__(self, 
                  raster_files: list[str], 
                  target_files: list[str], 
@@ -154,8 +171,15 @@ class TreeCrownDelineationBaseDataset(ABC):
 
         return raster
 
-    def load_target(self, file: str):
-        """Loads a target from disk."""
+    def load_target(self, file: str) -> xr.Dataset|xr.DataArray:
+        """Load target  raster from disk.
+
+        Args:
+            file (str): path to file. 
+
+        Returns:
+            xr.Dataset or xr.DataArray: Raster.
+        """        
         target = rioxarray.open_rasterio(file).load()
 
         if self.dim_ordering == 'CHW':
@@ -225,6 +249,13 @@ class TreeCrownDelineationBaseDataset(ABC):
         return raster
 
 class TreeCrownDelineationDataset(TreeCrownDelineationBaseDataset, IterableDataset):
+    '''
+    Iterable TreeCrownDelineation dataset.
+
+    Yields samples from all rasters until, statistically, each pixel has been 
+    covered once. If the raster edge length exceeds the sample edge length,
+    this implies that multiple samples can be sampled from one raster.
+    '''
     def __init__(self, 
                  raster_files: list[str], 
                  target_files: list[str], 
@@ -236,26 +267,52 @@ class TreeCrownDelineationDataset(TreeCrownDelineationBaseDataset, IterableDatas
                  dim_ordering="CHW",
                  dtype="float32",
                  divide_by=1):
+        '''__init__ 
+
+        Creates a dataset containing images and targets (masks, outlines, and distance_transforms).
+
+        Args:
+            raster_files (list[str]): List of file paths to source rasters. File names must be of the form '.../the_name_i.tif' where i is some index
+            target_files (list[str]): mask_files: A tuple containing lists of file paths to different sorts of 'masks', e.g. mask, outline, distance transform.
+                  The mask and raster file names must have the same index ending.
+            augmentation (Dict[str, Any]): Dictionary defining augmentations. Keys correspond to torchvision transforms, values to their kwargs.
+            ndvi_config (_type_, optional): Dictionary defining NDVI concatenation. Defaults to {'concatenate': False}.
+            dilate_outlines (int, optional): If present, dilate outlines by give amount of pixels. Defaults to 0.
+            overwrite_nan_with_zeros (bool, optional): If True, fill missing values in targets with 0. Defaults to True.
+            in_memory (bool, optional): If True, load all rasters and targets into memory (works for small datasets, beware of OOM error). Defaults to True.
+            dim_ordering (str, optional): Order of dimensions. Defaults to "CHW".
+            dtype (str, optional): torch Datatype. Defaults to "float32".
+            divide_by (int, optional): Scalar to divide the raster pixel values by. Defaults to 1.
+        '''
         super().__init__(raster_files, target_files, augmentation, ndvi_config, dilate_outlines,
                          overwrite_nan_with_zeros, in_memory, dim_ordering, dtype, divide_by
                          )
 
-        # TODO replace this by a regex based check
-        # TODO extract ID from mask
-        # TODO check if that matches ID in all three targets
+        # Check that raster ID matches target ID - only in iterable dataset used in training!
         for i, m in enumerate(target_files):
             if len(m) == 0:
                 raise RuntimeError("Mask list {} is empty.".format(i))
             if len(m) != len(raster_files):
                 raise RuntimeError("The length of the given lists must be equal.")
             for j, r in enumerate(raster_files):
-                # FIXME that does not comply with our way of naming the tiles!
                 raster_file_index = re.search(r'(_\d+_\d+.tif)', r).group()
                 if not m[j].endswith(raster_file_index):
                     print(r, m[j])
                     raise RuntimeError(f"The raster and mask lists must be sorted equally.")
 
+
     def __len__(self):
+        """Length of the dataset.
+
+        For this iterable dataset, we can define a length that stops the iteration.
+
+        Here, we define the length as the total pixels divided by the cutout (sample)
+        pixels. This implies that, on average, each pixel has been included once
+        in a sample.
+
+        Returns:
+            int: Prescribed dataset length.
+        """        
         # sum of product of all raster sizes
         total_pixels = np.sum([np.prod(np.array(r.shape)[self.lateral_ax]) for r in self.rasters])
         # product of the shape of cutout done by the transformation
@@ -263,6 +320,14 @@ class TreeCrownDelineationDataset(TreeCrownDelineationBaseDataset, IterableDatas
         return int(total_pixels / cutout_pixels)
 
     def __iter__(self):
+        """Iterate the dataset and yield a sample.
+
+        A sample is a cutout of an original raster file, can include augmentations.
+
+        Yields:
+            torch.Tensor: raster
+            torch.Tensor: target (mask, outline, and distance transform stacked)
+        """        
         i = 0
         while i < len(self):
             idx = np.random.choice(np.arange(len(self.rasters)))
@@ -282,42 +347,23 @@ class TreeCrownDelineationDataset(TreeCrownDelineationBaseDataset, IterableDatas
             i += 1
             yield raster, target
     
-    # the same but with map-style dataset
-    #def __len__(self):
-    #    '''Returns length of the dataset: number of raster files'''
-    #    return len(self.raster_files)
-
-    #def __getitem__(self, idx):
-    #    '''__getitem__ 
-
-    #    Return augmented raster and accompanying target
-
-    #    Args:
-    #        idx (_type_): _description_
-
-    #    Returns:
-    #        _type_: _description_
-    #    '''
-    #    if self.in_memory: # retrieve preloaded tiles
-    #        raster = self.rasters[idx].data
-    #        target = self.targets[idx].data
-    #    else: # load from disk
-    #        raster = self.load_raster(self.raster_files[idx])
-    #        target = self.load_target(self.target_files[idx])
-
-    #    # apply transforms (this ensures they are augmented in the same way)
-    #    # FIXME check with ColorJitter ... we do not want this on targets
-    #    # FIXME implement this https://pytorch.org/vision/main/auto_examples/transforms/plot_transforms_getting_started.html#detection-segmentation-videos
-    #    # FIXME we can define joint transform (for cutting etc) and separate transform (for color etc) by following this https://stackoverflow.com/questions/66284850/pytorch-transforms-compose-usage-for-pair-of-images-in-segmentation-tasks/73101141
-    #    raster = tv_tensors.Image(raster, dtype=torch.float32)
-    #    target = tv_tensors.Mask(target, dtype=torch.float32)
-    #    raster, target = self.augment_joint(raster, target)
-    #    raster = self.augment_raster(raster)
-    #    if self.augment_target is not None:
-    #        target = self.augment_target(target)
-    #    return raster, target
-
 class TreeCrownDelineationInferenceDataset(TreeCrownDelineationBaseDataset, Dataset):
+    '''
+    Map-style ("standard") dataset for the TreeCrownDelineation data.
+
+    This dataset is used for inference and returns complete rasters along with selected metadata.
+
+    Parameters:
+    - raster_files (list[str]): List of file paths to the raster images.
+    - augmentation (Dict[str, Any]): Dictionary containing augmentation configurations.
+    - ndvi_config (Dict[str, Any], optional): Configuration for NDVI, default is {'concatenate': False}.
+    - dilate_outlines (int, optional): Number of pixels to dilate the outlines, default is 0.
+    - overwrite_nan_with_zeros (bool, optional): Whether to overwrite NaN values with zeros, default is True.
+    - in_memory (bool, optional): Whether to load the data into memory, default is True.
+    - dim_ordering (str, optional): Dimension ordering, default is "CHW".
+    - dtype (str, optional): Data type of the raster images, default is "float32".
+    - divide_by (int, optional): Value to divide the raster data by, default is 1.
+    '''
     def __init__(self, 
                  raster_files: list[str], 
                  augmentation: Dict[str, Any],
@@ -328,6 +374,23 @@ class TreeCrownDelineationInferenceDataset(TreeCrownDelineationBaseDataset, Data
                  dim_ordering="CHW",
                  dtype="float32",
                  divide_by=1):
+        '''__init__ 
+
+        Creates a dataset containing images and targets (masks, outlines, and distance_transforms).
+
+        Args:
+            raster_files (list[str]): List of file paths to source rasters. File names must be of the form '.../the_name_i.tif' where i is some index
+            target_files (list[str]): mask_files: A tuple containing lists of file paths to different sorts of 'masks', e.g. mask, outline, distance transform.
+                  The mask and raster file names must have the same index ending.
+            augmentation (Dict[str, Any]): Dictionary defining augmentations. Keys correspond to torchvision transforms, values to their kwargs.
+            ndvi_config (_type_, optional): Dictionary defining NDVI concatenation. Defaults to {'concatenate': False}.
+            dilate_outlines (int, optional): If present, dilate outlines by give amount of pixels. Defaults to 0.
+            overwrite_nan_with_zeros (bool, optional): If True, fill missing values in targets with 0. Defaults to True.
+            in_memory (bool, optional): If True, load all rasters and targets into memory (works for small datasets, beware of OOM error). Defaults to True.
+            dim_ordering (str, optional): Order of dimensions. Defaults to "CHW".
+            dtype (str, optional): torch Datatype. Defaults to "float32".
+            divide_by (int, optional): Scalar to divide the raster pixel values by. Defaults to 1.
+        '''
         super().__init__(raster_files, None, augmentation, ndvi_config, dilate_outlines,
                          overwrite_nan_with_zeros, in_memory, dim_ordering, dtype, divide_by
                          )
