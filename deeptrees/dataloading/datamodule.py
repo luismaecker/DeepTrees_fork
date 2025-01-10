@@ -96,6 +96,9 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
         self.test_ds = None
 
         self.targets = None  # will be assigned in setup_data
+        if self.shuffle:
+            if self.val_indices is not None or self.train_indices is not None:
+                raise ValueError('Cannot use shuffled dataset split together with prescribed train/val indices')
 
     def prepare_data(self) -> None:
         """prepare_data
@@ -173,7 +176,15 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
         )
         dist_trafo_generator.apply_process()
 
-    def setup(self, stage=None):  # throws error if arg is removed
+    def setup(self, stage: str='fit'):  # throws error if arg is removed
+        """Setup the dataset.
+
+        Args:
+            stage (str, optional): Current stage (fit/test). Defaults to fit.
+
+        Raises:
+            ValueError: If shuffled dataset is passed together with fixed indices. 
+        """        
         if stage == "fit":
             targets = [self.masks, self.outlines, self.distance_transforms]
 
@@ -186,8 +197,6 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
                 ]
 
             if self.shuffle:
-                if self.val_indices is not None or self.train_indices is not None:
-                    raise ValueError('Cannot use shuffled dataset split together with prescribed train/val indices')
                 shuffle_idx = np.arange(len(self.rasters)).astype(int)
                 np.random.shuffle(shuffle_idx)
                 self.rasters = self.rasters[shuffle_idx]
@@ -247,6 +256,11 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
             )
 
     def train_dataloader(self):
+        """Return the dataloader for the training dataset.
+
+        Returns:
+            DataLoader: Pytorch dataloader for the training dataset. 
+        """        
         return DataLoader(
             self.train_ds,
             batch_size=self.batch_size,
@@ -256,6 +270,11 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
         )
 
     def val_dataloader(self):
+        """Return the dataloader for the validation dataset.
+
+        Returns:
+            DataLoader: Pytorch dataloader for the validation dataset. 
+        """        
         if self.val_ds is None:
             return None
         return DataLoader(
@@ -267,6 +286,11 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
         )
 
     def test_dataloader(self):
+        """Return the dataloader for the test dataset.
+
+        Returns:
+            DataLoader: Pytorch dataloader for the test dataset. 
+        """        
         return DataLoader(
             self.test_ds,
             batch_size=self.batch_size,
@@ -276,6 +300,11 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
         )
 
     def predict_dataloader(self):
+        """Return the dataloader for the predict dataset.
+
+        Returns:
+            DataLoader: Pytorch dataloader for the predict dataset. 
+        """        
         return DataLoader(
             self.test_ds,
             batch_size=self.batch_size,
