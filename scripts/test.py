@@ -1,8 +1,6 @@
 '''
 Inference with a trained TreeCrownDelineation model
 
-Follows the example script. 
-
 Caroline Arnold, Harsh Grover, Helmholtz AI, 2024
 
 ===================================================================================================
