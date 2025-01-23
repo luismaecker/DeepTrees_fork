@@ -70,8 +70,12 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
         super().__init__()
         if type(rasters) in (list, tuple, np.ndarray):
             self.rasters = rasters
-        else:
+        elif os.path.isdir(rasters):
             self.rasters = np.sort(glob.glob(os.path.abspath(rasters) + "/*.tif"))
+        elif isinstance(rasters, str):
+            self.rasters = [rasters]
+        
+        
 
         self.masks = masks
         self.outlines = outlines
