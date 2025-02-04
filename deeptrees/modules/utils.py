@@ -17,6 +17,9 @@ from osgeo import osr
 from fiona import crs
 import numpy as np
 import xarray
+import rasterio
+from rasterio.mask import mask
+from shapely.geometry import mapping
 
 
 import numpy as np
@@ -26,6 +29,8 @@ import os
 
 import logging
 log = logging.getLogger(__name__)
+
+
 
 def overlay_heatmap(image, entropy_map, output_path, filename):
     """
@@ -830,6 +835,46 @@ def create_batch_of_patches(input_tensor, patch_size, patch_ixs, offset, local_b
         
     batch_of_patches = torch.concat(batch_of_patches)
     return batch_of_patches
+
+
+def mask_and_scale_raster_from_polygons(tiff_path, polygons, output_dir, scale_factor=1):
+    """
+    Masks and optionally scales raster images based on given polygons.
+    
+    Parameters:
+        tiff_path (str): Path to the input GeoTIFF file.
+        polygons (list): A list of shapely geometries (polygons).
+        output_dir (str): Directory to save the masked raster files.
+        scale_factor (int): Factor by which to scale the output raster dimensions.
+    """
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    with rasterio.open(tiff_path) as src:
+        for idx, polygon in enumerate(polygons):
+            try:
+                # Mask the raster using the current polygon's geometry
+                masked_image, transform = mask(src, [mapping(polygon)], crop=True)
+
+                # Update metadata for the output raster
+                out_meta = src.meta.copy()
+                out_meta.update({
+                    "driver": "GTiff",
+                    "height": int(masked_image.shape[1] * scale_factor),
+                    "width": int(masked_image.shape[2] * scale_factor),
+                    "transform": transform
+                })
+
+                # Define output file path
+                output_file = os.path.join(output_dir, f"polygon_{idx}.tif")
+
+                # Save the masked raster
+                with rasterio.open(output_file, "w", **out_meta) as dst:
+                    dst.write(masked_image)
+                    
+                print(f"Saved masked raster to: {output_file}")
+            except Exception as e:
+                print(f"Error processing polygon {idx}: {e}")
 
 
 def predict_on_tile(model, input_tensor, patch_size=256, local_batch_size=32, stride=128):

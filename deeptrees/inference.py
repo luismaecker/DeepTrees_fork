@@ -24,6 +24,7 @@ import torch
 from omegaconf import OmegaConf
 import rootutils
 
+
 path = rootutils.find_root(search_from=__file__, indicator=".project-root")
 
 # set root directory
@@ -35,6 +36,7 @@ rootutils.set_root(
     cwd=False,  # we do not want that with hydra
 )
 
+from deeptrees.pretrained import freudenberg2022
 from deeptrees.model.deeptrees_model import DeepTreesModel
 from deeptrees.dataloading.datamodule import TreeCrownDelineationDataModule
 from deeptrees.modules import utils
@@ -42,10 +44,9 @@ import geopandas as gpd
 from deeptrees.dataloading.datasets import TreeCrownDelineationInferenceDataset
 import time
 from deeptrees.modules import postprocessing as tcdpp
-
+from deeptrees.modules.utils import mask_and_scale_raster_from_polygons
 log = logging.getLogger(__name__)
 
-# TODO: Run the test cases before committing the code
 class TreeCrownPredictor:
     """
     A class to handle the loading of the model, running inference, and post-processing.
@@ -120,6 +121,17 @@ class TreeCrownPredictor:
                 postprocessing_config=model_config.postprocessing_config)
 
         if isinstance(self.config['pretrained_model'], str):
+
+            if self.config['download_pretrained_model']:
+                os.makedirs('./pretrained_models', exist_ok=True)
+
+                file_name = os.path.join('./pretrained_models', "lUnet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=3_jitted.pt")
+
+                self.config['pretrained_model'] = './pretrained_models/lUnet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=3_jitted.pt'
+
+                if not os.path.exists('./pretrained_models/lUnet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=3_jitted.pt'):
+                    freudenberg2022(file_name)        
+                    
             pretrained_model = torch.jit.load(self.config['pretrained_model'])
             self.model.tcd_backbone.load_state_dict(pretrained_model.state_dict())
             log.info('Loaded state dict from pretrained model')
@@ -204,8 +216,18 @@ class TreeCrownPredictor:
                 
                 t_process = time.time() - t0
                 
-                # TODO add option to extract the masked raster files of the polygons
-
+                if self.config.save_masked_rasters:
+                
+                    log.info(f"Saving mask_and_scale_raster_from_polygons")
+                    
+                    print(f"Saving mask_and_scale_raster_from_polygons to {self.config.masked_rasters_output_dir}.")
+                    
+                    mask_and_scale_raster_from_polygons(tiff_path=raster_name,
+                                                        polygons=polygons,                                                         
+                                                        output_dir=os.path.join(self.config.masked_rasters_output_dir, 
+                                                                                raster_suffix.split('.')[0]),
+                                                                                scale_factor=self.config.scale_factor)
+                
                 log.info(f"Found {len(polygons)} polygons.")
                 log.info(f"Inference time: {t_inference:.2f} seconds")
                 log.info(f"Post-processing time: {t_process:.2f} seconds")
@@ -225,9 +247,10 @@ def main():
     
     parser.add_argument(
         "--image_path", 
+        default="/work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/pool_tiles/tile_10_3.tif",
         nargs='+',  # Accept multiple paths
         help="List of image paths to process.", 
-        required=True        
+        required=False        
     )
     
         
