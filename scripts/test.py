@@ -118,6 +118,8 @@ def test(config: DictConfig) -> None:
         log.info(f'Saving all polygons that overlap with Baumkataster to {os.path.join(os.getcwd(), config["baumkataster_intersection_file"])}.')
         utils.save_polygons(inters['geometry'], config['baumkataster_intersection_file'], crs=config['crs'])
 
+    log.info('Completed predictions.')
+
 
 if __name__=='__main__':
     test()

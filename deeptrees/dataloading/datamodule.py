@@ -200,25 +200,19 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
                     for file_list in targets
                 ]
 
-            if self.shuffle:
-                shuffle_idx = np.arange(len(self.rasters)).astype(int)
-                np.random.shuffle(shuffle_idx)
-                self.rasters = self.rasters[shuffle_idx]
-                self.targets = [tt[shuffle_idx] for tt in self.targets]
-
             # split into training and validation set
             data = (self.rasters, *self.targets)
 
             # if training and validation indices are given, use them
-            if self.train_indices is None:
-                training_data = [r[: int(len(r) * self.training_split)] for r in data]
-            else:
-                training_data = [r[self.train_indices] for r in data]
+            if self.train_indices is None and self.val_indices is None:
+                all_indices = list(range(len(self.rasters)))
+                if self.shuffle:
+                    np.random.shuffle(all_indices)
+                self.train_indices = all_indices[: int(len(all_indices) * self.training_split)]
+                self.val_indices = all_indices[int(len(all_indices) * self.training_split) :]
 
-            if self.val_indices is None:
-                validation_data = [r[int(len(r) * self.training_split) :] for r in data]
-            else:
-                validation_data = [r[self.val_indices] for r in data]
+            training_data = [r[self.train_indices] for r in data]
+            validation_data = [r[self.val_indices] for r in data]
 
             log.info("Tiles in training data")
             for t in training_data[0]:

@@ -15,7 +15,8 @@ data:
   ground_truth_config:
     labels: null
   num_workers: 8         # Number of workers in dataloader
-pretrained_model: /work/ka1176/caroline/gitlab/deeptrees/experiments/finetune-halle/2024-11-25_09-32-21/unet-halle_jitted.pt
+download_pretrained_model : True
+pretrained_model: ./pretrained_models/lUnet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=3_jitted.pt
   
 model:
   _target_: deeptrees.model.deeptrees_model.DeepTreesModel
@@ -48,8 +49,12 @@ logdir: ${hydra.run.dir} # this is where we find logs, trained models, predictio
 model_name: unet-halle # short and memorable model name
 seed: null               # Fix random seed 
 
+save_masked_rasters: True # save individual trees from the prediction masks as raster files
+masked_rasters_output_dir: masked_rasters  # directory to save the masked rasters
+scale_factor: 4         # Scale factor for saved raster images
+
 crs: EPSG:25832
-polygon_file: treecrowns.sqlite
+polygon_file: treecrowns.shp
 
 callbacks: {}
 
