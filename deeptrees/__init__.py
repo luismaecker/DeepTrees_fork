@@ -14,14 +14,14 @@ from deeptrees.pretrained import freudenberg2022
 import os
 
 
-def predict(image_path: list[str]):
+def predict(image_path: list[str], config_path: str):
     """
     Run tree crown delineation prediction on the provided image path.
 
     Args:
         image_path (list[str]): List of image paths to process.
     """
-    predictor = TreeCrownPredictor(image_path=image_path)  # Uses default config path and name
+    predictor = TreeCrownPredictor(image_path=image_path, config_path = config_path)  # Uses default config path and name
     predictor.predict()
     
 

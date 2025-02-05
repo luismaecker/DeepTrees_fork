@@ -36,15 +36,15 @@ rootutils.set_root(
     cwd=False,  # we do not want that with hydra
 )
 
-from deeptrees.pretrained import freudenberg2022
-from deeptrees.model.deeptrees_model import DeepTreesModel
-from deeptrees.dataloading.datamodule import TreeCrownDelineationDataModule
-from deeptrees.modules import utils
+from .pretrained import freudenberg2022
+from .model.deeptrees_model import DeepTreesModel
+from .dataloading.datamodule import TreeCrownDelineationDataModule
+from .modules import utils
 import geopandas as gpd
-from deeptrees.dataloading.datasets import TreeCrownDelineationInferenceDataset
+from .dataloading.datasets import TreeCrownDelineationInferenceDataset
 import time
-from deeptrees.modules import postprocessing as tcdpp
-from deeptrees.modules.utils import mask_and_scale_raster_from_polygons
+from .modules import postprocessing as tcdpp
+from .modules.utils import mask_and_scale_raster_from_polygons
 log = logging.getLogger(__name__)
 
 class TreeCrownPredictor:
@@ -62,17 +62,16 @@ class TreeCrownPredictor:
         predict(): Runs inference on the input data and performs post-processing and saves the results.
     """
 
-    def __init__(self, config_path: str = "./config", config_name: str = "inference_on_individual_tiles", image_path: list[str] = None):
+    def __init__(self, config_path: str = "./config", image_path: list[str] = None):
         """
         Initializes the TreeCrownPredictor with the given configuration.
 
         Args:
-            config_path (str): The path to the configuration folder.
-            config_name (str): The name of the configuration file (without extension).
+            config_path (str): The path to the configuration folder.            
             image_path (str): The path to the input raster image.
         """
         # Load the config using OmegaConf
-        self.config = OmegaConf.load(os.path.join(config_path, f"{config_name}.yaml"))
+        self.config = OmegaConf.load(os.path.join(config_path))
         
         # Print the loaded configuration to the console
         print("Loaded Configuration:")
@@ -170,8 +169,8 @@ class TreeCrownPredictor:
                 utils.array_to_tif(mask, f'./predictions/mask_{raster_suffix}', src_raster=raster_name, num_bands='single')                
                 utils.array_to_tif(outline, f'./predictions/outline_{raster_suffix}', src_raster=raster_name, num_bands='single')
                 utils.array_to_tif(distance_transform, f'./predictions/distance_transform_{raster_suffix}', src_raster=raster_name, num_bands='single')
-                log.info(f'Saved Mask, Outline and Distance Transform output to {os.path.join(os.getcwd(), 'predictions')}')
-                print(f'Saved Mask, Outline and Distance Transform output to {os.path.join(os.getcwd(), 'predictions')}')
+                log.info(f"Saved Mask, Outline and Distance Transform output to {os.path.join(os.getcwd(), 'predictions')}")
+                print(f"Saved Mask, Outline and Distance Transform output to {os.path.join(os.getcwd(), 'predictions')}")
                 
 
             # active learning
