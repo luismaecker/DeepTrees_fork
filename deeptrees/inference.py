@@ -12,8 +12,8 @@ Usage:
     python inference.py
 
 Example:
-    predictor = TreeCrownPredictor(config_path="./config", config_name="inference_halle")
-    predictor.predict('/path/to/raster/image.tif')
+    predictor = TreeCrownPredictor(config_path="./config", image_path=["/path/to/raster/image.tif"])
+    predictor.predict('/path/to/raster/image.tif', '/path/to/config')
 """
 
 import argparse
@@ -47,6 +47,8 @@ from deeptrees.modules import postprocessing as tcdpp
 from deeptrees.modules.utils import mask_and_scale_raster_from_polygons
 log = logging.getLogger(__name__)
 
+
+
 class TreeCrownPredictor:
     """
     A class to handle the loading of the model, running inference, and post-processing.
@@ -62,17 +64,16 @@ class TreeCrownPredictor:
         predict(): Runs inference on the input data and performs post-processing and saves the results.
     """
 
-    def __init__(self, config_path: str = "./config", config_name: str = "inference_on_individual_tiles", image_path: list[str] = None):
+    def __init__(self, image_path: list[str] = None, config_path: str = "./config/inference_on_individual_tiles.yaml"):
         """
         Initializes the TreeCrownPredictor with the given configuration.
 
         Args:
-            config_path (str): The path to the configuration folder.
-            config_name (str): The name of the configuration file (without extension).
+            config_path (str): The path to the configuration folder.            
             image_path (str): The path to the input raster image.
         """
         # Load the config using OmegaConf
-        self.config = OmegaConf.load(os.path.join(config_path, f"{config_name}.yaml"))
+        self.config = OmegaConf.load(os.path.join(config_path))
         
         # Print the loaded configuration to the console
         print("Loaded Configuration:")
@@ -153,7 +154,7 @@ class TreeCrownPredictor:
             trafo = raster_dict['trafo'] 
             raster_name = raster_dict['raster_id']
             raster_suffix = os.path.basename(raster_name).replace('tile_', '')
-            log.info(f'Predicting on {raster_name} ...')
+            log.info(f"Predicting on {raster_name} ...")
             
             raster = raster.unsqueeze(0)  # Add batch dimension
             
@@ -170,8 +171,8 @@ class TreeCrownPredictor:
                 utils.array_to_tif(mask, f'./predictions/mask_{raster_suffix}', src_raster=raster_name, num_bands='single')                
                 utils.array_to_tif(outline, f'./predictions/outline_{raster_suffix}', src_raster=raster_name, num_bands='single')
                 utils.array_to_tif(distance_transform, f'./predictions/distance_transform_{raster_suffix}', src_raster=raster_name, num_bands='single')
-                log.info(f'Saved Mask, Outline and Distance Transform output to {os.path.join(os.getcwd(), 'predictions')}')
-                print(f'Saved Mask, Outline and Distance Transform output to {os.path.join(os.getcwd(), 'predictions')}')
+                log.info(f"Saved Mask, Outline and Distance Transform output to {os.path.join(os.getcwd(), 'predictions')}")
+                print(f"Saved Mask, Outline and Distance Transform output to {os.path.join(os.getcwd(), 'predictions')}")
                 
 
             # active learning
@@ -190,10 +191,11 @@ class TreeCrownPredictor:
                 entropy_map = tcdpp.calculate_entropy(pmap)
                 log.info(f"Mean entropy in {os.path.basename(raster_name)}: {np.mean(entropy_map):.4f}")
                 log.info(f"Max entropy in {os.path.basename(raster_name)}: {np.max(entropy_map):.4f}")
-
+                
                 if self.config.model.postprocessing_config['save_entropy_maps']:
                     utils.array_to_tif(entropy_map, f'./entropy_maps/entropy_heatmap_{raster_suffix}', src_raster=raster_name)
                     
+                print('Saving entropy map to ./entropy_maps')
                     
                 # add postprocessing here
                 t0 = time.time()
@@ -220,6 +222,8 @@ class TreeCrownPredictor:
                 
                     log.info(f"Saving mask_and_scale_raster_from_polygons")
                     
+                    
+                    
                     print(f"Saving mask_and_scale_raster_from_polygons to {self.config.masked_rasters_output_dir}.")
                     
                     mask_and_scale_raster_from_polygons(tiff_path=raster_name,
@@ -233,10 +237,7 @@ class TreeCrownPredictor:
                 log.info(f"Post-processing time: {t_process:.2f} seconds")
                 
                 all_polygons.extend(polygons)  # Process your predictions here
-                log.info(f'Saving all polygons to {os.path.join(os.getcwd(), self.config["polygon_file"])}.')
-                
-                print(f'Saving all polygons to {os.path.join(os.getcwd(), self.config["polygon_file"])}.')
-                
+                log.info(f"Saving all polygons to {os.path.join(os.getcwd(), self.config["polygon_file"])}.")
                 utils.save_polygons(all_polygons, self.config['polygon_file'], crs=self.config['crs'])
       
 
@@ -247,30 +248,22 @@ def main():
     
     parser.add_argument(
         "--image_path", 
-        default="/work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/pool_tiles/tile_10_3.tif",
+        default="",
         nargs='+',  # Accept multiple paths
         help="List of image paths to process.", 
-        required=False        
+        required=True        
     )
     
         
     parser.add_argument(
         "--config_path",
         type=str,
-        required=False,    
-        default="./config",   
+        required=True,    
+        default="",   
         help="Directory containing the configuration file."
     )
     
     
-    parser.add_argument(
-        "--config_name",
-        type=str,
-        required=False,
-        default="inference_on_individual_tiles",        
-        help="Name of the configuration file."
-    )
-
     # Parse the arguments
     args = parser.parse_args()
 
@@ -280,7 +273,7 @@ def main():
         args.image_path = [args.image_path]
         
     # Initialize the predictor with the passed with configuration and image paths
-    predictor = TreeCrownPredictor(config_path=args.config_path, config_name=args.config_name, image_path=args.image_path)
+    predictor = TreeCrownPredictor(image_path=args.image_path, config_path=args.config_path)
 
 
     # Run the prediction

@@ -1,16 +1,5 @@
-import rootutils
 import os
 
-# path = rootutils.find_root(search_from=__file__, indicator=".project-root")
-path = rootutils.find_root(search_from=os.path.abspath(""), indicator=".project-root")
-# set root directory
-rootutils.set_root(
-    path=path,  # path to the root directory
-    project_root_env_var=True,  # set the PROJECT_ROOT environment variable to root directory
-    dotenv=True,  # load environment variables from .env if exists in root directory
-    pythonpath=True,  # add root directory to the PYTHONPATH (helps with imports)
-    cwd=False,  # we do not want that with hydra
-)
 
 import torch
 import numpy as np
@@ -23,8 +12,8 @@ from hyperopt import fmin, tpe, hp, STATUS_OK
 from rasterio.transform import IDENTITY
 from rasterio.features import shapes
 
-from deeptrees.modules import utils
-from deeptrees.modules import polygon_metrics as pm
+from . import utils
+from . import polygon_metrics as pm
 
 
 def find_treecrowns(

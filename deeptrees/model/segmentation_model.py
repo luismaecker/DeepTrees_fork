@@ -1,7 +1,7 @@
 import segmentation_models_pytorch as smp
 
 import lightning as L
-from deeptrees.modules import utils
+from ..modules import utils
 
 
 class SegmentationModel(L.LightningModule):

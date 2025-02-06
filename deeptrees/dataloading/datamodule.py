@@ -8,9 +8,9 @@ import pandas as pd
 import geopandas as gpd
 
 from torch.utils.data import DataLoader
-from deeptrees.dataloading import datasets as ds
-from deeptrees.modules.utils import dilate_img, fix_crs
-from deeptrees.dataloading.preprocessing import (
+from . import datasets as ds
+from ..modules.utils import dilate_img, fix_crs
+from .preprocessing import (
     MaskOutlinesGenerator,
     DistanceTransformGenerator,
 )
