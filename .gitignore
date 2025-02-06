@@ -147,6 +147,7 @@ cython_debug/
 
 # Models
 *.pt
+*.png
 outputs/
 results/
 experiments/
