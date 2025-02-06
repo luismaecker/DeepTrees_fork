@@ -1,8 +1,6 @@
 '''
 Inference with a trained TreeCrownDelineation model
 
-Follows the example script. 
-
 Caroline Arnold, Harsh Grover, Helmholtz AI, 2024
 
 ===================================================================================================
@@ -119,6 +117,8 @@ def test(config: DictConfig) -> None:
     else:
         log.info(f'Saving all polygons that overlap with Baumkataster to {os.path.join(os.getcwd(), config["baumkataster_intersection_file"])}.')
         utils.save_polygons(inters['geometry'], config['baumkataster_intersection_file'], crs=config['crs'])
+
+    log.info('Completed predictions.')
 
 
 if __name__=='__main__':

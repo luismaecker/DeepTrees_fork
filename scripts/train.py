@@ -1,8 +1,5 @@
 '''
-TODO update module docstring
 Train a TreeCrownDelineation model on new data.
-
-Follows the example script. 
 
 Caroline Arnold, Harsh Grover, Helmholtz AI, 2024
 
