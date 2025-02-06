@@ -1,6 +1,9 @@
-# DeepTrees
-
-End-to-end pipeline for tree crown delineation and anylsis in high-resolution DOP images based on U-Net.
+ <div align="center" style="text-align:center">
+  <h1 > DeepTrees </h1>
+  <br/>
+  <b>End-to-end pipeline for tree crown delineation and analysis in high-resolution DOP images based on U-Net.
+</b>  
+</div>
 
 This repository is based on https://github.com/AWF-GAUG/TreeCrownDelineation. The original repository is licensed under the MIT License. The original repository was forked and modified to work with the data provided by UFZ for the project "Deep Learning for Tree Crown Delineation". The added functionality includes data processing, training and further downstream processing of the original repository. We have also added a semantic versioning system to the repository, and the repository is licensed under the Prosperity Public License 3.0.0.
 
