@@ -92,6 +92,19 @@ Run the inference script with the corresponding config file. Adjust as needed.
 python scripts/test.py --config-name=inference_halle
 ```
 
+
+## Predict on list of images
+
+Run the inference script with the corresponding config file on list of images.
+
+```bash
+from deeptrees import predict
+
+predict(image_path=["list of image_paths"],  config_path = "config_path")
+```
+
+
+
 ## Separate ground truth data generation
 
 1. Combine all labels into one shapefile `all_labels.shp`. Make sure the coordinate reference system is `EPSG:25832` to comply with the tiles.
