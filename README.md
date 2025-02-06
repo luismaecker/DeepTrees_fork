@@ -1,6 +1,25 @@
 # DeepTrees
 
-This repository is based on https://github.com/AWF-GAUG/TreeCrownDelineation.
+End-to-end pipeline for tree crown delineation and anylsis in high-resolution DOP images based on U-Net.
+
+This repository is based on https://github.com/AWF-GAUG/TreeCrownDelineation. The original repository is licensed under the MIT License. The original repository was forked and modified to work with the data provided by UFZ for the project "Deep Learning for Tree Crown Delineation". The added functionality includes data processing, training and further downstream processing of the original repository. We have also added a semantic versioning system to the repository, and the repository is licensed under the Prosperity Public License 3.0.0.
+
+## Installation
+
+To install the package, clone the repository and install the dependencies.
+
+```bash
+git clone https://codebase.helmholtz.cloud/ai-consultants-dkrz/DeepTrees.git
+cd DeepTrees
+pip install -r requirements.txt
+```
+or from pip.
+
+```bash
+pip install deeptrees
+```
+
+## Documentation
 
 
 # Training
@@ -22,7 +41,7 @@ conda create -n deeptree python=3.12
 conda activate deeptree
 
 conda install -c conda-forge gdal==3.9.2 pip
-pip install -r requirements_levante.txt
+pip install -r requirements.txt
 ```
 
 ## Preprocessing
@@ -160,6 +179,9 @@ See the SemVer rules and all possible commit prefixes in the [.releaserc.json](.
 The implementation is based on. https://mobiuscode.dev/posts/Automatic-Semantic-Versioning-for-GitLab-Projects/
 
 
+# License
+
+This repository is licensed under the Prosperity Public License 3.0.0. For more information, see the [LICENSE.md](LICENSE.md) file.
 
 # Sources
 

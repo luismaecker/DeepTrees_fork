@@ -49,12 +49,12 @@ log = logging.getLogger(__name__)
 
 @hydra.main(version_base=None, config_path="../config", config_name="inference_halle")
 def test(config: DictConfig) -> None:
-    '''
+    """
     Inference with a pretrained tree crown delineation model.
 
     Args:
-        config (DictConfig): configuration (provided by hydra)
-    '''
+        config (DictConfig): Configuration provided by Hydra.
+    """
     print(OmegaConf.to_yaml(config))
 
     if config.seed:

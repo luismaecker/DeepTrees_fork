@@ -35,7 +35,7 @@ def overlay_heatmap(image, entropy_map, output_path, filename):
     - image: Original image (as a NumPy array or PIL image).
     - entropy_map: 2D array representing the entropy values.
     - output_path: Path to save the overlaid image.
-    - alpha: Opacity of the heatmap overlay.
+    - filename: Name of the file to save the overlaid image.
     """
     # Ensure the image and entropy_map have compatible sizes
     if isinstance(image, np.ndarray):
@@ -78,13 +78,33 @@ def overlay_heatmap(image, entropy_map, output_path, filename):
 
 
 def load_model_weights(model, path):
-    """Loads the models weights and sets the batch norm momentum to 0.9."""
+    """
+    Loads the models weights and sets the batch norm momentum to 0.9.
+
+    Args:
+        model: The model to load weights into.
+        path (str): Path to the weights file.
+
+    Returns:
+        The model with loaded weights.
+    """
     model.load_state_dict(torch.load(path))
     set_batchnorm_momentum(model, 0.9)
     return model
 
 
 def gpu(x: torch.Tensor, device="cuda", dtype=torch.float32):
+    """
+    Moves a tensor to the GPU if available.
+
+    Args:
+        x (torch.Tensor): The tensor to move.
+        device (str): The device to move the tensor to.
+        dtype (torch.dtype): The data type of the tensor.
+
+    Returns:
+        torch.Tensor: The tensor on the specified device.
+    """
     if torch.cuda.is_available():
         return x.to(device=device, dtype=dtype)
     else:
@@ -105,10 +125,15 @@ def set_batchnorm_momentum(model, momentum):
 
 
 def get_map_extent(gdal_raster):
-    """Returns a dict of {xmin, xmax, ymin, ymax, xres, yres} of a given GDAL raster file.
+    """
+    Returns a dict of {xmin, xmax, ymin, ymax, xres, yres} of a given GDAL raster file.
     Returns None if no geo reference was found.
+
     Args:
         gdal_raster: File opened via gdal.Open().
+
+    Returns:
+        dict: A dictionary containing the map extent.
     """
     xmin, xres, xskew, ymax, yskew, yres = gdal_raster.GetGeoTransform()
     xmax = xmin + (gdal_raster.RasterXSize * xres)
@@ -120,19 +145,42 @@ def get_map_extent(gdal_raster):
 
 
 def gdal_trafo_to_xarray_trafo(gdal_trafo):
+    """
+    Converts a GDAL transform to an xarray transform.
+
+    Args:
+        gdal_trafo: The GDAL transform.
+
+    Returns:
+        tuple: The xarray transform.
+    """
     xmin, xres, xskew, ymax, yskew, yres = gdal_trafo
     return (xres, xskew, xmin, yskew, yres, ymax)
 
 
 def xarray_trafo_to_gdal_trafo(xarray_trafo):
+    """
+    Converts an xarray transform to a GDAL transform.
+
+    Args:
+        xarray_trafo: The xarray transform.
+
+    Returns:
+        tuple: The GDAL transform.
+    """
     xres, xskew, xmin, yskew, yres, ymax = xarray_trafo
     return (xmin, xres, xskew, ymax, yskew, yres)
 
 
 def get_xarray_extent(arr):
-    """Returns
-    xmin, xmax, ymin, ymax, xres, yres
-    of an xarray. xres and yres can be negative.
+    """
+    Returns the extent of an xarray.
+
+    Args:
+        arr: The xarray.
+
+    Returns:
+        tuple: The extent of the xarray.
     """
     xr = arr.coords["x"].data
     yr = arr.coords["y"].data
@@ -141,8 +189,14 @@ def get_xarray_extent(arr):
 
 
 def get_xarray_trafo(arr):
-    """Returns
-    xres, xskew, xmin, yskwe, yres, ymax
+    """
+    Returns the transform of an xarray.
+
+    Args:
+        arr: The xarray.
+
+    Returns:
+        tuple: The transform of the xarray.
     """
     xr = arr.coords["x"].data
     yr = arr.coords["y"].data
@@ -151,15 +205,15 @@ def get_xarray_trafo(arr):
     return xres, xskew, min(xr), yskew, yres, max(yr)
 
 def get_rioxarray_trafo(arr: xarray.DataArray):
-    '''
-    Get the transform from a raster tile
+    """
+    Get the transform from a raster tile.
 
     Args:
-      arr (xarray.DataArray): Raster tile
-      
+        arr (xarray.DataArray): Raster tile.
+
     Returns:
-      xres, xskew, xmin, yskew, yres, ymax
-    '''
+        tuple: The transform of the raster tile.
+    """
     xr = arr.coords['x'].data
     yr = arr.coords['y'].data
     xres = np.round(xr[1]-xr[0], 4)
@@ -168,7 +222,15 @@ def get_rioxarray_trafo(arr: xarray.DataArray):
     return xres, xskew, min(xr), yskew, yres, max(yr)
 
 def extent_to_poly(xarr):
-    """Returns the bounding box of an xarray as shapely polygon."""
+    """
+    Returns the bounding box of an xarray as a shapely polygon.
+
+    Args:
+        xarr: The xarray.
+
+    Returns:
+        Polygon: The bounding box polygon.
+    """
     xmin, xmax, ymin, ymax, xres, yres = get_xarray_extent(xarr)
     return Polygon([(xmin, ymax), (xmin, ymin), (xmax, ymin), (xmax, ymax)])
 
@@ -180,22 +242,21 @@ def load_filtered_polygons(file: str,
                            filter_dict: dict = {},
                            operators: list = [operator.eq]
                            ) -> list:
-    """Loads those polygons from a given shapefile which fit into the extents of the given rasters.
+    """
+    Loads those polygons from a given shapefile which fit into the extents of the given rasters.
 
     Polygons will be cropped to fit the given raster extent.
 
     Args:
-        file (str): Shapefile path
-        rasters (list): List of xarrays
-        minimum_area (float): Minimum polygon area in map uniits (typically m²), measured after cropping to extent
-        maximum_area (float): Maximum polygon area in map uniits (typically m²), measured after cropping to extent
-        filter_dict (dict): Dictionary of key value pairs to filter polygons by, e.g. {"class": 1} - use this in
-            conjunction with the operators arg to filter out polygons for which the operator returns true. E.g. pass
-            'operators.eq' to test for equality; all polygons for which class is equal to 1 will be returned.
-        operators (list): A list of built-in python comparison operators from the 'operator' package. See filter_dict.
+        file (str): Shapefile path.
+        rasters (list): List of xarrays.
+        minimum_area (float): Minimum polygon area in map units (typically m²), measured after cropping to extent.
+        maximum_area (float): Maximum polygon area in map units (typically m²), measured after cropping to extent.
+        filter_dict (dict): Dictionary of key value pairs to filter polygons by.
+        operators (list): A list of built-in python comparison operators from the 'operator' package.
 
     Returns:
-        A list of lists containing polygons in the same order as the rasters.
+        list: A list of lists containing polygons in the same order as the rasters.
     """
 
     def filter_polygons_by_property(p):
@@ -231,14 +292,15 @@ def load_filtered_polygons(file: str,
 
 
 def save_polygons(polygons: list, dest_fname: str, crs, driver: str = "SQLite", mode: str = "w"):
-    """Save a list of polygons into a shapefile with given coordinate reference system.
+    """
+    Save a list of polygons into a shapefile with given coordinate reference system.
 
     Args:
-        polygons: List of shapely polygons to save
-        dest_fname: Path to file
-        crs: Coordinate reference system, e.g. from fiona.crs.from_epsg()
-        driver: One of fiona's supported drivers e.g. 'ESRI Shapefile' or 'SQLite'
-        mode: Either 'w' for write or 'a' for append. Not all drivers support both.
+        polygons (list): List of shapely polygons to save.
+        dest_fname (str): Path to file.
+        crs: Coordinate reference system, e.g. from fiona.crs.from_epsg().
+        driver (str): One of fiona's supported drivers e.g. 'ESRI Shapefile' or 'SQLite'.
+        mode (str): Either 'w' for write or 'a' for append. Not all drivers support both.
     """
     fiona.supported_drivers["SQLite"] = "rw"  # ensure we can actually write to a useful format
     schema = {"geometry"  : "Polygon",
@@ -259,17 +321,18 @@ def save_polygons(polygons: list, dest_fname: str, crs, driver: str = "SQLite", 
 
 
 def read_img(input_file, dim_ordering="HWC", dtype='float32', band_mapping=None, return_extent=False):
-    """Reads an image from disk and returns it as numpy array.
+    """
+    Reads an image from disk and returns it as numpy array.
 
     Args:
-        input_file: Path to the input file.
-        dim_ordering: One of HWC or CHW, C=Channels, H=Height, W=Width
-        dtype: Desired data type for loading, e.g. np.uint8, np.float32...
-        band_mapping: Dictionary of which image band to load into which array band. E.g. {1:0, 3:1}
-        return_extent: Whether or not to return the raster extent in the form (ymin, ymax, xmin, xmax). Defaults to False.
+        input_file (str): Path to the input file.
+        dim_ordering (str): One of HWC or CHW, C=Channels, H=Height, W=Width.
+        dtype (str): Desired data type for loading, e.g. np.uint8, np.float32.
+        band_mapping (dict): Dictionary of which image band to load into which array band.
+        return_extent (bool): Whether or not to return the raster extent in the form (ymin, ymax, xmin, xmax).
 
     Returns:
-        Numpy array containing the image and optionally the extent.
+        np.ndarray: Numpy array containing the image and optionally the extent.
     """
     if not os.path.isfile(input_file):
         raise RuntimeError("Input file does not exist. Given path: {}".format(input_file))
@@ -305,19 +368,17 @@ def read_img(input_file, dim_ordering="HWC", dtype='float32', band_mapping=None,
 
 def array_to_tif(array, dst_filename, num_bands='multi', save_background=True, src_raster: str = "", transform=None,
                  crs=None):
-    """ Takes a numpy array and writes a tif. Uses deflate compression.
+    """
+    Takes a numpy array and writes a tif. Uses deflate compression.
 
     Args:
-        array: numpy array
-        dst_filename (str): Destination file name/path
-        num_bands (str): 'single' or 'multi'. If 'single' is chosen, everything is saved into one layer. The values
-            in each layer of the input array are multiplied with the layer index and summed up. This is suitable for
-            mutually exclusive categorical labels or single layer arrays. 'multi' is for normal images.
+        array (np.ndarray): Numpy array.
+        dst_filename (str): Destination file name/path.
+        num_bands (str): 'single' or 'multi'. If 'single' is chosen, everything is saved into one layer.
         save_background (bool): Whether or not to save the last layer, which is often the background class.
-            Set to `True` for normal images.
         src_raster (str): Raster file used to determine the corner coords.
-        transform: A geotransform in the gdal format
-        crs: A coordinate reference system as proj4 string
+        transform: A geotransform in the gdal format.
+        crs: A coordinate reference system as proj4 string.
     """
     if src_raster != "":
         src_raster = gdal.Open(src_raster)
@@ -379,19 +440,18 @@ def array_to_tif(array, dst_filename, num_bands='multi', save_background=True, s
 
 
 def compute_pyramid_patch_weight_loss(width: int, height: int) -> np.ndarray:
-    """Compute a weight matrix that assigns bigger weight on pixels in center and
+    """
+    Compute a weight matrix that assigns bigger weight on pixels in center and
     less weight to pixels on image boundary.
     This weight matrix is then used for merging individual tile predictions and helps dealing
     with prediction artifacts on tile boundaries.
 
-    Taken from & credit to:
-        https://github.com/BloodAxe/pytorch-toolbelt/blob/f3acfca5da05cd7ccdd85e8d343d75fa40fb44d9/pytorch_toolbelt/inference/tiles.py#L16-L50
-
     Args:
-        width: Tile width
-        height: Tile height
+        width (int): Tile width.
+        height (int): Tile height.
+
     Returns:
-        The weight mask as ndarray
+        np.ndarray: The weight mask.
     """
     xc = width * 0.5
     yc = height * 0.5
@@ -437,18 +497,22 @@ def predict_on_array(model,
     Call model.eval() before use!
 
     Args:
-        model: pytorch model - make sure to call model.eval() before using this function!
-        arr: HWC array for which the segmentation should be created
-        stride: stride with which the model should be applied. Default: output size
-        batchsize: number of images to process in parallel
-        dtype: desired output type (default: float32)
-        augmentation: whether to average over rotations and mirrorings of the image or not. triples computation time.
-        no_data: a no-data value. It's used to compute the area containing data via the first input image channel.
-        verbose: whether or not to display progress
-        report_time: if true, returns (result, execution time)
+        model: Pytorch model - make sure to call model.eval() before using this function!
+        arr (np.ndarray): HWC array for which the segmentation should be created.
+        in_shape (tuple): Input shape.
+        out_bands (int): Number of output bands.
+        stride (int): Stride with which the model should be applied. Default: output size.
+        drop_border (int): Number of pixels to drop from the border.
+        batchsize (int): Number of images to process in parallel.
+        dtype (str): Desired output type (default: float32).
+        device (str): Device to run on (default: cuda).
+        augmentation (bool): Whether to average over rotations and mirrorings of the image or not.
+        no_data: A no-data value. It's used to compute the area containing data via the first input image channel.
+        verbose (bool): Whether or not to display progress.
+        report_time (bool): If true, returns (result, execution time).
 
     Returns:
-        An array containing the segmentation.
+        np.ndarray: An array containing the segmentation.
     """
     t0 = None
 
@@ -601,20 +665,22 @@ def predict_on_array_cf(model,
     Call model.eval() before use!
 
     Args:
-        model: pytorch model - make sure to call model.eval() before using this function!
-        arr: CHW array for which the segmentation should be created
-        stride: stride with which the model should be applied. Default: output size
-        batchsize: number of images to process in parallel
-        dtype: desired output type (default: float32)
-        augmentation: whether to average over rotations and mirrorings of the image or not. triples computation time.
-        no_data: a no-data vector. its length must match the number of layers in the input array.
-        verbose: whether or not to display progress
-        aggregate_metric: This is for development purposes or for active learning. In case the model returns
-            (prediction, some_metric), some_metric will be summed up for all predictions necessary to process the
-            input image. The model can then e.g. be an ensemble model, returning the result and the variance.
+        model: Pytorch model - make sure to call model.eval() before using this function!
+        arr (np.ndarray): CHW array for which the segmentation should be created.
+        in_shape (tuple): Input shape.
+        out_bands (int): Number of output bands.
+        stride (int): Stride with which the model should be applied. Default: output size.
+        drop_border (int): Number of pixels to drop from the border.
+        batchsize (int): Number of images to process in parallel.
+        dtype (str): Desired output type (default: float32).
+        device (str): Device to run on (default: cuda).
+        augmentation (bool): Whether to average over rotations and mirrorings of the image or not.
+        no_data: A no-data vector. Its length must match the number of layers in the input array.
+        verbose (bool): Whether or not to display progress.
+        aggregate_metric (bool): If true, returns (result, metric).
 
     Returns:
-        A dict containing result, time, nodata_region and time
+        dict: A dict containing result, time, nodata_region and time.
     """
     t0 = time.time()
     metric = 0
@@ -726,7 +792,7 @@ def predict_on_array_cf(model,
 
                 prediction = prediction.detach().cpu().numpy()
             if drop_border > 0:
-                prediction = prediction[:, :, drop_border:-drop_border, drop_border:-drop_border]
+                prediction = prediction[:, :, drop_border:-drop_border, drop_border:-dropborder]
 
             for j in range(batchsize_):
                 output[:, y:y + out_size, x:x + out_size] += prediction[j] * weight_mask[None, ...]
@@ -758,6 +824,15 @@ def predict_on_array_cf(model,
 
 
 def calc_band_stats(fpath : str):
+    """
+    Calculates the mean and standard deviation of each band in a raster file.
+
+    Args:
+        fpath (str): Path to the raster file.
+
+    Returns:
+        dict: A dictionary containing the mean and standard deviation of each band.
+    """
     means = []
     stddevs = []
     p = subprocess.Popen(["gdalinfo -approx_stats {}".format(fpath)], shell=True, stdout=subprocess.PIPE)
@@ -774,6 +849,17 @@ def calc_band_stats(fpath : str):
 
 
 def dilate_img(img, size=10, shape="square"):
+    """
+    Dilates an image using a specified structuring element.
+
+    Args:
+        img (np.ndarray): The input image.
+        size (int): The size of the structuring element.
+        shape (str): The shape of the structuring element ('square' or 'disk').
+
+    Returns:
+        np.ndarray: The dilated image.
+    """
     if shape == "square":
         selem = square(size)
     elif shape == "disk":
@@ -784,12 +870,28 @@ def dilate_img(img, size=10, shape="square"):
 
 
 def write_info_file(path, **kwargs):
+    """
+    Writes key-value pairs to a file.
+
+    Args:
+        path (str): The path to the file.
+        **kwargs: Key-value pairs to write to the file.
+    """
     file = open(path,'w')
     for key, value in kwargs.items():
         file.write( "{}: {}\n".format(key, value) )
     file.close()
 
 def get_crs(array):
+    """
+    Retrieves the CRS from an xarray.
+
+    Args:
+        array (xarray.DataArray): The input xarray.
+
+    Returns:
+        dict: The CRS.
+    """
     crs_ = array.attrs["crs"]
     if "epsg" in crs_:
         crs_ = crs.from_epsg(crs_.split(':')[-1])
@@ -798,7 +900,17 @@ def get_crs(array):
     return crs_
 
 def fix_crs(shape, is_crs=4326, target_crs=25832):
-    '''Fix the CRS if necessary'''
+    """
+    Fixes the CRS of a GeoDataFrame if necessary.
+
+    Args:
+        shape (gpd.GeoDataFrame): The input GeoDataFrame.
+        is_crs (int): The initial CRS.
+        target_crs (int): The target CRS.
+
+    Returns:
+        gpd.GeoDataFrame: The GeoDataFrame with the fixed CRS.
+    """
     if shape.crs is None: # naive coords
         shape.crs = is_crs
 
@@ -806,20 +918,19 @@ def fix_crs(shape, is_crs=4326, target_crs=25832):
 
 
 def create_batch_of_patches(input_tensor, patch_size, patch_ixs, offset, local_batch_size):
-    '''
+    """
     Helper function to create a batch of small patches.
 
     Args:
         input_tensor (torch.Tensor): Original input tensor.
         patch_size (int): Small patch size.
         patch_ixs (list): List of tuples specifying (x_start, y_start) for the small patches in the input tensor.
-        offset (int): Offset of current batch in patch_ixs
+        offset (int): Offset of current batch in patch_ixs.
         local_batch_size (int): Size of the batch of small patches.
 
     Returns:
         torch.Tensor: One batch of small patches to be used in inference.
-    '''
-
+    """
     batch_of_patches = []
     for j in range(local_batch_size):
         (x_start, y_start) = patch_ixs[offset * local_batch_size + j]
@@ -833,7 +944,7 @@ def create_batch_of_patches(input_tensor, patch_size, patch_ixs, offset, local_b
 
 
 def predict_on_tile(model, input_tensor, patch_size=256, local_batch_size=32, stride=128):
-    '''
+    """
     Predict on a single tile of arbitrary dimension.
 
     The tile is split into smaller patches that satisfy the criterion given by the segmentation model
@@ -845,15 +956,14 @@ def predict_on_tile(model, input_tensor, patch_size=256, local_batch_size=32, st
 
     Args:
         model: Trained DeepTrees model.
-        input_tensor (torch.tensor): Tensor with the values of the raster tile.
+        input_tensor (torch.Tensor): Tensor with the values of the raster tile.
         patch_size (int, optional): Patch size used in inference. Defaults to 256.
         local_batch_size (int, optional): Length of the batch of patches. Defaults to 32.
         stride (int, optional): Apply patches in a strided manner. Defaults to 128.
 
     Returns:
-        Model output for the input raster.
-    '''
-
+        torch.Tensor: Model output for the input raster.
+    """
     # set model to evaluation mode
     model.eval()
 

@@ -83,7 +83,7 @@ class DeepTreesModel(L.LightningModule):
                  ):
         """DeepTrees Model
 
-        The model consists of a TreeCrownDelineation backbon, plus added functionalities for training, fine-tuning, and prediction.
+        The model consists of a TreeCrownDelineation backbone, plus added functionalities for training, fine-tuning, and prediction.
 
         Args:
             in_channels: Number of input channels / bands of the input image

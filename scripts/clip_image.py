@@ -18,14 +18,28 @@ fiona.drvsupport.supported_drivers["SQLite"] = "r"
 
 
 def xarray_trafo_to_gdal_trafo(xarray_trafo):
+    """
+    Converts an xarray transform to a GDAL transform.
+
+    Args:
+        xarray_trafo (tuple): A tuple containing the xarray transform.
+
+    Returns:
+        tuple: A tuple containing the GDAL transform.
+    """
     xres, xskew, xmin, yskew, yres, ymax = xarray_trafo
     return (xmin, xres, xskew, ymax, yskew, yres)
 
 
 def get_xarray_trafo(arr):
-    """Returns
-    xmin, xmax, ymin, ymax, xres, yres
-    of an xarray. xres and yres can be negative.
+    """
+    Returns the xarray transform.
+
+    Args:
+        arr (xarray.DataArray): The xarray data array.
+
+    Returns:
+        tuple: A tuple containing the xarray transform.
     """
     xr = arr.coords["x"].data
     yr = arr.coords["y"].data
@@ -35,9 +49,14 @@ def get_xarray_trafo(arr):
 
 
 def get_xarray_extent(arr):
-    """Returns
-    xmin, xmax, ymin, ymax, xres, yres
-    of an xarray. xres and yres can be negative.
+    """
+    Returns the extent of an xarray.
+
+    Args:
+        arr (xarray.DataArray): The xarray data array.
+
+    Returns:
+        tuple: A tuple containing the extent of the xarray.
     """
     xr = arr.coords["x"].data
     yr = arr.coords["y"].data
@@ -46,20 +65,30 @@ def get_xarray_extent(arr):
 
 
 def extent_to_poly(xarr):
-    """Returns the bounding box of an xarray as shapely polygon."""
+    """
+    Returns the bounding box of an xarray as a shapely polygon.
+
+    Args:
+        xarr (xarray.DataArray): The xarray data array.
+
+    Returns:
+        shapely.geometry.Polygon: The bounding box of the xarray as a shapely polygon.
+    """
     xmin, xmax, ymin, ymax, xres, yres = get_xarray_extent(xarr)
     return Polygon([(xmin, ymax), (xmin, ymin), (xmax, ymin), (xmax, ymax)])
 
 
 def rasterize(source_raster, features: list, dim_ordering: str = "HWC"):
-    """ Rasterizes the features (polygons/lines) within the extent of the given xarray with the same resolution, all in-memory.
+    """
+    Rasterizes the features (polygons/lines) within the extent of the given xarray with the same resolution, all in-memory.
 
     Args:
-        source_raster: Xarray
-        features: List of shapely objects
-        dim_ordering: One of CHW (default) or HWC (height, widht, channels)
+        source_raster (xarray.DataArray): The source xarray data array.
+        features (list): A list of shapely objects.
+        dim_ordering (str): One of CHW (default) or HWC (height, width, channels).
+
     Returns:
-        Rasterized features
+        numpy.ndarray: The rasterized features.
     """
     ncol = source_raster.sizes["x"]
     nrow = source_raster.sizes["y"]
@@ -112,6 +141,19 @@ def rasterize(source_raster, features: list, dim_ordering: str = "HWC"):
 
 
 def clip_and_save(feature_enum, dest_fname_base, src_fname, src_xarray, lock, restrict_to_intersection=True, mask=False, no_overwrite=False):
+    """
+    Clips and saves a feature.
+
+    Args:
+        feature_enum (tuple): A tuple containing the feature index and the feature.
+        dest_fname_base (str): The base name for the destination file.
+        src_fname (str): The source file name.
+        src_xarray (xarray.DataArray): The source xarray data array.
+        lock (multiprocessing.Lock): A lock for multiprocessing.
+        restrict_to_intersection (bool): If True, restricts the resulting rasters to the area of intersection between source raster and feature.
+        mask (bool): If True, only the values within the polygons are extracted. The rest is set to zero.
+        no_overwrite (bool): If True, data will not be overwritten.
+    """
     j, feature = feature_enum
     i = feature["id"] if "id" in feature else j
     src_bbox = extent_to_poly(src_xarray)
@@ -157,6 +199,12 @@ def clip_and_save(feature_enum, dest_fname_base, src_fname, src_xarray, lock, re
 
 
 def get_parser():
+    """
+    Returns the argument parser.
+
+    Returns:
+        argparse.ArgumentParser: The argument parser.
+    """
     parser = ArgumentParser(description="Loads a raster and a shapefile, then produces rectangular tif tiles\n"
                                         "covering each shape in the shapefile. You can mask the resulting arrays\n"
                                         "with the overlay polygon.\n"
@@ -244,6 +292,12 @@ if __name__ == '__main__':
         source_raster_bbox = extent_to_poly(source_raster)
 
         def work(feature_enum):
+            """
+            Clips and saves a feature.
+
+            Args:
+                feature_enum (tuple): A tuple containing the feature index and the feature.
+            """
             clip_and_save(feature_enum,
                           dest_fname_base,
                           file_,

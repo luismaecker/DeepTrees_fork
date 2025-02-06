@@ -141,6 +141,17 @@ def tp_fp_fn_polygons_from_list(predictions: list, true_polygons: list, rasters,
 
 
 def iou_matrix_naive(y_pred, y_true):
+    """
+    Compute the Intersection over Union (IoU) matrix between two sets of polygons.
+    This function calculates the IoU for each pair of polygons from the two input lists.
+    Note: This implementation is naive and may be slow for large inputs.
+    Parameters:
+    y_pred (list of shapely.geometry.Polygon): List of predicted polygons.
+    y_true (list of shapely.geometry.Polygon): List of ground truth polygons.
+    Returns:
+    numpy.ndarray: A 2D array where the element at [i, j] is the IoU between y_pred[i] and y_true[j].
+    """
+    
     # takes ages, just for validation of other code
     res = np.zeros((len(y_pred), len(y_true)))
     for i, p_pred in enumerate(y_pred):
@@ -153,6 +164,19 @@ def iou_matrix_naive(y_pred, y_true):
 
 
 def oversegmentation_factor(y_true: list, y_pred: STRtree, threshold=0.5):
+    """
+    Calculate the oversegmentation factor for a set of true polygons and predicted polygons.
+    The oversegmentation factor is defined as the ratio of the number of predicted polygons
+    that overlap with true polygons by more than a given threshold to the total number of true polygons.
+    Args:
+        y_true (list): A list of true polygons (shapely.geometry.Polygon).
+        y_pred (STRtree): A spatial index (STRtree) containing predicted polygons (shapely.geometry.Polygon).
+        threshold (float, optional): The minimum overlap ratio required to consider a predicted polygon
+                                     as overlapping with a true polygon. Default is 0.5.
+    Returns:
+        float: The oversegmentation factor, which is the ratio of overlapping predicted polygons
+               to the total number of true polygons. Returns 0 if there are no true polygons.
+    """
     overlapping_polygons = 0
     for p_true in y_true:
         intersecting_polygons = y_pred.query(p_true)  # these polygons have an overlapping bounding box with p

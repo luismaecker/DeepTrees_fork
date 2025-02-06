@@ -22,6 +22,12 @@ from deeptrees.model.averaging_model import AveragingModel
 
 #%%
 def get_parser():
+    """
+    Creates an argument parser for the script.
+
+    Returns:
+        ArgumentParser: The argument parser.
+    """
     parser = ArgumentParser(description="This tool allows segmentation inference on many small images, e.g. GeoTiff.",
                             formatter_class=ArgumentDefaultsHelpFormatter)
     parser.add_argument("-i", "--input_files",
@@ -140,15 +146,43 @@ def get_parser():
 
 
 def get_crs_wkt(array):
+    """
+    Retrieves the CRS in WKT format from an xarray.
+
+    Args:
+        array (xarray.DataArray): The input xarray.
+
+    Returns:
+        str: The CRS in WKT format.
+    """
     return array.rio.crs.wkt
 
 
 def get_transform(array):
+    """
+    Retrieves the transform from an xarray.
+
+    Args:
+        array (xarray.DataArray): The input xarray.
+
+    Returns:
+        Affine: The transform.
+    """
     return array.rio.transform()
 
 
 # n is chunksize
 def split_into_chunks(list_, n):
+    """
+    Splits a list into chunks of size n.
+
+    Args:
+        list_ (list): The input list.
+        n (int): The chunk size.
+
+    Returns:
+        list: A list of chunks.
+    """
     return [[list_[i * n:(i + 1) * n] for i in range((len(list_) + n - 1) // n )]]
 
 

@@ -15,11 +15,11 @@ from setuptools import find_packages, setup, Command
 NAME = 'deeptrees'
 DESCRIPTION = 'AI-based delineation and analysis of individual tree crowns'
 URL = 'https://codebase.helmholtz.cloud/ai-consultants-dkrz/DeepTrees'
-AUTHOR = 'Caroline Arnold, Harsh Grover, Jasmin Krebs, Taimur Khan'
-EMAIL = ""
+AUTHOR = 'Caroline Arnold, Harsh Grover, Taimur Khan'
+EMAIL = "taimur.khan@ufz.de"
 REQUIRES_PYTHON = '>=3.10.0'
 VERSION = None
-LICENSE = "GPLv3+"
+LICENSE = "Prosperity Public License 3.0.0"
 REQUIREMENTS = "requirements.txt"
 EXCLUDES = ('tests', 'docs', 'images', 'build', 'dist')
 
@@ -60,6 +60,32 @@ if not VERSION:
 
 if VERSION is None:
     raise ValueError("Version is None")
+
+
+def read_requirements():
+    """
+    Reads the requirements from the requirements.txt file.
+
+    Returns:
+        list: A list of requirements.
+    """
+    with open(REQUIREMENTS) as f:
+        return f.read().splitlines()
+
+
+def get_version():
+    """
+    Retrieves the version of the package.
+
+    Returns:
+        str: The version of the package.
+    """
+    if VERSION:
+        return VERSION
+    else:
+        with open(os.path.join(here, NAME, '__version__.py')) as f:
+            exec(f.read())
+        return locals()['__version__']
 
 
 class UploadCommand(Command):

@@ -13,8 +13,7 @@ def freudenberg2022(filename):
     Neural Computing and Applications, 34(24), pp.22197-22207.
 
     Args:
-        url: The URL of the file to download.
-        filename: The name of the file to save the downloaded content to.
+        filename (str): The name of the file to save the downloaded content to.
     """
     url = "https://syncandshare.desy.de/index.php/s/NcFgPM4gX2dtSQq/download/lUnet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=3_jitted.pt"
     response = requests.get(url, stream=True)
