@@ -237,7 +237,7 @@ class TreeCrownPredictor:
                 log.info(f"Post-processing time: {t_process:.2f} seconds")
                 
                 all_polygons.extend(polygons)  # Process your predictions here
-                log.info(f"Saving all polygons to {os.path.join(os.getcwd(), self.config["polygon_file"])}.")
+                log.info(f"Saving all polygons to {os.path.join(os.getcwd(), self.config['polygon_file'])}.")
                 utils.save_polygons(all_polygons, self.config['polygon_file'], crs=self.config['crs'])
       
 
