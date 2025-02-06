@@ -17,7 +17,7 @@ from shapely import Polygon
 from scipy.ndimage import distance_transform_edt
 from multiprocessing import Pool
 
-from deeptrees.modules import rasterize_utils as rutils
+from ..modules import rasterize_utils as rutils
 
 import logging
 log = logging.getLogger(__name__)

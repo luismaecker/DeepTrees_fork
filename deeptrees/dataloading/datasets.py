@@ -13,8 +13,8 @@ from torchvision import tv_tensors
 
 from torch.utils.data import IterableDataset, Dataset
 
-from deeptrees.modules.indices import ndvi
-from deeptrees.modules.utils import dilate_img, get_rioxarray_trafo
+from ..modules.indices import ndvi
+from ..modules.utils import dilate_img, get_rioxarray_trafo
 
 import logging
 log = logging.getLogger(__name__)

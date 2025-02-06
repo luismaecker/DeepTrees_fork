@@ -36,16 +36,18 @@ rootutils.set_root(
     cwd=False,  # we do not want that with hydra
 )
 
-from .pretrained import freudenberg2022
-from .model.deeptrees_model import DeepTreesModel
-from .dataloading.datamodule import TreeCrownDelineationDataModule
-from .modules import utils
+from deeptrees.pretrained import freudenberg2022
+from deeptrees.model.deeptrees_model import DeepTreesModel
+from deeptrees.dataloading.datamodule import TreeCrownDelineationDataModule
+from deeptrees.modules import utils
 import geopandas as gpd
-from .dataloading.datasets import TreeCrownDelineationInferenceDataset
+from deeptrees.dataloading.datasets import TreeCrownDelineationInferenceDataset
 import time
-from .modules import postprocessing as tcdpp
-from .modules.utils import mask_and_scale_raster_from_polygons
+from deeptrees.modules import postprocessing as tcdpp
+from deeptrees.modules.utils import mask_and_scale_raster_from_polygons
 log = logging.getLogger(__name__)
+
+
 
 class TreeCrownPredictor:
     """
