@@ -22,29 +22,16 @@ import os
 import numpy as np
 import torch
 from omegaconf import OmegaConf
-import rootutils
 
-
-path = rootutils.find_root(search_from=__file__, indicator=".project-root")
-
-# set root directory
-rootutils.set_root(
-    path=path,  # path to the root directory
-    project_root_env_var=True,  # set the PROJECT_ROOT environment variable to root directory
-    dotenv=True,  # load environment variables from .env if exists in root directory
-    pythonpath=True,  # add root directory to the PYTHONPATH (helps with imports)
-    cwd=False,  # we do not want that with hydra
-)
-
-from deeptrees.pretrained import freudenberg2022
-from deeptrees.model.deeptrees_model import DeepTreesModel
-from deeptrees.dataloading.datamodule import TreeCrownDelineationDataModule
-from deeptrees.modules import utils
+from .pretrained import freudenberg2022
+from .model.deeptrees_model import DeepTreesModel
+from .dataloading.datamodule import TreeCrownDelineationDataModule
+from .modules import utils
 import geopandas as gpd
-from deeptrees.dataloading.datasets import TreeCrownDelineationInferenceDataset
+from .dataloading.datasets import TreeCrownDelineationInferenceDataset
 import time
-from deeptrees.modules import postprocessing as tcdpp
-from deeptrees.modules.utils import mask_and_scale_raster_from_polygons
+from .modules import postprocessing as tcdpp
+from .modules.utils import mask_and_scale_raster_from_polygons
 log = logging.getLogger(__name__)
 
 
