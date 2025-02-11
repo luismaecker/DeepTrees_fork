@@ -1,6 +1,3 @@
-name: inference-halle
-output_dir: results
-
 data:
   ndvi_config:
     concatenate: True    # If True, concatenate NDVI
@@ -10,8 +7,6 @@ data:
   divide_by: 255         # divisor
   dilate_outlines: False # dilate the outlines by number of pixels
   augment_eval: {}
-download_pretrained_model : True
-pretrained_model: ./pretrained_models/lUnet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=3_jitted.pt
   
 model:
   num_backbones: 1
@@ -19,6 +14,9 @@ model:
   architecture: Unet     # segmentation model architecture
   backbone: resnet18     # backbone
   apply_sigmoid: False   # sigmoid function applied to masks and outlines
+
+download_pretrained_model : True
+pretrained_model: ./pretrained_models/lUnet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=3_jitted.pt
 
 polygon_extraction:
     min_dist: 10 # minimum distance in pixels between local maxima during feature extraction
