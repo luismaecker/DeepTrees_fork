@@ -94,10 +94,10 @@ class TreeCrownPredictor:
         self._initialize_model()      
         
         # Directories for saving output
-        if self.config['postprocessing_config']['save_predictions']:
+        if self.config['save_predictions']:
             if not os.path.exists('predictions'):
                 os.mkdir('predictions')
-        if self.config['postprocessing_config']['save_entropy_maps']:
+        if self.config['save_entropy_maps']:
             if not os.path.exists('entropy_maps'):
                 os.mkdir('entropy_maps')
   
@@ -163,30 +163,30 @@ class TreeCrownPredictor:
             outline = output[:,1].cpu().numpy().squeeze()
             distance_transform = output[:,2].cpu().numpy().squeeze()
 
-            if self.config.postprocessing_config['save_predictions']:
+            if self.config['save_predictions']:
                 utils.array_to_tif(mask, f'./predictions/mask_{raster_suffix}', src_raster=raster_name, num_bands='single')                
                 utils.array_to_tif(outline, f'./predictions/outline_{raster_suffix}', src_raster=raster_name, num_bands='single')
                 utils.array_to_tif(distance_transform, f'./predictions/distance_transform_{raster_suffix}', src_raster=raster_name, num_bands='single')
                 log.info(f"Saved Mask, Outline and Distance Transform output to {os.path.join(os.getcwd(), 'predictions')}")
 
             # active learning
-            if self.config.postprocessing_config["active_learning"]:
+            if self.config["active_learning"]:
                 pmap = tcdpp.calculate_probability_map(
                     mask,
                     outline,
                     distance_transform,
-                    mask_exp=self.config.postprocessing_config["mask_exp"],
-                    outline_multiplier=self.config.postprocessing_config["outline_multiplier"],
-                    outline_exp=self.config.postprocessing_config["outline_exp"],
-                    dist_exp=self.config.postprocessing_config["dist_exp"],
-                    sigma=self.config.postprocessing_config["sigma"]
+                    mask_exp=self.config.polygon_extraction["mask_exp"],
+                    outline_multiplier=self.config.polygon_extraction["outline_multiplier"],
+                    outline_exp=self.config.polygon_extraction["outline_exp"],
+                    dist_exp=self.config.polygon_extraction["dist_exp"],
+                    sigma=self.config.polygon_extraction["sigma"]
                 )
                 
                 entropy_map = tcdpp.calculate_entropy(pmap)
                 log.info(f"Mean entropy in {os.path.basename(raster_name)}: {np.mean(entropy_map):.4f}")
                 log.info(f"Max entropy in {os.path.basename(raster_name)}: {np.max(entropy_map):.4f}")
                 
-                if self.config.postprocessing_config['save_entropy_maps']:
+                if self.config['save_entropy_maps']:
                     utils.array_to_tif(entropy_map, f'./entropy_maps/entropy_heatmap_{raster_suffix}', src_raster=raster_name)
                     
                 log.info('Saving entropy map to ./entropy_maps')
@@ -198,16 +198,16 @@ class TreeCrownPredictor:
                     outline,
                     distance_transform,
                     transform=trafo,
-                    mask_exp=self.config.postprocessing_config["mask_exp"],
-                    outline_multiplier=self.config.postprocessing_config["outline_multiplier"],
-                    outline_exp=self.config.postprocessing_config["outline_exp"],
-                    dist_exp=self.config.postprocessing_config["dist_exp"],
-                    sigma=self.config.postprocessing_config["sigma"],
-                    binary_threshold=self.config.postprocessing_config["binary_threshold"],
-                    min_dist=self.config.postprocessing_config["min_dist"],
-                    label_threshold=self.config.postprocessing_config["label_threshold"],
-                    area_min=self.config.postprocessing_config["area_min"],
-                    simplify=self.config.postprocessing_config["simplify"]
+                    mask_exp=self.config.polygon_extraction["mask_exp"],
+                    outline_multiplier=self.config.polygon_extraction["outline_multiplier"],
+                    outline_exp=self.config.polygon_extraction["outline_exp"],
+                    dist_exp=self.config.polygon_extraction["dist_exp"],
+                    sigma=self.config.polygon_extraction["sigma"],
+                    binary_threshold=self.config.polygon_extraction["binary_threshold"],
+                    min_dist=self.config.polygon_extraction["min_dist"],
+                    label_threshold=self.config.polygon_extraction["label_threshold"],
+                    area_min=self.config.polygon_extraction["area_min"],
+                    simplify=self.config.polygon_extraction["simplify"]
                 )
                 
                 t_process = time.time() - t0

@@ -20,7 +20,7 @@ model:
   backbone: resnet18     # backbone
   apply_sigmoid: False   # sigmoid function applied to masks and outlines
 
-postprocessing_config:
+polygon_extraction:
     min_dist: 10 # minimum distance in pixels between local maxima during feature extraction
     mask_exp: 2             # parameter for feature map extraction
     outline_multiplier: 5   # parameter for feature map extraction
@@ -31,13 +31,13 @@ postprocessing_config:
     label_threshold: 0.5 # minimum height of local maxima during feature extraction
     binary_threshold: 0.1 # threshold value for the feature map, lower is background
     simplify: 0.3 # polygon simplification distance, vertices closer than this value are simplified
-    active_learning: True # calculate entropy heatmap
-    save_entropy_maps: True  # save entropy heatmap
-    save_predictions: True  # save predictions (mask, outlines, distance transform)
-  # TODO
   #  subsample: False # if True, polygon extraction works at half the resolution of the model output. Use this for speedup at the cost of accuracy.
   #  upsample: 1.0 # Input to the network will be upsampled bilinearly by the given factor
   #  stride: null # Stride used in applying the network to the image
+
+active_learning: True # calculate entropy heatmap
+save_entropy_maps: True  # save entropy heatmap
+save_predictions: True  # save predictions (mask, outlines, distance transform)
 
 save_masked_rasters: True # save individual trees from the prediction masks as raster files
 masked_rasters_output_dir: masked_rasters  # directory to save the masked rasters
