@@ -106,6 +106,9 @@ class TreeCrownPredictor:
         """
         Initializes the model with the configuration parameters.
         """
+
+        pretrained_model_file = os.path.join(self.config['pretrained_model_path'], self.config['pretrained_model_name'])
+
         # Access the model parameters from config and pass them to the constructor manually
         model_config = self.config.model
    
@@ -117,23 +120,19 @@ class TreeCrownPredictor:
                 apply_sigmoid=model_config.apply_sigmoid,
         )
 
-        if isinstance(self.config['pretrained_model'], str):
-
-            if self.config['download_pretrained_model']:
+        if self.config['download_pretrained_model']:
+            if not os.path.exists(pretrained_model_file):
                 os.makedirs('./pretrained_models', exist_ok=True)
+                freudenberg2022(pretrained_model_file)        
+        
+        # check this after the model download
+        if not isinstance(pretrained_model_file, str):
+            raise ValueError("Pretrained model file path must be passed.")
 
-                file_name = os.path.join('./pretrained_models', "lUnet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=3_jitted.pt")
-
-                self.config['pretrained_model'] = './pretrained_models/lUnet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=3_jitted.pt'
-
-                if not os.path.exists('./pretrained_models/lUnet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=3_jitted.pt'):
-                    freudenberg2022(file_name)        
-                    
-            pretrained_model = torch.jit.load(self.config['pretrained_model'])
-            self.model.tcd_backbone.load_state_dict(pretrained_model.state_dict())
-            log.info('Loaded state dict from pretrained model')
-        else:
-            raise ValueError("Inference requires a pretrained model")
+        log.info(f'Loading state dict from pretrained model at :{pretrained_model_file}')
+        pretrained_model = torch.jit.load(pretrained_model_file)
+        self.model.tcd_backbone.load_state_dict(pretrained_model.state_dict())
+        log.info(f'Finished loading state dict')
         
 
     def predict(self):
