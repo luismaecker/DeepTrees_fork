@@ -19,7 +19,6 @@ import os
 
 import torch
 from lightning import Trainer, seed_everything
-from lightning.pytorch.loggers import MLFlowLogger
 
 import hydra
 from omegaconf import DictConfig, OmegaConf, ListConfig

@@ -159,3 +159,5 @@ logs/
 *.tif
 *.sqlite
 lightning_logs/
+*.shp
+*.sh

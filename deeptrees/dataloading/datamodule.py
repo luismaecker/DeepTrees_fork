@@ -9,7 +9,7 @@ import geopandas as gpd
 
 from torch.utils.data import DataLoader
 from . import datasets as ds
-from ..modules.utils import dilate_img, fix_crs
+from ..modules.utils import fix_crs
 from .preprocessing import (
     MaskOutlinesGenerator,
     DistanceTransformGenerator,
@@ -21,6 +21,32 @@ log = logging.getLogger(__name__)
 
 
 class TreeCrownDelineationDataModule(L.LightningDataModule):
+    """
+    TreeCrownDelineationDataModule
+
+    This class is responsible for managing the datasets, applying preprocessing steps, 
+    and providing DataLoaders for training, validation, testing, and prediction.
+
+    Attributes:
+        rasters (Union[str, list]): List of file paths, or path to folder containing the training raster files (TIF).
+        masks (Union[str, list]): List of file paths, or path to folder containing the masks.
+        outlines (Union[str, list]): List of file paths, or path to folder containing the outlines.
+        distance_transforms (Union[str, list]): List of file paths, or path to folder containing the distance transforms.
+        training_split (float): Training data split. Defaults to 0.7.
+        batch_size (int): Training batch size. Defaults to 16.
+        val_batch_size (int): Validation batch size. Defaults to 2.
+        num_workers (int): Number of workers in DataLoader. Defaults to 8.
+        augment_train (Dict[str, Any]): Dictionary defining torchvision augmentations to be used during training. Defaults to {}.
+        augment_eval (Dict[str, Any]): Dictionary defining torchvision augmentations to be used during validation/testing. Defaults to {}.
+        ndvi_config (Dict[str, Any]): Dictionary defining the NDVI concatenation settings. Defaults to {'concatenate': False}.
+        divide_by (float): Scalar used to normalize rasters. Defaults to 1.
+        dilate_outlines (int): If present (>0), dilate outlines by the given number of pixels. Defaults to 0.
+        shuffle (bool): If True, shuffle data before applying split. Defaults to True.
+        train_indices (list[int]): List of indices of files to be used for training. Cannot be used with shuffle. Defaults to None.
+        val_indices (list[int]): List of indices of files to be used for validation. Cannot be used with shuffle. Defaults to None.
+        test_indices (list[int]): List of indices of files to be used for testing. Cannot be used with shuffle. Defaults to None.
+        ground_truth_config (Dict[str, Any]): Dictionary defining the ground truth preprocessing settings. Defaults to {'labels': None}.
+    """
     def __init__(
         self,
         rasters: Union[str, list],
@@ -105,8 +131,7 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
                 raise ValueError('Cannot use shuffled dataset split together with prescribed train/val indices')
 
     def prepare_data(self) -> None:
-        """prepare_data
-
+        """
         Prepare the ground truth masks, outlines, and distance transforms from
         ground truth labels.
         """

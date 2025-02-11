@@ -26,13 +26,13 @@ class GroundTruthGenerator(ABC):
 
     Base class to generate ground truth (masks, outlines, distance transforms)
 
-    Based on scripts/rasterize.py
-
     Loads a raster and a vector file, then rasterizes the vector file within the
     extent of the raster with the same resolution. Uses gdal_rasterize
     under the hood, but provides some more features like specifying which classes
     to rasterize into which layer of the output. If you want to infer the output
     file names, the input file name suffixes have to be delimited by an '_'.",
+
+    Based on scripts/rasterize.py in Freudenberg 2022.
     '''
     def __init__(self,
                  rasters: Union[str, list],
