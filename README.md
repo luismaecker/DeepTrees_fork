@@ -25,32 +25,24 @@ pip install deeptrees
 
 ## Documentation
 
+Documentation website: <URL>
 
-# Training
+## Predict on a list of images
 
-This document outlines the steps for working with the TreeCrownDelineation model on Levante.
-
-## Setup
-
-### Code
-
-Check out branch `finetune-halle` from the forked TreeCrownDelineation repository (https://codebase.helmholtz.cloud/ai-consultants-dkrz/TreeCrownDelineation/).
-
-### Environment
-
-Install the required libraries in a conda environment:
+Run the inference script with the corresponding config file on list of images.
 
 ```bash
-conda create -n deeptree python=3.12
-conda activate deeptree
+from deeptrees import predict
 
-conda install -c conda-forge gdal==3.9.2 pip
-pip install -r requirements.txt
+predict(image_path=["list of image_paths"],  config_path = "config_path")
 ```
 
-## Preprocessing
 
-### Directory structure
+## Scripts
+
+### Preprocessing
+
+#### Expected Directory structure
 
 The root folder is `/work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/`. Sync the folder `tiles` and `labels` with the labeled tiles provided by UFZ. The unlabeled tiles go into `pool_tiles`.
 
@@ -77,11 +69,7 @@ Create the new empty directories
 |-- dist_trafo
 ```
 
-### Preparation
-
-We will follow the instructions in the TreeCrownDelineation repository to fine tune the models. Link: https://github.com/AWF-GAUG/TreeCrownDelineation
-
-## Training
+### Training
 
 Adapt your own config file based on the defaults in `train_halle.yaml` as needed. For inspiration for a derived config file for finetuning, check `finetune_halle.yaml`.
 
@@ -107,7 +95,13 @@ To resume training from a checkpoint, take care to pass the hydra arguments in q
 python scripts/train.py 'model.pretrained_model="Unet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=0_jitted.pt"'
 ```
 
-## Inference
+#### Training Logs
+
+View the MLFlow logs that were created during training.
+
+TODO
+
+### Inference
 
 Run the inference script with the corresponding config file. Adjust as needed.
 
@@ -115,66 +109,6 @@ Run the inference script with the corresponding config file. Adjust as needed.
 python scripts/test.py --config-name=inference_halle
 ```
 
-
-## Predict on list of images
-
-Run the inference script with the corresponding config file on list of images.
-
-```bash
-from deeptrees import predict
-
-predict(image_path=["list of image_paths"],  config_path = "config_path")
-```
-
-
-
-## Separate ground truth data generation
-
-1. Combine all labels into one shapefile `all_labels.shp`. Make sure the coordinate reference system is `EPSG:25832` to comply with the tiles.
-
-```python
-import glob
-import pandas as pd
-import geopandas as gpd
-
-shapes = np.sort(glob.glob('/work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/labels/label_tile_*.shp'))
-all_polygons = pd.concat([gpd.read_file(shape).set_crs(epsg=4326).to_crs(epsg=25832) for shape in shapes])
-all_polygons.to_file('/work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/labels/all_labels.shp')
-```
-
-2. Create the raster image tiles: skip, they are provided by UFZ. These files should be in `tiles`.
-
-3. Rasterize the delineated tree crowns. We are working in `~treecrowndelineation/scripts`.
-
-```python
-python rasterize.py -i /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/tiles/* -o /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/masks/mask_ -shp /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/labels/all_labels.shp
-```
-
-4. Create the outlines.
-
-```python
-python rasterize.py -i /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/tiles/* -o /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/outlines/outline_ -shp /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/labels/all_labels.shp --outlines
-```
-
-5. Create the distance transform.
-
-```python
-python rasterize_to_distance_transform.py -i /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/tiles/* -o /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/dist_trafo/dist_trafo_ -shp /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/labels/all_labels.shp
-```
-
-6. Check that everything was processed correctly. Run the notebook `notebooks/processing/quick_data_check.ipynb` for a visual inspection.
-
-## Logs
-
-View the MLFlow logs that were created during training.
-
-On a Levante login node in VSCode, run the following command, exchanging the file path to your personal directory.
-
-```bash
-source ~/.bashrc
-conda activate deeptree
-mlflow server --host 127.0.0.1 --port 6006 --backend-store-uri file:///work/ka1176/caroline/gitlab/TreeCrownDelineation/logs/mlruns/
-```
 
 ## Semantic Versioning
 This reposirotry has auto semantic versionining enabled. To create new releases, we need to merge into the default `finetuning-halle` branch. 
@@ -200,6 +134,8 @@ The implementation is based on. https://mobiuscode.dev/posts/Automatic-Semantic-
 
 This repository is licensed under the Prosperity Public License 3.0.0. For more information, see the [LICENSE.md](LICENSE.md) file.
 
-# Sources
+# Cite as
 
-M. Freudenberg, P. Magdon, and N. Nölke: Individual tree crown delineation in high-resolution remote sensing images based on U-Net, NCAA, Springer, 2022, https://doi.org/10.1007/s00521-022-07640-4.
+```bib
+
+```
