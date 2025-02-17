@@ -30,7 +30,7 @@ from .modules import utils
 from .dataloading.datasets import TreeCrownDelineationInferenceDataset
 import time
 from .modules import postprocessing as tcdpp
-from .modules.utils import mask_and_scale_raster_from_polygons
+from .modules.utils import mask_and_save_individual_trees
 
 
 logging.basicConfig(
@@ -215,7 +215,7 @@ class TreeCrownPredictor:
                 
                     log.info(f"Saving mask_and_scale_raster_from_polygons to {self.config.masked_rasters_output_dir}.")
                     
-                    mask_and_scale_raster_from_polygons(tiff_path=raster_name,
+                    mask_and_save_individual_trees(tiff_path=raster_name,
                                                         polygons=polygons,                                                         
                                                         output_dir=os.path.join(self.config.masked_rasters_output_dir, 
                                                                                 raster_suffix.split('.')[0]),

@@ -948,7 +948,7 @@ def create_batch_of_patches(input_tensor, patch_size, patch_ixs, offset, local_b
     return batch_of_patches
 
 
-def mask_and_scale_raster_from_polygons(tiff_path, polygons, output_dir, scale_factor=1):
+def mask_and_save_individual_trees(tiff_path, polygons, output_dir, scale_factor=1):
     """
     Masks and optionally scales raster images based on given polygons.
     
