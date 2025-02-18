@@ -44,7 +44,7 @@ import geopandas as gpd
 warnings.filterwarnings("ignore", category=FutureWarning)
 log = logging.getLogger(__name__)
 
-@hydra.main(version_base=None, config_path="../config", config_name="inference_halle")
+@hydra.main(version_base=None, config_path="../config/test", config_name="inference_halle")
 def test(config: DictConfig) -> None:
     """
     Inference with a pretrained tree crown delineation model.

@@ -42,7 +42,7 @@ from deeptrees.dataloading.datamodule import TreeCrownDelineationDataModule
 warnings.filterwarnings("ignore", category=FutureWarning)
 log = logging.getLogger(__name__)
 
-@hydra.main(version_base=None, config_path="../config", config_name="train_halle")
+@hydra.main(version_base=None, config_path="../config/train", config_name="train_halle")
 def train(config: DictConfig) -> None:
     '''
     Train a tree segmentation model and save it for later inference.

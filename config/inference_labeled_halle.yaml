@@ -1,7 +1,0 @@
-defaults:
-  - inference_halle.yaml
-
-name: inference-labeled-halle
-data:
-  rasters: /work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/tiles  # directory with raster images
-  test_indices: [10, 11] # set to null to process the whole folder
