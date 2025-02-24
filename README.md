@@ -15,6 +15,11 @@ To install the package, clone the repository and install the dependencies.
 ```bash
 git clone https://codebase.helmholtz.cloud/ai-consultants-dkrz/DeepTrees.git
 cd DeepTrees
+
+## create a new conda environment
+conda create --name deeptree
+conda activate deeptree
+conda install -c conda-forge gdal==3.9.2 pip
 pip install -r requirements.txt
 ```
 or from pip.

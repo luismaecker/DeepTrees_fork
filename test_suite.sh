@@ -7,7 +7,7 @@
 # These scripts need to run so that we can be sure that training, fine-tuning, inference, and averaging inference work
 
 source ~/.bashrc
-conda activate /work/ka1176/harsh/conda_envs/deeptree
+conda activate deeptree
 
 # Run scripts as Python modules
 python -m scripts.train trainer.fast_dev_run=True output_dir=test_suite
