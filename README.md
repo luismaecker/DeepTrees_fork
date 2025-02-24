@@ -25,6 +25,15 @@ pip install deeptrees
 
 ## Documentation
 
+This library is documented using Sphinx. To build the documentation, run the following command.
+
+```bash
+sphinx-apidoc -o docs/source deeptrees 
+cd docs
+make html
+```
+
+This will create the documentation in the `docs/build` directory. Open the `index.html` file in your browser to view the documentation.
 
 # Training
 
