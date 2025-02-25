@@ -19,7 +19,7 @@ AUTHOR = 'Taimur Khan, Caroline Arnold, Harsh Grover'
 EMAIL = "taimur.khan@ufz.de"
 REQUIRES_PYTHON = '>=3.10.0'
 VERSION = None
-LICENSE = "Prosperity Public License 3.0.0"
+LICENSE = "MIT"
 REQUIREMENTS = "requirements.txt"
 EXCLUDES = ('tests', 'docs', 'images', 'build', 'dist')
 

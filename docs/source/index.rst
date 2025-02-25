@@ -78,4 +78,4 @@ If you use TorchTrees in your research, please cite it as follows:
 License
 =======
 
-This package is license under the Prosperity Public License 3.0. See the `LICENSE <https://codebase.helmholtz.cloud/taimur.khan/DeepTrees/-/blob/main/LICENSE.md?ref_type=heads>`_ file for details.
+This package is license under the MIT License. See the `LICENSE <https://codebase.helmholtz.cloud/taimur.khan/DeepTrees/-/blob/main/LICENSE?ref_type=heads>`_ file for details.
