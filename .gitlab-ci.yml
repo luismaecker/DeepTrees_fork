@@ -24,7 +24,7 @@ semantic-versioning:
     - main
 
 
-build-docs:
+pages:
   image: python:3.10
   stage: docs
   before_script:
@@ -50,7 +50,7 @@ build-package:
     paths:
       - dist/
   only:
-    - main
+    - tags
   dependencies:
     - semantic-versioning
 

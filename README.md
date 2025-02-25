@@ -1,12 +1,11 @@
  <div align="center" style="text-align:center">
   <h1 > DeepTrees 🌳</h1>
-  <b>End-to-end pipeline for tree crown delineation and analysis in high-resolution DOP images based on U-Net.</b>  
+  <b>Tree Crown Segmentation and Analysis in Remote Sensing Imagery with PyTorch</b>  
     <br/>
 <img src="./static/header.png" alt="DeepTrees" width="300"/>
 <br/>
 </div>
 
-This repository is based on https://github.com/AWF-GAUG/TreeCrownDelineation. The original repository is licensed under the MIT License. The original repository was forked and modified to work with the data provided by UFZ for the project "Deep Learning for Tree Crown Delineation". The added functionality includes data processing, training and further downstream processing of the original repository. We have also added a semantic versioning system to the repository, and the repository is licensed under the MIT License.
 
 ## Installation
 
@@ -150,5 +149,13 @@ This repository is licensed under the MIT License. For more information, see the
 # Cite as
 
 ```bib
-
+@article{khan2025torchtrees,
+        author    = {Taimur Khan and Caroline Arnold and Harsh Grover},
+        title     = {DeepTrees: Tree Crown Segmentation and Analysis in Remote Sensing Imagery with PyTorch},
+        journal   = {arXiv},
+        year      = {2025},
+        archivePrefix = {arXiv},
+        eprint    = {XXXXX.YYYYY},  
+        primaryClass = {cs.CV}      
+      }
 ```
