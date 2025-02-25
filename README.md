@@ -9,7 +9,6 @@
   <h1>DeepTrees 🌳</h1>
   <h3>Tree Crown Segmentation and Analysis in Remote Sensing Imagery with PyTorch</h3>  
   <br/>
-  <br/>
   <img src="./static/header.png" alt="DeepTrees" width="300"/>
   <br/>
 </div>
