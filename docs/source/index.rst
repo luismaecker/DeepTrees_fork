@@ -74,3 +74,8 @@ If you use TorchTrees in your research, please cite it as follows:
         eprint    = {XXXXX.YYYYY},  
         primaryClass = {cs.CV}      
       }
+
+License
+=======
+
+This package is license under the Prosperity Public License 3.0. See the `LICENSE <https://codebase.helmholtz.cloud/taimur.khan/DeepTrees/-/blob/main/LICENSE.md?ref_type=heads>`_ file for details.

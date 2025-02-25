@@ -14,7 +14,7 @@ from setuptools import find_packages, setup, Command
 # Package meta-data.
 NAME = 'deeptrees'
 DESCRIPTION = 'AI-based delineation and analysis of individual tree crowns'
-URL = 'https://codebase.helmholtz.cloud/ai-consultants-dkrz/DeepTrees'
+URL = 'https://codebase.helmholtz.cloud/taimur.khan/DeepTrees'
 AUTHOR = 'Taimur Khan, Caroline Arnold, Harsh Grover'
 EMAIL = "taimur.khan@ufz.de"
 REQUIRES_PYTHON = '>=3.10.0'
