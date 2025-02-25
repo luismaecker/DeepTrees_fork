@@ -1,4 +1,4 @@
-<div style="display: flex; justify-content: space-between; align-items: center;">
+<div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
   <a href="https://www.ufz.de" target="_blank">
     <img src="static/ufz.png" alt="UFZLogo" height="90px" style="margin-top: 0; margin-left: 10px" />
   </a>
