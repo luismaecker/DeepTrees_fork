@@ -22,9 +22,7 @@ semantic-versioning:
       semantic-release
   only:
     - main
-    except:
-      - changes:
-          - "**/*.md"
+
 
 pages:
   image: python:3.10
@@ -39,23 +37,20 @@ pages:
       - public/
   only:
     - main
-    except:
-      - changes:
-          - "**/*.md"
 
 build-package:
   image: python:3.10
   stage: build
   before_script:
+    - python -m pip install --upgrade pip
+    - pip install setuptools wheel
+  script:
     - python setup.py sdist bdist_wheel
   artifacts:
     paths:
       - dist/
   only:
     - main
-    except:
-      - changes:
-          - "**/*.md"
   dependencies:
     - semantic-versioning
 
@@ -69,11 +64,9 @@ publish-package:
     - TWINE_PASSWORD=${CI_JOB_TOKEN} TWINE_USERNAME=gitlab-ci-token python -m twine upload --repository-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi dist/*
   only:
     - tags
-    except:
-      - changes:
-          - "**/*.md"
   dependencies:
     - build-package
+
 
 publish-package:
   image: python:3.10
@@ -85,8 +78,7 @@ publish-package:
     - TWINE_PASSWORD=${PYPI_TOKEN} TWINE_USERNAME=__token__ python -m twine upload dist/*
   only:
     - main
-    except:
-      - changes:
-          - "**/*.md"
   dependencies:
     - build-package
+
+
