@@ -156,9 +156,6 @@ logs/
 *.tif
 *.sqlite
 lightning_logs/
-*.shp
-*.sh
 
 # MacOS
 .DS_Store
-
