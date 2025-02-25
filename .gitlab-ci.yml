@@ -50,7 +50,7 @@ build-package:
     paths:
       - dist/
   only:
-    - tags
+    - main
   dependencies:
     - semantic-versioning
 
@@ -66,3 +66,17 @@ publish-package:
     - tags
   dependencies:
     - build-package
+
+
+publish-package:
+  image: python:3.10
+  stage: publish
+  before_script:
+    - python -m pip install --upgrade pip
+    - pip install setuptools wheel twine
+  script:
+    - TWINE_PASSWORD=${PYPI_TOKEN} TWINE_USERNAME=__token__ python -m twine upload dist/*
+  only:
+    - main
+
+
