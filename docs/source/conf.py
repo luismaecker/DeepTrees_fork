@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.abspath('../../'))
 
 
 
-project = 'TorchTrees'
+project = 'DeepTrees🌳'
 copyright = '2025, Taimur Khan, Caroline Arnold, Harsh Grover'
 author = 'Taimur Khan, Caroline Arnold, Harsh Grover'
 

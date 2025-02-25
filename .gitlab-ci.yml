@@ -78,5 +78,7 @@ publish-package:
     - TWINE_PASSWORD=${PYPI_TOKEN} TWINE_USERNAME=__token__ python -m twine upload dist/*
   only:
     - main
+  dependencies:
+    - build-package
 
 

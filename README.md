@@ -1,7 +1,17 @@
+<div>
+<div style="display: flex; justify-content: space-between; align-items: center;">
+  <img src="./static/ufz.png" alt="UFZ" width="300" style="margin-right: auto;"/>
+  <img src="./static/hai.png" alt="HAI" width="150" style="margin-left: auto;"/>
+</div>
+<hr/>
+</div>
+
  <div align="center" style="text-align:center">
   <h1 > DeepTrees 🌳</h1>
   <b>Tree Crown Segmentation and Analysis in Remote Sensing Imagery with PyTorch</b>  
     <br/>
+    <br/>
+
 <img src="./static/header.png" alt="DeepTrees" width="300"/>
 <br/>
 </div>
@@ -16,11 +26,9 @@ git clone https://codebase.helmholtz.cloud/ai-consultants-dkrz/DeepTrees.git
 cd DeepTrees
 
 ## create a new conda environment
-conda create --name deeptree
-conda activate deeptree
-conda install -c conda-forge gdal==3.9.2 pip
 pip install -r requirements.txt
 ```
+
 or from pip.
 
 ```bash
@@ -28,6 +36,8 @@ pip install deeptrees
 ```
 
 ## Documentation
+
+You can view the documentation on: https://taimur.khan.pages.hzdr.de/deeptrees
 
 This library is documented using Sphinx. To build the documentation, run the following command.
 
@@ -50,38 +60,22 @@ predict(image_path=["list of image_paths"],  config_path = "config_path")
 ```
 
 
-## Scripts
+## Configuration
 
-### Preprocessing
+This software uses Hydra for configuration management. The configuration files are stored in the `config` directory. 
 
-#### Expected Directory structure
+The confirguration schema can be found in the `config/schema.yaml` file.
 
-The root folder is `/work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/`. Sync the folder `tiles` and `labels` with the labeled tiles provided by UFZ. The unlabeled tiles go into `pool_tiles`.
+You can find sample configuration files for training and prediction in the following links:
+- [Training Configs](https://taimur.khan.pages.hzdr.de/deeptrees/config/train/)
+- [Prediction Configs](https://taimur.khan.pages.hzdr.de/deeptrees/config/predict/)
 
-```
-|-- tiles
-|   |-- tile_0_0.tif
-|   |-- tile_0_1.tif
-|   |-- ...
-|-- labels
-|   |-- label_tile_0_0.shp
-|   |-- label_tile_0_1.shp
-|   |-- ...
-|-- pool_tiles
-|   |-- tile_4_7.tif
-|   |-- tile_4_8.tif
-|   |-- ...
-```
+A list of prediction configurations can be found in: [/docs/prediction_config.md](/docs/prediction_config.md)
 
-Create the new empty directories
 
-```
-|-- masks
-|-- outlines
-|-- dist_trafo
-```
+## Training
 
-### Training
+To train the model, you need to have the labeled tiles in the `tiles` and `labels` directories. The unlabeled tiles go into `pool_tiles`. Your polygon labels need to be in ESRI shapefile format.
 
 Adapt your own config file based on the defaults in `train_halle.yaml` as needed. For inspiration for a derived config file for finetuning, check `finetune_halle.yaml`.
 
@@ -106,6 +100,46 @@ To resume training from a checkpoint, take care to pass the hydra arguments in q
 ```bash
 python scripts/train.py 'model.pretrained_model="Unet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=0_jitted.pt"'
 ```
+
+#### Expected Directory structure
+
+Before you embark onSync the folder `tiles` and `labels` with the labeled tiles. The unlabeled tiles go into `pool_tiles`.
+
+```
+|-- tiles
+|   |-- tile_0_0.tif
+|   |-- tile_0_1.tif
+|   |-- ...
+|-- labels
+|   |-- label_tile_0_0.shp
+|   |-- label_tile_0_1.shp
+|   |-- ...
+|-- pool_tiles
+|   |-- tile_4_7.tif
+|   |-- tile_4_8.tif
+|   |-- ...
+```
+
+Create the new empty directories
+
+```
+|-- masks
+|-- outlines
+|-- dist_trafo
+```
+
+### Training Classes
+
+We use the following classes for training:
+
+0 = tree
+1 = cluster of trees 
+2 = unsure 
+3 = dead trees (haven’t added yet)
+
+However, you can adjust classes as needed in your own training workflow.
+
+
 
 #### Training Logs
 
