@@ -43,14 +43,21 @@ This software is a result of the [DeepTrees](https://deeptrees.de) project at th
 To install the package, clone the repository and install the dependencies.
 
 ```bash
-git clone https://codebase.helmholtz.cloud/ai-consultants-dkrz/DeepTrees.git
+git clone https://codebase.helmholtz.cloud/taimur.khan/DeepTrees.git
 cd DeepTrees
 
 ## create a new conda environment
 pip install -r requirements.txt
 ```
 
-or from pip.
+or from Gitlab registry:
+
+```bash
+pip install deeptrees --index-url https://codebase.helmholtz.cloud/api/v4/projects/13888/packages/pypi/simple
+```
+
+
+or from PyPI.
 
 ```bash
 pip install deeptrees
@@ -106,7 +113,7 @@ from deeptrees.pretrained import freudenberg2022
 freundenberg2022(
   filename="name_your_file", # name of the file to save the model
   k=0, # number of k-fold cross validation
-  load_weights=True # load the weights
+  return_dict=True # returns the weight pytorch model weights dictionary
 )
 ```
 
