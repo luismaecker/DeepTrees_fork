@@ -1,5 +1,6 @@
 stages:
   - release
+  - docs
   - build
   - publish
 
@@ -19,6 +20,21 @@ semantic-versioning:
       -p conventional-changelog-conventionalcommits@5.0.0
       -p semantic-release@19.0.5
       semantic-release
+  only:
+    - main
+
+
+build-docs:
+  image: python:3.10
+  stage: docs
+  before_script:
+    - python -m pip install --upgrade pip
+    - pip3 install sphinx sphinx-rtd-theme
+  script:
+    - sphinx-build -b html docs/source public
+  artifacts:
+    paths:
+      - public/html/
   only:
     - main
 
