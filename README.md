@@ -1,23 +1,18 @@
-<div>
-<a href="https://www.ufz.de" target="_blank">
-<img src="static/ufz.png" alt="UFZLogo" align="right" height="60px" style="margin-top: 15px; margin-right: 10px" />
+*<a href="https://www.ufz.de" target="_blank">
+<img src="static/ufz.png" alt="UFZLogo" align="right" height="60px" style="margin-top: 0; margin-right: 10px" />
 </a>
 <a href="https://www.helmholtz.ai" target="_blank">
-<img src="static/hai.png" alt="HelmholtzAILogo" align="left" height="60px" style="margin-top: 15px; margin-right: 30px" />
+<img src="static/hai.png" alt="HelmholtzAI" align="right" height="60px" style="margin-top: 0; margin-right: 30px" />
 </a>
-<div>
-<hr/>
-
- <div align="center" style="text-align:center">
-  <h1 > DeepTrees 🌳</h1>
+*
+<div align="center" style="text-align:center">
+  <h1>DeepTrees 🌳</h1>
   <b>Tree Crown Segmentation and Analysis in Remote Sensing Imagery with PyTorch</b>  
-    <br/>
-    <br/>
-
-<img src="./static/header.png" alt="DeepTrees" width="300"/>
-<br/>
+  <br/>
+  <br/>
+  <img src="./static/header.png" alt="DeepTrees" width="300"/>
+  <br/>
 </div>
-
 
 ## Installation
 
@@ -61,9 +56,11 @@ from deeptrees import predict
 predict(image_path=["list of image_paths"],  config_path = "config_path")
 ```
 
-
 ## Configuration
 
+This software uses Hydra for configuration management. The configuration files are stored in the `config` directory. 
+
+The configuration schema can be found in
 This software uses Hydra for configuration management. The configuration files are stored in the `config` directory. 
 
 The confirguration schema can be found in the `config/schema.yaml` file.
