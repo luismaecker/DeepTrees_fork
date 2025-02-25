@@ -34,7 +34,7 @@ build-docs:
     - sphinx-build -b html docs/source public
   artifacts:
     paths:
-      - public/html/
+      - public/
   only:
     - main
 
