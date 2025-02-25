@@ -10,12 +10,12 @@
 
 <div align="left" style="text-align:left">
 <h1>DeepTrees 🌳</h1>
-  <br/>
+</div>
 
 <div align="center" style="text-align:center">
   <h3>Tree Crown Segmentation and Analysis in Remote Sensing Imagery with PyTorch</h3>  
-  <br/>
   <img src="./static/header.png" alt="DeepTrees" width="300"/>
+  <br/>
   <br/>
 </div>
 
