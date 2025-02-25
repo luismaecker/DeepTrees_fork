@@ -34,7 +34,9 @@
   </a>
 </div>
 
-DeepTrees is a PyTorch-based library for tree crown segmentation and analysis in remote sensing imagery. It provides a modular and flexible framework for training and deploying deep learning models for tree crown segmentation. The library is designed to be easy to use and extend, with a focus on reproducibility and scalability. It includes a variety of pre-trained models, data loaders, and evaluation metrics to help you get started quickly. DeepTrees is developed by the Helmholtz AI Consultants at the Helmholtz-Zentrum Dresden-Rossendorf (HZDR) and the Helmholtz Centre for Environmental Research (UFZ).
+DeepTrees is a PyTorch-based library for tree crown segmentation and analysis in remote sensing imagery. It provides a modular and flexible framework for training and deploying deep learning models for tree crown segmentation. The library is designed to be easy to use and extend, with a focus on reproducibility and scalability. It includes a variety of pre-trained models, datasets, and tree allometrical metrics to help you get started quickly. 
+
+This software is a result of the [DeepTrees](https://deeptrees.de) project at the Helmholtz Centre for Environmental Research -- UFZ, in collaboration with Helmholtz AI.
 
 ## Installation
 
@@ -84,6 +86,41 @@ You can find sample configuration files for training and prediction in the follo
 - [Prediction Configs](https://taimur.khan.pages.hzdr.de/deeptrees/config/predict/)
 
 A list of prediction configurations can be found in: [/docs/prediction_config.md](/docs/prediction_config.md)
+
+## Pretrained Models
+
+DeepTrees provides a set of pretrained models for tree crown segmentation. Currently following models are available:
+
+| Author | Model Weights |
+|--------|---------------|
+| [Freudenberg et al., 2022](https://doi.org/10.1007/s00521-022-07640-4) | [k=3](https://syncandshare.desy.de/index.php/s/NcFgPM4gX2dtSQq/download/lUnet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=3_jitted.pt) |
+| Caroline Arnold | |
+
+> Note: We are in the process of adding more pretrained models.
+
+Download the pretrained models from the links:
+
+```python
+from deeptrees.pretrained import freudenberg2022
+
+freundenberg2022(
+  filename="name_your_file", # name of the file to save the model
+  k=0, # number of k-fold cross validation
+  load_weights=True # load the weights
+)
+```
+
+## Datasets
+
+DeepTrees also provides a lablled DOP dataset with DOP20cm rasters and corresponding polygon labels as `.shp` files. The dataset is available for download:
+
+```python
+from deeptrees.datasets.halleDOP20 import load_tiles, load_labels
+
+load_tiles(zip_filename="path/to/tiles.zip") #give the path to where you want to save the tiles
+load_labels(zip_filename="path/to/labels.zip") #give the path to where you want to save the labels
+```
+> Note: We are in the process of adding more datasets and updating the current datasets.
 
 ## Predict on a list of images
 
