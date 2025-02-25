@@ -1,5 +1,5 @@
 ---
-title: "TorchTrees: Tree Crown Segmentation and Analysis in Remote Sensing Imagery with PyTorch"
+title: "DeepTrees: Tree Crown Segmentation and Analysis in Remote Sensing Imagery with PyTorch"
 authors:
   - name: "Taimur Khan"
     affiliation: 1

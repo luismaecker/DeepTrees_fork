@@ -75,8 +75,6 @@ instance/
 # Scrapy stuff:
 .scrapy
 
-# Sphinx documentation
-docs/_build/
 
 # PyBuilder
 .pybuilder/
@@ -159,3 +157,6 @@ logs/
 *.tif
 *.sqlite
 lightning_logs/
+
+# MacOS
+.DS_Store
