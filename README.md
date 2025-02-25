@@ -1,6 +1,6 @@
 
 <a href="https://www.helmholtz.ai" target="_blank">
-<img src="static/hai.png" alt="HelmholtzAI" align="right" height="60px" style="margin-top: 0; margin-right: 30px" />
+<img src="https://codebase.helmholtz.cloud/taimur.khan/DeepTrees/-/blob/0824a9b09524797ae4f71ba2cb232a32209a942c/static/hai.png" alt="HelmholtzAI" align="right" height="60px" style="margin-top: 0; margin-right: 30px" />
 </a>
 <a href="https://www.ufz.de" target="_blank">
 <img src="static/ufz.png" alt="UFZLogo" align="right" height="60px" style="margin-top: 0; margin-right: 10px" />
@@ -34,6 +34,8 @@
   </a>
 </div>
 
+DeepTrees is a PyTorch-based library for tree crown segmentation and analysis in remote sensing imagery. It provides a modular and flexible framework for training and deploying deep learning models for tree crown segmentation. The library is designed to be easy to use and extend, with a focus on reproducibility and scalability. It includes a variety of pre-trained models, data loaders, and evaluation metrics to help you get started quickly. DeepTrees is developed by the Helmholtz AI Consultants at the Helmholtz-Zentrum Dresden-Rossendorf (HZDR) and the Helmholtz Centre for Environmental Research (UFZ).
+
 ## Installation
 
 To install the package, clone the repository and install the dependencies.
@@ -51,6 +53,8 @@ or from pip.
 ```bash
 pip install deeptrees
 ```
+
+> Note: DeepTrees uses python libaries that depend on GDAL. Make sure to have GDAL installed on your system. 
 
 ## Documentation
 
