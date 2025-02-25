@@ -1,10 +1,13 @@
-*<a href="https://www.ufz.de" target="_blank">
-<img src="static/ufz.png" alt="UFZLogo" align="right" height="60px" style="margin-top: 0; margin-right: 10px" />
-</a>
-<a href="https://www.helmholtz.ai" target="_blank">
-<img src="static/hai.png" alt="HelmholtzAI" align="right" height="60px" style="margin-top: 0; margin-right: 30px" />
-</a>
-*
+<div style="display: flex; justify-content: space-between; align-items: center;">
+  <a href="https://www.ufz.de" target="_blank">
+    <img src="static/ufz.png" alt="UFZLogo" height="90px" style="margin-top: 0; margin-left: 10px" />
+  </a>
+  <a href="https://www.helmholtz.ai" target="_blank">
+    <img src="static/hai.png" alt="HelmholtzAI" height="70px" style="margin-top: 0; margin-right: 30px" />
+  </a>
+</div>
+<hr/>
+
 <div align="center" style="text-align:center">
   <h1>DeepTrees 🌳</h1>
   <h3>Tree Crown Segmentation and Analysis in Remote Sensing Imagery with PyTorch</h3>  
@@ -85,8 +88,6 @@ You can find sample configuration files for training and prediction in the follo
 
 A list of prediction configurations can be found in: [/docs/prediction_config.md](/docs/prediction_config.md)
 
-
-## Training
 
 To train the model, you need to have the labeled tiles in the `tiles` and `labels` directories. The unlabeled tiles go into `pool_tiles`. Your polygon labels need to be in ESRI shapefile format.
 
