@@ -14,6 +14,21 @@
   <br/>
 </div>
 
+<div align="center">
+  <a href="https://badge.fury.io/py/deeptrees">
+    <img src="https://badge.fury.io/py/deeptrees.svg" alt="PyPI version">
+  </a>
+  <a href="https://doi.org/10.5281/zenodo.5555555">
+    <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.5555555.svg" alt="DOI">
+  </a>
+  <a href="https://opensource.org/licenses/MIT">
+    <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT">
+  </a>
+  <a href="https://codebase.helmholtz.cloud/taimur.khan/DeepTrees/-/pipelines">
+    <img src="https://codebase.helmholtz.cloud/taimur.khan/DeepTrees/badges/main/pipeline.svg" alt="CI Build">
+  </a>
+</div>
+
 ## Installation
 
 To install the package, clone the repository and install the dependencies.
