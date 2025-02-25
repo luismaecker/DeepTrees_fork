@@ -1,4 +1,4 @@
-__VERSION__ = "1.6.0"
+__version__ = "v1.6.0"
 
 from . import model
 from . import modules

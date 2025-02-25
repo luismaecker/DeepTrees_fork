@@ -44,6 +44,14 @@ try:
 except FileNotFoundError:
     long_description = DESCRIPTION
 
+# Read version from deeptrees/__init__.py if not provided
+if not VERSION:
+    with open(os.path.join(here, NAME, '__init__.py'), encoding='utf-8') as f:
+        for line in f:
+            if "__version__" in line:
+                VERSION = line.split('=')[-1].strip().strip('"').strip("'")
+                print(f"Found version in __init__.py: {VERSION}", file=sys.stderr)
+
 # Function that checks GitLab's CI_COMMIT_TAG or falls back
 def get_version():
     """
