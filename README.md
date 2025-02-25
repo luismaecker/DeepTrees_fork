@@ -66,19 +66,9 @@ make html
 
 This will create the documentation in the `docs/build` directory. Open the `index.html` file in your browser to view the documentation.
 
-## Predict on a list of images
-
-Run the inference script with the corresponding config file on list of images.
-
-```bash
-from deeptrees import predict
-
-predict(image_path=["list of image_paths"],  config_path = "config_path")
-```
-
 ## Configuration
 
-This software uses Hydra for configuration management. The configuration files are stored in the `config` directory. 
+This software requires Hydra for configuration management. The configuration **yaml** files are stored in the `config` directory. 
 
 The configuration schema can be found in
 This software uses Hydra for configuration management. The configuration files are stored in the `config` directory. 
@@ -91,6 +81,15 @@ You can find sample configuration files for training and prediction in the follo
 
 A list of prediction configurations can be found in: [/docs/prediction_config.md](/docs/prediction_config.md)
 
+## Predict on a list of images
+
+Run the inference script with the corresponding config file on list of images.
+
+```bash
+from deeptrees import predict
+
+predict(image_path=["list of image_paths"],  config_path = "config_path")
+```
 
 ## Training
 
