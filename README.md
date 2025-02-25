@@ -1,10 +1,8 @@
-<div>
 <div style="display: flex; justify-content: space-between; align-items: center;">
-  <img src="./static/ufz.png" alt="UFZ" width="300" style="margin-right: auto;"/>
-  <img src="./static/hai.png" alt="HAI" width="150" style="margin-left: auto;"/>
+  <img src="./static/ufz.png" alt="UFZ" width="300" style="text-align:left;"/>
+  <img src="./static/hai.png" alt="HAI" width="150" style="text-align:right;"/>
 </div>
 <hr/>
-</div>
 
  <div align="center" style="text-align:center">
   <h1 > DeepTrees 🌳</h1>
