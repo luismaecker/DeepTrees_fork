@@ -7,7 +7,7 @@
 *
 <div align="center" style="text-align:center">
   <h1>DeepTrees 🌳</h1>
-  <b>Tree Crown Segmentation and Analysis in Remote Sensing Imagery with PyTorch</b>  
+  <h3>Tree Crown Segmentation and Analysis in Remote Sensing Imagery with PyTorch</h3>  
   <br/>
   <br/>
   <img src="./static/header.png" alt="DeepTrees" width="300"/>
