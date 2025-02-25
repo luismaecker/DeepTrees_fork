@@ -1,3 +1,4 @@
+
 <a href="https://www.helmholtz.ai" target="_blank">
 <img src="static/hai.png" alt="HelmholtzAI" align="right" height="60px" style="margin-top: 0; margin-right: 30px" />
 </a>
@@ -7,8 +8,11 @@
 <br/>
 <br/>
 
+<div align="left" style="text-align:left">
+<h1>DeepTrees 🌳</h1>
+  <br/>
+
 <div align="center" style="text-align:center">
-  <h1>DeepTrees 🌳</h1>
   <h3>Tree Crown Segmentation and Analysis in Remote Sensing Imagery with PyTorch</h3>  
   <br/>
   <img src="./static/header.png" alt="DeepTrees" width="300"/>
