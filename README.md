@@ -2,7 +2,7 @@
 <img src="static/hai.png" alt="HelmholtzAI" align="right" height="60px" style="margin-top: 0; margin-right: 30px" />
 </a>
 <a href="https://www.ufz.de" target="_blank">
-<img src="static/ufz.png" alt="UFZLogo" align="right" height="90px" style="margin-top: 0; margin-right: 10px" />
+<img src="static/ufz.png" alt="UFZLogo" align="right" height="60px" style="margin-top: 0; margin-right: 10px" />
 </a>
 <br/>
 <br/>
