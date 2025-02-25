@@ -1,7 +1,9 @@
-<div style="display: flex; justify-content: space-between; align-items: center;">
-  <img src="./static/ufz.png" alt="UFZ" width="300" style="text-align:left;"/>
-  <img src="./static/hai.png" alt="HAI" width="150" style="text-align:right;"/>
-</div>
+<a href="https://www.ufz.de" target="_blank">
+<img src="static/ufz.png" alt="UFZLogo" align="right" height="60px" style="margin-top: 15px; margin-right: 10px" />
+</a>
+<a href="https://www.helmholtz.ai" target="_blank">
+<img src="static/hai.png" alt="HelmholtzAILogo" align="left" height="60px" style="margin-top: 15px; margin-right: 30px" />
+</a>
 <hr/>
 
  <div align="center" style="text-align:center">
