@@ -20,9 +20,11 @@ semantic-versioning:
       -p conventional-changelog-conventionalcommits@5.0.0
       -p semantic-release@19.0.5
       semantic-release
-  only:
-    - main
-
+  rules:
+    - changes:
+        - "**/*"
+    - exists:
+        - "*.md"
 
 pages:
   image: python:3.10
@@ -35,8 +37,11 @@ pages:
   artifacts:
     paths:
       - public/
-  only:
-    - main
+  rules:
+    - changes:
+        - "**/*"
+    - exists:
+        - "*.md"
 
 build-package:
   image: python:3.10
@@ -49,8 +54,11 @@ build-package:
   artifacts:
     paths:
       - dist/
-  only:
-    - main
+  rules:
+    - changes:
+        - "**/*"
+    - exists:
+        - "*.md"
   dependencies:
     - semantic-versioning
 
@@ -62,11 +70,13 @@ publish-package:
     - pip install setuptools wheel twine
   script:
     - TWINE_PASSWORD=${CI_JOB_TOKEN} TWINE_USERNAME=gitlab-ci-token python -m twine upload --repository-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi dist/*
-  only:
-    - tags
+  rules:
+    - changes:
+        - "**/*"
+    - exists:
+        - "*.md"
   dependencies:
     - build-package
-
 
 publish-package:
   image: python:3.10
@@ -76,9 +86,10 @@ publish-package:
     - pip install setuptools wheel twine
   script:
     - TWINE_PASSWORD=${PYPI_TOKEN} TWINE_USERNAME=__token__ python -m twine upload dist/*
-  only:
-    - main
+  rules:
+    - changes:
+        - "**/*"
+    - exists:
+        - "*.md"
   dependencies:
     - build-package
-
-
