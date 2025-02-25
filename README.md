@@ -1,8 +1,8 @@
 <a href="https://www.ufz.de" target="_blank">
-<img src="static/ufz.png" alt="UFZLogo" align="right" height="60px" style="margin-top: 15px; margin-right: 10px" />
+<img src="./static/ufz.png" alt="UFZLogo" align="right" height="60px" style="margin-top: 15px; margin-right: 10px" />
 </a>
 <a href="https://www.helmholtz.ai" target="_blank">
-<img src="static/hai.png" alt="HelmholtzAILogo" align="left" height="60px" style="margin-top: 15px; margin-right: 30px" />
+<img src="./static/hai.png" alt="HelmholtzAILogo" align="left" height="60px" style="margin-top: 15px; margin-right: 30px" />
 </a>
 <hr/>
 
