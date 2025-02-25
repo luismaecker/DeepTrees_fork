@@ -1,0 +1,1271 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>torchtrees.modules.utils &mdash; TorchTrees  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            TorchTrees
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../overview.html">Architectural Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides.html">Developer Guides</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">TorchTrees</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">torchtrees.modules.utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for torchtrees.modules.utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">import</span> <span class="nn">osgeo.gdal</span> <span class="k">as</span> <span class="nn">gdal</span>
+<span class="kn">import</span> <span class="nn">osgeo.gdalnumeric</span> <span class="k">as</span> <span class="nn">gdn</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">import</span> <span class="nn">fiona</span>
+<span class="kn">import</span> <span class="nn">operator</span>
+<span class="kn">from</span> <span class="nn">sys</span> <span class="kn">import</span> <span class="n">stdout</span>
+<span class="kn">from</span> <span class="nn">uuid</span> <span class="kn">import</span> <span class="n">uuid4</span>
+<span class="kn">from</span> <span class="nn">skimage</span> <span class="kn">import</span> <span class="n">filters</span>
+<span class="kn">from</span> <span class="nn">skimage.morphology</span> <span class="kn">import</span> <span class="n">dilation</span><span class="p">,</span> <span class="n">square</span><span class="p">,</span> <span class="n">disk</span>
+<span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">Polygon</span><span class="p">,</span> <span class="n">mapping</span><span class="p">,</span> <span class="n">shape</span>
+<span class="kn">from</span> <span class="nn">osgeo</span> <span class="kn">import</span> <span class="n">osr</span>
+<span class="kn">from</span> <span class="nn">fiona</span> <span class="kn">import</span> <span class="n">crs</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">xarray</span>
+<span class="kn">import</span> <span class="nn">rasterio</span>
+<span class="kn">from</span> <span class="nn">rasterio.mask</span> <span class="kn">import</span> <span class="n">mask</span>
+<span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">mapping</span>
+
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+
+<div class="viewcode-block" id="overlay_heatmap">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#torchtrees.modules.utils.overlay_heatmap">[docs]</a>
+<span class="k">def</span> <span class="nf">overlay_heatmap</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">entropy_map</span><span class="p">,</span> <span class="n">output_path</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Overlay an entropy heatmap on top of the image and save the result.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters:</span>
+<span class="sd">    - image: Original image (as a NumPy array or PIL image).</span>
+<span class="sd">    - entropy_map: 2D array representing the entropy values.</span>
+<span class="sd">    - output_path: Path to save the overlaid image.</span>
+<span class="sd">    - filename: Name of the file to save the overlaid image.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Ensure the image and entropy_map have compatible sizes</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">or</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">image</span><span class="p">]</span><span class="o">*</span><span class="mi">3</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># Make grayscale image RGB-compatible</span>
+        <span class="n">image_pil</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">fromarray</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">image_pil</span> <span class="o">=</span> <span class="n">image</span>
+    
+    <span class="c1"># Create heatmap</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">entropy_map</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;jet&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s1">&#39;off&#39;</span><span class="p">)</span>
+    <span class="c1"># plt.colorbar()  # Add a color bar to interpret the heatmap scale</span>
+
+    <span class="c1"># Save heatmap as temporary file</span>
+    
+    <span class="n">heatmap_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="s1">&#39;image_heatmap.png&#39;</span><span class="p">)</span>
+    
+    <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">heatmap_path</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s1">&#39;tight&#39;</span><span class="p">,</span> <span class="n">pad_inches</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    
+    <span class="c1"># Load heatmap image</span>
+    <span class="n">heatmap</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">heatmap_path</span><span class="p">)</span><span class="o">.</span><span class="n">convert</span><span class="p">(</span><span class="s2">&quot;RGBA&quot;</span><span class="p">)</span>
+
+    <span class="n">image_pil</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">image_pil</span><span class="p">)</span>
+
+    <span class="c1"># Transpose the image to (height, width, channels)</span>
+    <span class="n">image_pil</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">image_pil</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+    <span class="c1"># Convert to PIL image and resize to match heatmap dimensions</span>
+    <span class="n">image_pil</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">fromarray</span><span class="p">((</span><span class="n">image_pil</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">))</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">heatmap</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+
+    <span class="c1"># Overlay heatmap on original image</span>
+    <span class="n">overlaid_image</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">blend</span><span class="p">(</span><span class="n">image_pil</span><span class="p">,</span> <span class="n">heatmap</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.4</span><span class="p">)</span>
+
+    <span class="n">saved_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+
+    <span class="c1"># Save final image with overlaid heatmap</span>
+    <span class="n">overlaid_image</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">saved_path</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="load_model_weights">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#torchtrees.modules.utils.load_model_weights">[docs]</a>
+<span class="k">def</span> <span class="nf">load_model_weights</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Loads the models weights and sets the batch norm momentum to 0.9.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: The model to load weights into.</span>
+<span class="sd">        path (str): Path to the weights file.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The model with loaded weights.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
+    <span class="n">set_batchnorm_momentum</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">model</span></div>
+
+
+
+<div class="viewcode-block" id="gpu">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#torchtrees.modules.utils.gpu">[docs]</a>
+<span class="k">def</span> <span class="nf">gpu</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cuda&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Moves a tensor to the GPU if available.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        x (torch.Tensor): The tensor to move.</span>
+<span class="sd">        device (str): The device to move the tensor to.</span>
+<span class="sd">        dtype (torch.dtype): The data type of the tensor.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        torch.Tensor: The tensor on the specified device.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">x</span></div>
+
+
+
+<div class="viewcode-block" id="set_batchnorm_momentum">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#torchtrees.modules.utils.set_batchnorm_momentum">[docs]</a>
+<span class="k">def</span> <span class="nf">set_batchnorm_momentum</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">momentum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Set the momentum for all BatchNorm layers in the given model.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: The model (either scripted or non-scripted) where batchnorm layers are modified.</span>
+<span class="sd">        momentum: The momentum value to set for the BatchNorm layers.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">modules</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm1d</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm3d</span><span class="p">)):</span>
+            <span class="n">m</span><span class="o">.</span><span class="n">momentum</span> <span class="o">=</span> <span class="n">momentum</span>                </div>
+
+
+
+<div class="viewcode-block" id="get_map_extent">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#torchtrees.modules.utils.get_map_extent">[docs]</a>
+<span class="k">def</span> <span class="nf">get_map_extent</span><span class="p">(</span><span class="n">gdal_raster</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns a dict of {xmin, xmax, ymin, ymax, xres, yres} of a given GDAL raster file.</span>
+<span class="sd">    Returns None if no geo reference was found.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        gdal_raster: File opened via gdal.Open().</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: A dictionary containing the map extent.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">xmin</span><span class="p">,</span> <span class="n">xres</span><span class="p">,</span> <span class="n">xskew</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">yskew</span><span class="p">,</span> <span class="n">yres</span> <span class="o">=</span> <span class="n">gdal_raster</span><span class="o">.</span><span class="n">GetGeoTransform</span><span class="p">()</span>
+    <span class="n">xmax</span> <span class="o">=</span> <span class="n">xmin</span> <span class="o">+</span> <span class="p">(</span><span class="n">gdal_raster</span><span class="o">.</span><span class="n">RasterXSize</span> <span class="o">*</span> <span class="n">xres</span><span class="p">)</span>
+    <span class="n">ymin</span> <span class="o">=</span> <span class="n">ymax</span> <span class="o">+</span> <span class="p">(</span><span class="n">gdal_raster</span><span class="o">.</span><span class="n">RasterYSize</span> <span class="o">*</span> <span class="n">yres</span><span class="p">)</span>
+    <span class="c1"># ret = ( (ymin, ymax), (xmin, xmax) )</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;xmin&quot;</span><span class="p">:</span> <span class="n">xmin</span><span class="p">,</span> <span class="s2">&quot;xmax&quot;</span><span class="p">:</span> <span class="n">xmax</span><span class="p">,</span> <span class="s2">&quot;ymin&quot;</span><span class="p">:</span> <span class="n">ymin</span><span class="p">,</span> <span class="s2">&quot;ymax&quot;</span><span class="p">:</span> <span class="n">ymax</span><span class="p">,</span> <span class="s2">&quot;xres&quot;</span><span class="p">:</span> <span class="n">xres</span><span class="p">,</span> <span class="s2">&quot;yres&quot;</span><span class="p">:</span> <span class="n">yres</span><span class="p">}</span>
+    <span class="k">if</span> <span class="mf">0.</span> <span class="ow">in</span> <span class="p">(</span><span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">):</span> <span class="k">return</span> <span class="kc">None</span>  <span class="c1"># This is true if no real geodata is referenced.</span>
+    <span class="k">return</span> <span class="n">ret</span></div>
+
+
+
+<div class="viewcode-block" id="gdal_trafo_to_xarray_trafo">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#torchtrees.modules.utils.gdal_trafo_to_xarray_trafo">[docs]</a>
+<span class="k">def</span> <span class="nf">gdal_trafo_to_xarray_trafo</span><span class="p">(</span><span class="n">gdal_trafo</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Converts a GDAL transform to an xarray transform.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        gdal_trafo: The GDAL transform.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple: The xarray transform.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">xmin</span><span class="p">,</span> <span class="n">xres</span><span class="p">,</span> <span class="n">xskew</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">yskew</span><span class="p">,</span> <span class="n">yres</span> <span class="o">=</span> <span class="n">gdal_trafo</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">xres</span><span class="p">,</span> <span class="n">xskew</span><span class="p">,</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">yskew</span><span class="p">,</span> <span class="n">yres</span><span class="p">,</span> <span class="n">ymax</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="xarray_trafo_to_gdal_trafo">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#torchtrees.modules.utils.xarray_trafo_to_gdal_trafo">[docs]</a>
+<span class="k">def</span> <span class="nf">xarray_trafo_to_gdal_trafo</span><span class="p">(</span><span class="n">xarray_trafo</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Converts an xarray transform to a GDAL transform.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        xarray_trafo: The xarray transform.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple: The GDAL transform.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">xres</span><span class="p">,</span> <span class="n">xskew</span><span class="p">,</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">yskew</span><span class="p">,</span> <span class="n">yres</span><span class="p">,</span> <span class="n">ymax</span> <span class="o">=</span> <span class="n">xarray_trafo</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xres</span><span class="p">,</span> <span class="n">xskew</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">yskew</span><span class="p">,</span> <span class="n">yres</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_xarray_extent">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#torchtrees.modules.utils.get_xarray_extent">[docs]</a>
+<span class="k">def</span> <span class="nf">get_xarray_extent</span><span class="p">(</span><span class="n">arr</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the extent of an xarray.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        arr: The xarray.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple: The extent of the xarray.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">xr</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+    <span class="n">yr</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+    <span class="n">xres</span><span class="p">,</span> <span class="n">yres</span> <span class="o">=</span> <span class="p">(</span><span class="n">arr</span><span class="o">.</span><span class="n">transform</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">arr</span><span class="o">.</span><span class="n">transform</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+    <span class="k">return</span> <span class="nb">min</span><span class="p">(</span><span class="n">xr</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">xr</span><span class="p">),</span> <span class="nb">min</span><span class="p">(</span><span class="n">yr</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">yr</span><span class="p">),</span> <span class="n">xres</span><span class="p">,</span> <span class="n">yres</span></div>
+
+
+
+<div class="viewcode-block" id="get_xarray_trafo">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#torchtrees.modules.utils.get_xarray_trafo">[docs]</a>
+<span class="k">def</span> <span class="nf">get_xarray_trafo</span><span class="p">(</span><span class="n">arr</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the transform of an xarray.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        arr: The xarray.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple: The transform of the xarray.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">xr</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+    <span class="n">yr</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+    <span class="n">xres</span><span class="p">,</span> <span class="n">yres</span> <span class="o">=</span> <span class="p">(</span><span class="n">arr</span><span class="o">.</span><span class="n">transform</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">arr</span><span class="o">.</span><span class="n">transform</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+    <span class="n">xskew</span><span class="p">,</span> <span class="n">yskew</span> <span class="o">=</span> <span class="p">(</span><span class="n">arr</span><span class="o">.</span><span class="n">transform</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">arr</span><span class="o">.</span><span class="n">transform</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">xres</span><span class="p">,</span> <span class="n">xskew</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">xr</span><span class="p">),</span> <span class="n">yskew</span><span class="p">,</span> <span class="n">yres</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">yr</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_rioxarray_trafo">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#torchtrees.modules.utils.get_rioxarray_trafo">[docs]</a>
+<span class="k">def</span> <span class="nf">get_rioxarray_trafo</span><span class="p">(</span><span class="n">arr</span><span class="p">:</span> <span class="n">xarray</span><span class="o">.</span><span class="n">DataArray</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get the transform from a raster tile.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        arr (xarray.DataArray): Raster tile.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple: The transform of the raster tile.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">xr</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+    <span class="n">yr</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+    <span class="n">xres</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">xr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">xr</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">4</span><span class="p">)</span>
+    <span class="n">yres</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">yr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">yr</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">4</span><span class="p">)</span>
+    <span class="n">xskew</span><span class="p">,</span> <span class="n">yskew</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">xres</span><span class="p">,</span> <span class="n">xskew</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">xr</span><span class="p">),</span> <span class="n">yskew</span><span class="p">,</span> <span class="n">yres</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">yr</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="extent_to_poly">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#torchtrees.modules.utils.extent_to_poly">[docs]</a>
+<span class="k">def</span> <span class="nf">extent_to_poly</span><span class="p">(</span><span class="n">xarr</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the bounding box of an xarray as a shapely polygon.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        xarr: The xarray.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Polygon: The bounding box polygon.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">xres</span><span class="p">,</span> <span class="n">yres</span> <span class="o">=</span> <span class="n">get_xarray_extent</span><span class="p">(</span><span class="n">xarr</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Polygon</span><span class="p">([(</span><span class="n">xmin</span><span class="p">,</span> <span class="n">ymax</span><span class="p">),</span> <span class="p">(</span><span class="n">xmin</span><span class="p">,</span> <span class="n">ymin</span><span class="p">),</span> <span class="p">(</span><span class="n">xmax</span><span class="p">,</span> <span class="n">ymin</span><span class="p">),</span> <span class="p">(</span><span class="n">xmax</span><span class="p">,</span> <span class="n">ymax</span><span class="p">)])</span></div>
+
+
+
+<div class="viewcode-block" id="load_filtered_polygons">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#torchtrees.modules.utils.load_filtered_polygons">[docs]</a>
+<span class="k">def</span> <span class="nf">load_filtered_polygons</span><span class="p">(</span><span class="n">file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                           <span class="n">rasters</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+                           <span class="n">minimum_area</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                           <span class="n">maximum_area</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="mi">6</span><span class="p">,</span>
+                           <span class="n">filter_dict</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{},</span>
+                           <span class="n">operators</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[</span><span class="n">operator</span><span class="o">.</span><span class="n">eq</span><span class="p">]</span>
+                           <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Loads those polygons from a given shapefile which fit into the extents of the given rasters.</span>
+
+<span class="sd">    Polygons will be cropped to fit the given raster extent.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        file (str): Shapefile path.</span>
+<span class="sd">        rasters (list): List of xarrays.</span>
+<span class="sd">        minimum_area (float): Minimum polygon area in map units (typically m²), measured after cropping to extent.</span>
+<span class="sd">        maximum_area (float): Maximum polygon area in map units (typically m²), measured after cropping to extent.</span>
+<span class="sd">        filter_dict (dict): Dictionary of key value pairs to filter polygons by.</span>
+<span class="sd">        operators (list): A list of built-in python comparison operators from the &#39;operator&#39; package.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list: A list of lists containing polygons in the same order as the rasters.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">filter_polygons_by_property</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">filter_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;properties&quot;</span><span class="p">][</span><span class="n">k</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">operators</span><span class="p">[</span><span class="n">i</span><span class="p">](</span><span class="n">val</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="n">fiona</span><span class="o">.</span><span class="n">supported_drivers</span><span class="p">[</span><span class="s2">&quot;SQLite&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;rw&quot;</span>
+    <span class="n">polygons</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">with</span> <span class="n">fiona</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">file</span><span class="p">)</span> <span class="k">as</span> <span class="n">src</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">rasters</span><span class="p">):</span>
+            <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">xres</span><span class="p">,</span> <span class="n">yres</span> <span class="o">=</span> <span class="n">get_xarray_extent</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+            <span class="n">bbox</span> <span class="o">=</span> <span class="p">(</span><span class="n">xmin</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymax</span><span class="p">)</span>
+            <span class="n">crop</span> <span class="o">=</span> <span class="n">Polygon</span><span class="p">(((</span><span class="n">xmin</span><span class="p">,</span> <span class="n">ymin</span><span class="p">),</span> <span class="p">(</span><span class="n">xmin</span><span class="p">,</span> <span class="n">ymax</span><span class="p">),</span> <span class="p">(</span><span class="n">xmax</span><span class="p">,</span> <span class="n">ymax</span><span class="p">),</span> <span class="p">(</span><span class="n">xmax</span><span class="p">,</span> <span class="n">ymin</span><span class="p">),</span> <span class="p">(</span><span class="n">xmin</span><span class="p">,</span> <span class="n">ymin</span><span class="p">)))</span>
+
+            <span class="n">tmp</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">src</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">bbox</span><span class="o">=</span><span class="n">bbox</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">filter_dict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">filter_polygons_by_property</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+                        <span class="k">continue</span>
+
+                <span class="n">polygon</span> <span class="o">=</span> <span class="n">shape</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;geometry&quot;</span><span class="p">])</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">polygon</span><span class="o">.</span><span class="n">is_valid</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Skipping invalid polygon: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">polygon</span><span class="p">))</span>
+                    <span class="k">continue</span>
+
+                <span class="n">intersection</span> <span class="o">=</span> <span class="n">crop</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">polygon</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">minimum_area</span> <span class="o">&lt;</span> <span class="n">intersection</span><span class="o">.</span><span class="n">area</span> <span class="o">&lt;</span> <span class="n">maximum_area</span><span class="p">:</span>
+                    <span class="n">tmp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">intersection</span><span class="p">)</span>
+            <span class="n">polygons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">polygons</span></div>
+
+
+
+<div class="viewcode-block" id="save_polygons">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#torchtrees.modules.utils.save_polygons">[docs]</a>
+<span class="k">def</span> <span class="nf">save_polygons</span><span class="p">(</span><span class="n">polygons</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">dest_fname</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">crs</span><span class="p">,</span> <span class="n">driver</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;SQLite&quot;</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;w&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Save a list of polygons into a shapefile with given coordinate reference system.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        polygons (list): List of shapely polygons to save.</span>
+<span class="sd">        dest_fname (str): Path to file.</span>
+<span class="sd">        crs: Coordinate reference system, e.g. from fiona.crs.from_epsg().</span>
+<span class="sd">        driver (str): One of fiona&#39;s supported drivers e.g. &#39;ESRI Shapefile&#39; or &#39;SQLite&#39;.</span>
+<span class="sd">        mode (str): Either &#39;w&#39; for write or &#39;a&#39; for append. Not all drivers support both.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">fiona</span><span class="o">.</span><span class="n">supported_drivers</span><span class="p">[</span><span class="s2">&quot;SQLite&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;rw&quot;</span>  <span class="c1"># ensure we can actually write to a useful format</span>
+    <span class="n">schema</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;geometry&quot;</span>  <span class="p">:</span> <span class="s2">&quot;Polygon&quot;</span><span class="p">,</span>
+              <span class="s2">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;int&quot;</span><span class="p">}}</span>
+
+    <span class="n">records</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;geometry&quot;</span><span class="p">:</span> <span class="n">mapping</span><span class="p">(</span><span class="n">p</span><span class="p">),</span> <span class="s2">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">i</span><span class="p">}}</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">polygons</span><span class="p">)]</span>
+
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">dest_fname</span><span class="p">):</span>
+        <span class="n">uuid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid4</span><span class="p">())[:</span><span class="mi">4</span><span class="p">]</span>
+        <span class="n">head</span><span class="p">,</span> <span class="n">suff</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">dest_fname</span><span class="p">)</span>
+        <span class="n">head</span> <span class="o">=</span> <span class="n">head</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span>
+        <span class="n">dest_fname_new</span> <span class="o">=</span> <span class="n">uuid</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">head</span><span class="p">,</span> <span class="n">suff</span><span class="p">])</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;File </span><span class="si">{}</span><span class="s2"> already exists, saving as </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dest_fname</span><span class="p">,</span> <span class="n">dest_fname_new</span><span class="p">))</span>
+        <span class="n">dest_fname</span> <span class="o">=</span> <span class="n">dest_fname_new</span>
+
+    <span class="k">with</span> <span class="n">fiona</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">dest_fname</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">crs</span><span class="o">=</span><span class="n">crs</span><span class="p">,</span> <span class="n">driver</span><span class="o">=</span><span class="n">driver</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="n">schema</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">writerecords</span><span class="p">(</span><span class="n">records</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="read_img">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#torchtrees.modules.utils.read_img">[docs]</a>
+<span class="k">def</span> <span class="nf">read_img</span><span class="p">(</span><span class="n">input_file</span><span class="p">,</span> <span class="n">dim_ordering</span><span class="o">=</span><span class="s2">&quot;HWC&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float32&#39;</span><span class="p">,</span> <span class="n">band_mapping</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">return_extent</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Reads an image from disk and returns it as numpy array.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        input_file (str): Path to the input file.</span>
+<span class="sd">        dim_ordering (str): One of HWC or CHW, C=Channels, H=Height, W=Width.</span>
+<span class="sd">        dtype (str): Desired data type for loading, e.g. np.uint8, np.float32.</span>
+<span class="sd">        band_mapping (dict): Dictionary of which image band to load into which array band.</span>
+<span class="sd">        return_extent (bool): Whether or not to return the raster extent in the form (ymin, ymax, xmin, xmax).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: Numpy array containing the image and optionally the extent.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">input_file</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Input file does not exist. Given path: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">input_file</span><span class="p">))</span>
+
+    <span class="n">ds</span> <span class="o">=</span> <span class="n">gdal</span><span class="o">.</span><span class="n">Open</span><span class="p">(</span><span class="n">input_file</span><span class="p">)</span>
+    <span class="n">extent</span> <span class="o">=</span> <span class="n">get_map_extent</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">band_mapping</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">num_bands</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">RasterCount</span>
+        <span class="n">band_mapping</span> <span class="o">=</span> <span class="p">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_bands</span><span class="p">)}</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">band_mapping</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">num_bands</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">band_mapping</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;band_mapping must be a dict, not </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">band_mapping</span><span class="p">)))</span>
+
+    <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">num_bands</span><span class="p">,</span> <span class="n">ds</span><span class="o">.</span><span class="n">RasterYSize</span><span class="p">,</span> <span class="n">ds</span><span class="o">.</span><span class="n">RasterXSize</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">source_layer</span><span class="p">,</span> <span class="n">target_layer</span> <span class="ow">in</span> <span class="n">band_mapping</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">arr</span><span class="p">[</span><span class="n">target_layer</span><span class="p">]</span> <span class="o">=</span> <span class="n">gdn</span><span class="o">.</span><span class="n">BandReadAsArray</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">GetRasterBand</span><span class="p">(</span><span class="n">source_layer</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">dim_ordering</span> <span class="o">==</span> <span class="s2">&quot;HWC&quot;</span><span class="p">:</span>
+        <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>  <span class="c1"># Reorders dimensions, so that channels are last</span>
+    <span class="k">elif</span> <span class="n">dim_ordering</span> <span class="o">==</span> <span class="s2">&quot;CHW&quot;</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Dim ordering </span><span class="si">{}</span><span class="s2"> not supported. Choose one of &#39;HWC&#39; or &#39;CHW&#39;.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dim_ordering</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">return_extent</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">arr</span><span class="p">,</span> <span class="n">extent</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">arr</span></div>
+
+
+
+<div class="viewcode-block" id="array_to_tif">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#torchtrees.modules.utils.array_to_tif">[docs]</a>
+<span class="k">def</span> <span class="nf">array_to_tif</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">dst_filename</span><span class="p">,</span> <span class="n">num_bands</span><span class="o">=</span><span class="s1">&#39;multi&#39;</span><span class="p">,</span> <span class="n">save_background</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">src_raster</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">crs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Takes a numpy array and writes a tif. Uses deflate compression.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        array (np.ndarray): Numpy array.</span>
+<span class="sd">        dst_filename (str): Destination file name/path.</span>
+<span class="sd">        num_bands (str): &#39;single&#39; or &#39;multi&#39;. If &#39;single&#39; is chosen, everything is saved into one layer.</span>
+<span class="sd">        save_background (bool): Whether or not to save the last layer, which is often the background class.</span>
+<span class="sd">        src_raster (str): Raster file used to determine the corner coords.</span>
+<span class="sd">        transform: A geotransform in the gdal format.</span>
+<span class="sd">        crs: A coordinate reference system as proj4 string.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">src_raster</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+        <span class="n">src_raster</span> <span class="o">=</span> <span class="n">gdal</span><span class="o">.</span><span class="n">Open</span><span class="p">(</span><span class="n">src_raster</span><span class="p">)</span>
+        <span class="n">x_pixels</span> <span class="o">=</span> <span class="n">src_raster</span><span class="o">.</span><span class="n">RasterXSize</span>
+        <span class="n">y_pixels</span> <span class="o">=</span> <span class="n">src_raster</span><span class="o">.</span><span class="n">RasterYSize</span>
+    <span class="k">elif</span> <span class="n">transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">crs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">y_pixels</span><span class="p">,</span> <span class="n">x_pixels</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Please provide either a source raster file or geotransform and coordinate reference &quot;</span>
+                           <span class="s2">&quot;system.&quot;</span><span class="p">)</span>
+
+    <span class="n">bands</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span> <span class="n">array</span><span class="o">.</span><span class="n">shape</span> <span class="p">)</span> <span class="k">if</span> <span class="n">array</span><span class="o">.</span><span class="n">ndim</span><span class="o">==</span><span class="mi">3</span> <span class="k">else</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">save_background</span> <span class="ow">and</span> <span class="n">array</span><span class="o">.</span><span class="n">ndim</span><span class="o">==</span><span class="mi">3</span><span class="p">:</span> <span class="n">bands</span> <span class="o">-=</span> <span class="mi">1</span>
+
+    <span class="n">driver</span> <span class="o">=</span> <span class="n">gdal</span><span class="o">.</span><span class="n">GetDriverByName</span><span class="p">(</span><span class="s1">&#39;GTiff&#39;</span><span class="p">)</span>
+
+    <span class="n">datatype</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">array</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">datatype_mapping</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;byte&#39;</span><span class="p">:</span> <span class="n">gdal</span><span class="o">.</span><span class="n">GDT_Byte</span><span class="p">,</span> <span class="s1">&#39;uint8&#39;</span><span class="p">:</span> <span class="n">gdal</span><span class="o">.</span><span class="n">GDT_Byte</span><span class="p">,</span> <span class="s1">&#39;uint16&#39;</span><span class="p">:</span> <span class="n">gdal</span><span class="o">.</span><span class="n">GDT_UInt16</span><span class="p">,</span>
+                        <span class="s1">&#39;uint32&#39;</span><span class="p">:</span> <span class="n">gdal</span><span class="o">.</span><span class="n">GDT_UInt32</span><span class="p">,</span> <span class="s1">&#39;int8&#39;</span><span class="p">:</span> <span class="n">gdal</span><span class="o">.</span><span class="n">GDT_Byte</span><span class="p">,</span> <span class="s1">&#39;int16&#39;</span><span class="p">:</span> <span class="n">gdal</span><span class="o">.</span><span class="n">GDT_Int16</span><span class="p">,</span>
+                        <span class="s1">&#39;int32&#39;</span><span class="p">:</span> <span class="n">gdal</span><span class="o">.</span><span class="n">GDT_Int32</span><span class="p">,</span> <span class="s1">&#39;float16&#39;</span><span class="p">:</span> <span class="n">gdal</span><span class="o">.</span><span class="n">GDT_Float32</span><span class="p">,</span> <span class="s1">&#39;float32&#39;</span><span class="p">:</span> <span class="n">gdal</span><span class="o">.</span><span class="n">GDT_Float32</span><span class="p">}</span>
+    <span class="n">options</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;COMPRESS=DEFLATE&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">datatype</span> <span class="o">==</span> <span class="s2">&quot;float16&quot;</span><span class="p">:</span>
+        <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;NBITS=16&quot;</span><span class="p">)</span>
+
+    <span class="n">out</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span>
+        <span class="n">dst_filename</span><span class="p">,</span>
+        <span class="n">x_pixels</span><span class="p">,</span>
+        <span class="n">y_pixels</span><span class="p">,</span>
+        <span class="mi">1</span> <span class="k">if</span> <span class="n">num_bands</span> <span class="o">==</span> <span class="s1">&#39;single&#39;</span> <span class="k">else</span> <span class="n">bands</span><span class="p">,</span>
+        <span class="n">datatype_mapping</span><span class="p">[</span><span class="n">datatype</span><span class="p">],</span>
+        <span class="n">options</span><span class="o">=</span><span class="n">options</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">src_raster</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">SetGeoTransform</span><span class="p">(</span><span class="n">src_raster</span><span class="o">.</span><span class="n">GetGeoTransform</span><span class="p">())</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">SetProjection</span><span class="p">(</span><span class="n">src_raster</span><span class="o">.</span><span class="n">GetProjection</span><span class="p">())</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">SetGeoTransform</span><span class="p">(</span><span class="n">transform</span><span class="p">)</span>
+        <span class="n">srs</span> <span class="o">=</span> <span class="n">osr</span><span class="o">.</span><span class="n">SpatialReference</span><span class="p">()</span>
+        <span class="n">srs</span><span class="o">.</span><span class="n">ImportFromProj4</span><span class="p">(</span><span class="n">crs</span><span class="p">)</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">SetProjection</span><span class="p">(</span><span class="n">srs</span><span class="o">.</span><span class="n">ExportToWkt</span><span class="p">())</span>
+
+    <span class="k">if</span> <span class="n">array</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">GetRasterBand</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">WriteArray</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">GetRasterBand</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">SetNoDataValue</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">num_bands</span> <span class="o">==</span> <span class="s1">&#39;single&#39;</span><span class="p">:</span>
+            <span class="n">singleband</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">array</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">array</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">bands</span><span class="p">):</span>
+                <span class="n">singleband</span> <span class="o">+=</span> <span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">array</span><span class="p">[:,:,</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">GetRasterBand</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">WriteArray</span><span class="p">(</span> <span class="n">singleband</span> <span class="p">)</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">GetRasterBand</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">SetNoDataValue</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">num_bands</span> <span class="o">==</span> <span class="s1">&#39;multi&#39;</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">bands</span><span class="p">):</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">GetRasterBand</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">WriteArray</span><span class="p">(</span> <span class="n">array</span><span class="p">[:,:,</span><span class="n">i</span><span class="p">]</span> <span class="p">)</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">GetRasterBand</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">SetNoDataValue</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">out</span><span class="o">.</span><span class="n">FlushCache</span><span class="p">()</span>  <span class="c1"># Write to disk.</span></div>
+
+
+
+<div class="viewcode-block" id="compute_pyramid_patch_weight_loss">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#torchtrees.modules.utils.compute_pyramid_patch_weight_loss">[docs]</a>
+<span class="k">def</span> <span class="nf">compute_pyramid_patch_weight_loss</span><span class="p">(</span><span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute a weight matrix that assigns bigger weight on pixels in center and</span>
+<span class="sd">    less weight to pixels on image boundary.</span>
+<span class="sd">    This weight matrix is then used for merging individual tile predictions and helps dealing</span>
+<span class="sd">    with prediction artifacts on tile boundaries.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        width (int): Tile width.</span>
+<span class="sd">        height (int): Tile height.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: The weight mask.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">xc</span> <span class="o">=</span> <span class="n">width</span> <span class="o">*</span> <span class="mf">0.5</span>
+    <span class="n">yc</span> <span class="o">=</span> <span class="n">height</span> <span class="o">*</span> <span class="mf">0.5</span>
+    <span class="n">xl</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">xr</span> <span class="o">=</span> <span class="n">width</span>
+    <span class="n">yb</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">yt</span> <span class="o">=</span> <span class="n">height</span>
+
+    <span class="n">Dcx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">width</span><span class="p">)</span> <span class="o">-</span> <span class="n">xc</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">Dcy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">height</span><span class="p">)</span> <span class="o">-</span> <span class="n">yc</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">Dc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">Dcx</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span> <span class="o">+</span> <span class="n">Dcy</span><span class="p">)</span>
+
+    <span class="n">De_l</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">width</span><span class="p">)</span> <span class="o">-</span> <span class="n">xl</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">De_r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">width</span><span class="p">)</span> <span class="o">-</span> <span class="n">xr</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">De_b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">height</span><span class="p">)</span> <span class="o">-</span> <span class="n">yb</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">De_t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">height</span><span class="p">)</span> <span class="o">-</span> <span class="n">yt</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span>
+
+    <span class="n">De_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">De_l</span><span class="p">,</span> <span class="n">De_r</span><span class="p">))</span>
+    <span class="n">De_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">De_b</span><span class="p">,</span> <span class="n">De_t</span><span class="p">))</span>
+    <span class="n">De</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">De_x</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span><span class="o">.</span><span class="n">transpose</span><span class="p">(),</span> <span class="n">De_y</span><span class="p">)</span>
+
+    <span class="n">alpha</span> <span class="o">=</span> <span class="p">(</span><span class="n">width</span> <span class="o">*</span> <span class="n">height</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="n">De</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Dc</span><span class="p">,</span> <span class="n">De</span><span class="p">)))</span>
+    <span class="n">W</span> <span class="o">=</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="n">De</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Dc</span><span class="p">,</span> <span class="n">De</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">W</span></div>
+
+
+
+<div class="viewcode-block" id="predict_on_array">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#torchtrees.modules.utils.predict_on_array">[docs]</a>
+<span class="k">def</span> <span class="nf">predict_on_array</span><span class="p">(</span><span class="n">model</span><span class="p">,</span>
+                     <span class="n">arr</span><span class="p">,</span>
+                     <span class="n">in_shape</span><span class="p">,</span>
+                     <span class="n">out_bands</span><span class="p">,</span>
+                     <span class="n">stride</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">drop_border</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                     <span class="n">batchsize</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span>
+                     <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float32&quot;</span><span class="p">,</span>
+                     <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cuda&quot;</span><span class="p">,</span>
+                     <span class="n">augmentation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                     <span class="n">no_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                     <span class="n">report_time</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Applies a pytorch segmentation model to an array in a strided manner.</span>
+
+<span class="sd">    Call model.eval() before use!</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: Pytorch model - make sure to call model.eval() before using this function!</span>
+<span class="sd">        arr (np.ndarray): HWC array for which the segmentation should be created.</span>
+<span class="sd">        in_shape (tuple): Input shape.</span>
+<span class="sd">        out_bands (int): Number of output bands.</span>
+<span class="sd">        stride (int): Stride with which the model should be applied. Default: output size.</span>
+<span class="sd">        drop_border (int): Number of pixels to drop from the border.</span>
+<span class="sd">        batchsize (int): Number of images to process in parallel.</span>
+<span class="sd">        dtype (str): Desired output type (default: float32).</span>
+<span class="sd">        device (str): Device to run on (default: cuda).</span>
+<span class="sd">        augmentation (bool): Whether to average over rotations and mirrorings of the image or not.</span>
+<span class="sd">        no_data: A no-data value. It&#39;s used to compute the area containing data via the first input image channel.</span>
+<span class="sd">        verbose (bool): Whether or not to display progress.</span>
+<span class="sd">        report_time (bool): If true, returns (result, execution time).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: An array containing the segmentation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">t0</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">augmentation</span><span class="p">:</span>
+        <span class="n">operations</span> <span class="o">=</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
+                      <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">rot90</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                      <span class="c1"># lambda x: np.rot90(x, 2),</span>
+                      <span class="c1"># lambda x: np.rot90(x, 3),</span>
+                      <span class="c1"># lambda x: np.flip(x,0),</span>
+                      <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+        <span class="n">inverse</span> <span class="o">=</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
+                       <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">rot90</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+                       <span class="c1"># lambda x: np.rot90(x, -2),</span>
+                       <span class="c1"># lambda x: np.rot90(x, -3),</span>
+                       <span class="c1"># lambda x: np.flip(x,0),</span>
+                       <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">operations</span> <span class="o">=</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,)</span>
+        <span class="n">inverse</span> <span class="o">=</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,)</span>
+
+    <span class="k">assert</span> <span class="n">in_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">in_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;Input shape must be equal in first two dims.&quot;</span>
+    <span class="n">out_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">in_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">drop_border</span><span class="p">,</span> <span class="n">in_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">drop_border</span><span class="p">,</span> <span class="n">out_bands</span><span class="p">)</span>
+    <span class="n">in_size</span> <span class="o">=</span> <span class="n">in_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">out_size</span> <span class="o">=</span> <span class="n">out_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">stride</span> <span class="o">=</span> <span class="n">stride</span> <span class="ow">or</span> <span class="n">out_size</span>
+    <span class="n">pad</span> <span class="o">=</span> <span class="p">(</span><span class="n">in_size</span> <span class="o">-</span> <span class="n">out_size</span><span class="p">)</span><span class="o">//</span><span class="mi">2</span>
+    <span class="k">assert</span> <span class="n">pad</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Model input and output shapes have to be divisible by 2.&quot;</span>
+
+    <span class="n">weight_mask</span> <span class="o">=</span> <span class="n">compute_pyramid_patch_weight_loss</span><span class="p">(</span><span class="n">out_size</span><span class="p">,</span> <span class="n">out_size</span><span class="p">)</span>
+
+    <span class="n">original_size</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">ymin</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">xmin</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">if</span> <span class="n">no_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># assert arr.shape[-1]==len(no_data_vec), &quot;Length of no_data_vec must match number of channels.&quot;</span>
+        <span class="c1"># data_mask = np.all(arr[:,:,0].reshape( (-1,arr.shape[-1]) ) != no_data, axis=1).reshape(arr.shape[:2])</span>
+        <span class="n">nonzero</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">arr</span><span class="p">[:,:,</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">no_data</span><span class="p">)</span>
+        <span class="n">ymin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">nonzero</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">ymax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">nonzero</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">xmin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">nonzero</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">xmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">nonzero</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="n">ymin</span><span class="p">:</span><span class="n">ymax</span><span class="p">,</span> <span class="n">xmin</span><span class="p">:</span><span class="n">xmax</span><span class="p">]</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">arr</span>
+
+    <span class="n">final_output</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="p">(</span><span class="n">out_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+
+    <span class="n">op_cnt</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">op</span><span class="p">,</span> <span class="n">inv</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">operations</span><span class="p">,</span> <span class="n">inverse</span><span class="p">):</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">op</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+        <span class="n">img_shape</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">x_tiles</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="n">stride</span><span class="p">))</span>
+        <span class="n">y_tiles</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="n">stride</span><span class="p">))</span>
+
+        <span class="n">y_range</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="n">y_tiles</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">stride</span><span class="o">-</span><span class="n">out_size</span><span class="p">,</span> <span class="n">stride</span><span class="p">)</span>
+        <span class="n">x_range</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="n">x_tiles</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">stride</span><span class="o">-</span><span class="n">out_size</span><span class="p">,</span> <span class="n">stride</span><span class="p">)</span>
+
+        <span class="n">y_pad_after</span> <span class="o">=</span> <span class="n">y_range</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">in_size</span><span class="o">-</span><span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">pad</span>
+        <span class="n">x_pad_after</span> <span class="o">=</span> <span class="n">x_range</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">in_size</span><span class="o">-</span><span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">pad</span>
+
+        <span class="n">output</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span> <span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">y_pad_after</span><span class="o">-</span><span class="n">pad</span><span class="p">,</span> <span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">x_pad_after</span><span class="o">-</span><span class="n">pad</span><span class="p">)</span><span class="o">+</span><span class="p">(</span><span class="n">out_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">division_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1E-7</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="p">((</span><span class="n">pad</span><span class="p">,</span> <span class="n">y_pad_after</span><span class="p">),</span> <span class="p">(</span><span class="n">pad</span><span class="p">,</span> <span class="n">x_pad_after</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;reflect&#39;</span><span class="p">)</span>
+
+        <span class="n">patches</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_range</span><span class="p">)</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">x_range</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">patch_generator</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">y_range</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">x_range</span><span class="p">:</span>
+                    <span class="k">yield</span> <span class="n">img</span><span class="p">[</span><span class="n">y</span><span class="p">:</span><span class="n">y</span><span class="o">+</span><span class="n">in_size</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span><span class="n">x</span><span class="o">+</span><span class="n">in_size</span><span class="p">]</span>
+
+        <span class="n">patch_gen</span> <span class="o">=</span> <span class="n">patch_generator</span><span class="p">()</span>
+
+        <span class="n">y</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">patch_idx</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">batchsize_</span> <span class="o">=</span> <span class="n">batchsize</span>
+
+        <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="k">while</span> <span class="n">patch_idx</span><span class="o">&lt;</span><span class="n">patches</span><span class="p">:</span>
+            <span class="n">batchsize_</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">batchsize_</span><span class="p">,</span> <span class="n">patches</span><span class="p">,</span> <span class="n">patches</span> <span class="o">-</span> <span class="n">patch_idx</span><span class="p">)</span>
+            <span class="n">patch_idx</span> <span class="o">+=</span> <span class="n">batchsize_</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span> <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\r</span><span class="si">%.2f%%</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="mi">100</span> <span class="o">*</span> <span class="p">(</span><span class="n">patch_idx</span> <span class="o">+</span> <span class="n">op_cnt</span> <span class="o">*</span> <span class="n">patches</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">operations</span><span class="p">)</span> <span class="o">*</span> <span class="n">patches</span><span class="p">)))</span>
+
+            <span class="n">batch</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">batchsize_</span><span class="p">,)</span> <span class="o">+</span> <span class="n">in_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batchsize_</span><span class="p">):</span>
+                <span class="n">batch</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">patch_gen</span><span class="p">)</span>
+
+            <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+                <span class="n">prediction</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span>
+                    <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">transpose</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">))</span>
+                <span class="c1"># prediction = torch.sigmoid(prediction)</span>
+                <span class="n">prediction</span> <span class="o">=</span> <span class="n">prediction</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+                <span class="n">prediction</span> <span class="o">=</span> <span class="n">prediction</span><span class="o">.</span><span class="n">transpose</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">drop_border</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">prediction</span> <span class="o">=</span> <span class="n">prediction</span><span class="p">[:,</span> <span class="n">drop_border</span><span class="p">:</span><span class="o">-</span><span class="n">drop_border</span><span class="p">,</span> <span class="n">drop_border</span><span class="p">:</span><span class="o">-</span><span class="n">drop_border</span><span class="p">,</span> <span class="p">:]</span>
+
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batchsize_</span><span class="p">):</span>
+                <span class="n">output</span><span class="p">[</span><span class="n">y</span><span class="p">:</span><span class="n">y</span> <span class="o">+</span> <span class="n">out_size</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span><span class="n">x</span> <span class="o">+</span> <span class="n">out_size</span><span class="p">]</span> <span class="o">+=</span> <span class="n">prediction</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">weight_mask</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+                <span class="n">division_mask</span><span class="p">[</span><span class="n">y</span><span class="p">:</span><span class="n">y</span> <span class="o">+</span> <span class="n">out_size</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span><span class="n">x</span> <span class="o">+</span> <span class="n">out_size</span><span class="p">]</span> <span class="o">+=</span> <span class="n">weight_mask</span>
+                <span class="n">x</span> <span class="o">+=</span> <span class="n">stride</span>
+                <span class="k">if</span> <span class="n">x</span> <span class="o">+</span> <span class="n">out_size</span> <span class="o">&gt;</span> <span class="n">output</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                    <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="n">y</span> <span class="o">+=</span> <span class="n">stride</span>
+
+        <span class="n">output</span> <span class="o">=</span> <span class="n">output</span> <span class="o">/</span> <span class="n">division_mask</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">inv</span><span class="p">(</span><span class="n">output</span><span class="p">[:</span><span class="n">img_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">:</span><span class="n">img_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+        <span class="n">final_output</span> <span class="o">+=</span> <span class="n">output</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="n">ymin</span><span class="p">:</span><span class="n">ymax</span><span class="p">,</span> <span class="n">xmin</span><span class="p">:</span><span class="n">xmax</span><span class="p">]</span> <span class="k">if</span> <span class="n">no_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">arr</span>
+        <span class="n">op_cnt</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span> <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\r</span><span class="s2">Augmentation step </span><span class="si">%d</span><span class="s2">/</span><span class="si">%d</span><span class="s2"> done.</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">op_cnt</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">operations</span><span class="p">)))</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span> <span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+    <span class="n">final_output</span> <span class="o">=</span> <span class="n">final_output</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">operations</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">no_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">final_output</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">final_output</span><span class="p">,</span> <span class="p">((</span><span class="n">ymin</span><span class="p">,</span> <span class="n">original_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">ymax</span><span class="p">),(</span><span class="n">xmin</span><span class="p">,</span> <span class="n">original_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">xmax</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)),</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;constant&#39;</span><span class="p">,</span> <span class="n">constant_values</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">report_time</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">final_output</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">final_output</span></div>
+
+
+
+<div class="viewcode-block" id="predict_on_array_cf">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#torchtrees.modules.utils.predict_on_array_cf">[docs]</a>
+<span class="k">def</span> <span class="nf">predict_on_array_cf</span><span class="p">(</span><span class="n">model</span><span class="p">,</span>
+                        <span class="n">arr</span><span class="p">,</span>
+                        <span class="n">in_shape</span><span class="p">,</span>
+                        <span class="n">out_bands</span><span class="p">,</span>
+                        <span class="n">stride</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">drop_border</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                        <span class="n">batchsize</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span>
+                        <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float32&quot;</span><span class="p">,</span>
+                        <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cuda&quot;</span><span class="p">,</span>
+                        <span class="n">augmentation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                        <span class="n">no_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                        <span class="n">aggregate_metric</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Applies a pytorch segmentation model to an array in a strided manner.</span>
+
+<span class="sd">    Channels first version.</span>
+
+<span class="sd">    Call model.eval() before use!</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: Pytorch model - make sure to call model.eval() before using this function!</span>
+<span class="sd">        arr (np.ndarray): CHW array for which the segmentation should be created.</span>
+<span class="sd">        in_shape (tuple): Input shape.</span>
+<span class="sd">        out_bands (int): Number of output bands.</span>
+<span class="sd">        stride (int): Stride with which the model should be applied. Default: output size.</span>
+<span class="sd">        drop_border (int): Number of pixels to drop from the border.</span>
+<span class="sd">        batchsize (int): Number of images to process in parallel.</span>
+<span class="sd">        dtype (str): Desired output type (default: float32).</span>
+<span class="sd">        device (str): Device to run on (default: cuda).</span>
+<span class="sd">        augmentation (bool): Whether to average over rotations and mirrorings of the image or not.</span>
+<span class="sd">        no_data: A no-data vector. Its length must match the number of layers in the input array.</span>
+<span class="sd">        verbose (bool): Whether or not to display progress.</span>
+<span class="sd">        aggregate_metric (bool): If true, returns (result, metric).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: A dict containing result, time, nodata_region and time.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">metric</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">if</span> <span class="n">augmentation</span><span class="p">:</span>
+        <span class="n">operations</span> <span class="o">=</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
+                      <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">rot90</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)),</span>
+                      <span class="c1"># lambda x: np.rot90(x, 2),</span>
+                      <span class="c1"># lambda x: np.rot90(x, 3),</span>
+                      <span class="c1"># lambda x: np.flip(x,0),</span>
+                      <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+        <span class="n">inverse</span> <span class="o">=</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
+                   <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">rot90</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)),</span>
+                   <span class="c1"># lambda x: np.rot90(x, -2),</span>
+                   <span class="c1"># lambda x: np.rot90(x, -3),</span>
+                   <span class="c1"># lambda x: np.flip(x,0),</span>
+                   <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">operations</span> <span class="o">=</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,)</span>
+        <span class="n">inverse</span> <span class="o">=</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,)</span>
+
+    <span class="k">assert</span> <span class="n">in_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">in_shape</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="s2">&quot;Input shape must be equal in last two dims.&quot;</span>
+    <span class="n">out_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">out_bands</span><span class="p">,</span> <span class="n">in_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">drop_border</span><span class="p">,</span> <span class="n">in_shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">drop_border</span><span class="p">)</span>
+    <span class="n">in_size</span> <span class="o">=</span> <span class="n">in_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">out_size</span> <span class="o">=</span> <span class="n">out_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">stride</span> <span class="o">=</span> <span class="n">stride</span> <span class="ow">or</span> <span class="n">out_size</span>
+    <span class="n">pad</span> <span class="o">=</span> <span class="p">(</span><span class="n">in_size</span> <span class="o">-</span> <span class="n">out_size</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+    <span class="k">assert</span> <span class="n">pad</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Model input and output shapes have to be divisible by 2.&quot;</span>
+
+    <span class="n">original_size</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">ymin</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">xmin</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">ymax</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">xmax</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">no_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># assert arr.shape[-1]==len(no_data_vec), &quot;Length of no_data_vec must match number of channels.&quot;</span>
+        <span class="c1"># data_mask = np.all(arr[:,:,0].reshape( (-1,arr.shape[-1]) ) != no_data, axis=1).reshape(arr.shape[:2])</span>
+        <span class="n">nonzero</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">arr</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">-</span> <span class="n">no_data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">nonzero</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;prediction&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                    <span class="s2">&quot;time&quot;</span><span class="p">:</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span><span class="p">,</span>
+                    <span class="s2">&quot;nodata_region&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                    <span class="s2">&quot;metric&quot;</span><span class="p">:</span> <span class="n">metric</span><span class="p">}</span>
+
+        <span class="n">ymin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">nonzero</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">ymax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">nonzero</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">xmin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">nonzero</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">xmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">nonzero</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[:,</span> <span class="n">ymin</span><span class="p">:</span><span class="n">ymax</span><span class="p">,</span> <span class="n">xmin</span><span class="p">:</span><span class="n">xmax</span><span class="p">]</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">arr</span>
+
+    <span class="n">weight_mask</span> <span class="o">=</span> <span class="n">compute_pyramid_patch_weight_loss</span><span class="p">(</span><span class="n">out_size</span><span class="p">,</span> <span class="n">out_size</span><span class="p">)</span>
+    <span class="n">final_output</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">out_bands</span><span class="p">,)</span> <span class="o">+</span> <span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+
+    <span class="n">op_cnt</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">op</span><span class="p">,</span> <span class="n">inv</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">operations</span><span class="p">,</span> <span class="n">inverse</span><span class="p">):</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">op</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+        <span class="n">img_shape</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">x_tiles</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">/</span> <span class="n">stride</span><span class="p">))</span>
+        <span class="n">y_tiles</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">stride</span><span class="p">))</span>
+
+        <span class="n">y_range</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="n">y_tiles</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">stride</span> <span class="o">-</span> <span class="n">out_size</span><span class="p">,</span> <span class="n">stride</span><span class="p">)</span>
+        <span class="n">x_range</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="n">x_tiles</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">stride</span> <span class="o">-</span> <span class="n">out_size</span><span class="p">,</span> <span class="n">stride</span><span class="p">)</span>
+
+        <span class="n">y_pad_after</span> <span class="o">=</span> <span class="n">y_range</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">in_size</span> <span class="o">-</span> <span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">pad</span>
+        <span class="n">x_pad_after</span> <span class="o">=</span> <span class="n">x_range</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">in_size</span> <span class="o">-</span> <span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">pad</span>
+
+        <span class="n">output</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">out_bands</span><span class="p">,)</span> <span class="o">+</span> <span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">y_pad_after</span> <span class="o">-</span> <span class="n">pad</span><span class="p">,</span> <span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">x_pad_after</span> <span class="o">-</span> <span class="n">pad</span><span class="p">),</span>
+                          <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">division_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1E-7</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="n">pad</span><span class="p">,</span> <span class="n">y_pad_after</span><span class="p">),</span> <span class="p">(</span><span class="n">pad</span><span class="p">,</span> <span class="n">x_pad_after</span><span class="p">)),</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;reflect&#39;</span><span class="p">)</span>
+
+        <span class="n">patches</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_range</span><span class="p">)</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_range</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">patch_generator</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">y_range</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">x_range</span><span class="p">:</span>
+                    <span class="k">yield</span> <span class="n">img</span><span class="p">[:,</span> <span class="n">y</span><span class="p">:</span><span class="n">y</span> <span class="o">+</span> <span class="n">in_size</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span><span class="n">x</span> <span class="o">+</span> <span class="n">in_size</span><span class="p">]</span>
+
+        <span class="n">patch_gen</span> <span class="o">=</span> <span class="n">patch_generator</span><span class="p">()</span>
+
+        <span class="n">y</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">patch_idx</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">batchsize_</span> <span class="o">=</span> <span class="n">batchsize</span>
+
+        <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="k">while</span> <span class="n">patch_idx</span> <span class="o">&lt;</span> <span class="n">patches</span><span class="p">:</span>
+            <span class="n">batchsize_</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">batchsize_</span><span class="p">,</span> <span class="n">patches</span><span class="p">,</span> <span class="n">patches</span> <span class="o">-</span> <span class="n">patch_idx</span><span class="p">)</span>
+            <span class="n">patch_idx</span> <span class="o">+=</span> <span class="n">batchsize_</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span> <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\r</span><span class="si">%.2f%%</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="mi">100</span> <span class="o">*</span> <span class="p">(</span><span class="n">patch_idx</span> <span class="o">+</span> <span class="n">op_cnt</span> <span class="o">*</span> <span class="n">patches</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">operations</span><span class="p">)</span> <span class="o">*</span> <span class="n">patches</span><span class="p">)))</span>
+
+            <span class="n">batch</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">batchsize_</span><span class="p">,)</span> <span class="o">+</span> <span class="n">in_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batchsize_</span><span class="p">):</span>
+                <span class="n">batch</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">patch_gen</span><span class="p">)</span>
+
+            <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+                <span class="n">prediction</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">))</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;batch&#39;</span><span class="p">,</span> <span class="n">batch</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">aggregate_metric</span><span class="p">:</span>
+                    <span class="n">metric</span> <span class="o">+=</span> <span class="n">prediction</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+                    <span class="n">prediction</span> <span class="o">=</span> <span class="n">prediction</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+                <span class="n">prediction</span> <span class="o">=</span> <span class="n">prediction</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">drop_border</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">prediction</span> <span class="o">=</span> <span class="n">prediction</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">drop_border</span><span class="p">:</span><span class="o">-</span><span class="n">drop_border</span><span class="p">,</span> <span class="n">drop_border</span><span class="p">:</span><span class="o">-</span><span class="n">dropborder</span><span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batchsize_</span><span class="p">):</span>
+                <span class="n">output</span><span class="p">[:,</span> <span class="n">y</span><span class="p">:</span><span class="n">y</span> <span class="o">+</span> <span class="n">out_size</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span><span class="n">x</span> <span class="o">+</span> <span class="n">out_size</span><span class="p">]</span> <span class="o">+=</span> <span class="n">prediction</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">weight_mask</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+                <span class="n">division_mask</span><span class="p">[</span><span class="n">y</span><span class="p">:</span><span class="n">y</span> <span class="o">+</span> <span class="n">out_size</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span><span class="n">x</span> <span class="o">+</span> <span class="n">out_size</span><span class="p">]</span> <span class="o">+=</span> <span class="n">weight_mask</span>
+                <span class="n">x</span> <span class="o">+=</span> <span class="n">stride</span>
+                <span class="k">if</span> <span class="n">x</span> <span class="o">+</span> <span class="n">out_size</span> <span class="o">&gt;</span> <span class="n">output</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]:</span>
+                    <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="n">y</span> <span class="o">+=</span> <span class="n">stride</span>
+
+        <span class="n">output</span> <span class="o">=</span> <span class="n">output</span> <span class="o">/</span> <span class="n">division_mask</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">inv</span><span class="p">(</span><span class="n">output</span><span class="p">[:,</span> <span class="p">:</span><span class="n">img_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="p">:</span><span class="n">img_shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]])</span>
+        <span class="n">final_output</span> <span class="o">+=</span> <span class="n">output</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[:,</span> <span class="n">ymin</span><span class="p">:</span><span class="n">ymax</span><span class="p">,</span> <span class="n">xmin</span><span class="p">:</span><span class="n">xmax</span><span class="p">]</span> <span class="k">if</span> <span class="n">no_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">arr</span>
+        <span class="n">op_cnt</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span> <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\r</span><span class="s2">Augmentation step </span><span class="si">%d</span><span class="s2">/</span><span class="si">%d</span><span class="s2"> done.</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">op_cnt</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">operations</span><span class="p">)))</span>
+
+    <span class="n">final_output</span> <span class="o">=</span> <span class="n">final_output</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">operations</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">no_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">final_output</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">final_output</span><span class="p">,</span>
+                              <span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="n">ymin</span><span class="p">,</span> <span class="n">original_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">ymax</span><span class="p">),</span> <span class="p">(</span><span class="n">xmin</span><span class="p">,</span> <span class="n">original_size</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">xmax</span><span class="p">)),</span>
+                              <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;constant&#39;</span><span class="p">,</span>
+                              <span class="n">constant_values</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;prediction&quot;</span><span class="p">:</span> <span class="n">final_output</span><span class="p">,</span>
+            <span class="s2">&quot;time&quot;</span><span class="p">:</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span><span class="p">,</span>
+            <span class="s2">&quot;nodata_region&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">),</span>
+            <span class="s2">&quot;metric&quot;</span><span class="p">:</span> <span class="n">metric</span><span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="calc_band_stats">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#torchtrees.modules.utils.calc_band_stats">[docs]</a>
+<span class="k">def</span> <span class="nf">calc_band_stats</span><span class="p">(</span><span class="n">fpath</span> <span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculates the mean and standard deviation of each band in a raster file.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        fpath (str): Path to the raster file.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: A dictionary containing the mean and standard deviation of each band.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">means</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">stddevs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">([</span><span class="s2">&quot;gdalinfo -approx_stats </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fpath</span><span class="p">)],</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">)</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">ret</span><span class="p">:</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;UTF-8&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;  Minimum&quot;</span><span class="p">):</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;=&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">std</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;=&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">means</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+            <span class="n">stddevs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">std</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;mean&quot;</span> <span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">means</span><span class="p">),</span> <span class="s2">&quot;stddev&quot;</span> <span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">stddevs</span><span class="p">)}</span></div>
+
+
+
+<div class="viewcode-block" id="dilate_img">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#torchtrees.modules.utils.dilate_img">[docs]</a>
+<span class="k">def</span> <span class="nf">dilate_img</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="s2">&quot;square&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Dilates an image using a specified structuring element.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        img (np.ndarray): The input image.</span>
+<span class="sd">        size (int): The size of the structuring element.</span>
+<span class="sd">        shape (str): The shape of the structuring element (&#39;square&#39; or &#39;disk&#39;).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: The dilated image.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">shape</span> <span class="o">==</span> <span class="s2">&quot;square&quot;</span><span class="p">:</span>
+        <span class="n">selem</span> <span class="o">=</span> <span class="n">square</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">shape</span> <span class="o">==</span> <span class="s2">&quot;disk&quot;</span><span class="p">:</span>
+        <span class="n">selem</span> <span class="o">=</span> <span class="n">disk</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unknown shape </span><span class="si">{}</span><span class="s2">, choose &#39;square&#39; or &#39;disk&#39;.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">shape</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">dilation</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">selem</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="write_info_file">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#torchtrees.modules.utils.write_info_file">[docs]</a>
+<span class="k">def</span> <span class="nf">write_info_file</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Writes key-value pairs to a file.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        path (str): The path to the file.</span>
+<span class="sd">        **kwargs: Key-value pairs to write to the file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span><span class="s1">&#39;w&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="p">)</span>
+    <span class="n">file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="get_crs">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#torchtrees.modules.utils.get_crs">[docs]</a>
+<span class="k">def</span> <span class="nf">get_crs</span><span class="p">(</span><span class="n">array</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieves the CRS from an xarray.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        array (xarray.DataArray): The input xarray.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: The CRS.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">crs_</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;crs&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="s2">&quot;epsg&quot;</span> <span class="ow">in</span> <span class="n">crs_</span><span class="p">:</span>
+        <span class="n">crs_</span> <span class="o">=</span> <span class="n">crs</span><span class="o">.</span><span class="n">from_epsg</span><span class="p">(</span><span class="n">crs_</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">crs_</span> <span class="o">=</span> <span class="n">crs</span><span class="o">.</span><span class="n">from_string</span><span class="p">(</span><span class="n">crs_</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">crs_</span></div>
+
+
+<div class="viewcode-block" id="fix_crs">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#torchtrees.modules.utils.fix_crs">[docs]</a>
+<span class="k">def</span> <span class="nf">fix_crs</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">is_crs</span><span class="o">=</span><span class="mi">4326</span><span class="p">,</span> <span class="n">target_crs</span><span class="o">=</span><span class="mi">25832</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Fixes the CRS of a GeoDataFrame if necessary.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        shape (gpd.GeoDataFrame): The input GeoDataFrame.</span>
+<span class="sd">        is_crs (int): The initial CRS.</span>
+<span class="sd">        target_crs (int): The target CRS.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        gpd.GeoDataFrame: The GeoDataFrame with the fixed CRS.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">shape</span><span class="o">.</span><span class="n">crs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="c1"># naive coords</span>
+        <span class="n">shape</span><span class="o">.</span><span class="n">crs</span> <span class="o">=</span> <span class="n">is_crs</span>
+
+    <span class="k">return</span> <span class="n">shape</span><span class="o">.</span><span class="n">to_crs</span><span class="p">(</span><span class="n">epsg</span><span class="o">=</span><span class="n">target_crs</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="create_batch_of_patches">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#torchtrees.modules.utils.create_batch_of_patches">[docs]</a>
+<span class="k">def</span> <span class="nf">create_batch_of_patches</span><span class="p">(</span><span class="n">input_tensor</span><span class="p">,</span> <span class="n">patch_size</span><span class="p">,</span> <span class="n">patch_ixs</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="n">local_batch_size</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Helper function to create a batch of small patches.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        input_tensor (torch.Tensor): Original input tensor.</span>
+<span class="sd">        patch_size (int): Small patch size.</span>
+<span class="sd">        patch_ixs (list): List of tuples specifying (x_start, y_start) for the small patches in the input tensor.</span>
+<span class="sd">        offset (int): Offset of current batch in patch_ixs.</span>
+<span class="sd">        local_batch_size (int): Size of the batch of small patches.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        torch.Tensor: One batch of small patches to be used in inference.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">batch_of_patches</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">local_batch_size</span><span class="p">):</span>
+        <span class="p">(</span><span class="n">x_start</span><span class="p">,</span> <span class="n">y_start</span><span class="p">)</span> <span class="o">=</span> <span class="n">patch_ixs</span><span class="p">[</span><span class="n">offset</span> <span class="o">*</span> <span class="n">local_batch_size</span> <span class="o">+</span> <span class="n">j</span><span class="p">]</span>
+        <span class="n">x_end</span>   <span class="o">=</span> <span class="n">x_start</span> <span class="o">+</span> <span class="n">patch_size</span>
+        <span class="n">y_end</span>   <span class="o">=</span> <span class="n">y_start</span> <span class="o">+</span> <span class="n">patch_size</span>
+
+        <span class="n">batch_of_patches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">input_tensor</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">x_start</span><span class="p">:</span><span class="n">x_end</span><span class="p">,</span> <span class="n">y_start</span><span class="p">:</span><span class="n">y_end</span><span class="p">])</span>
+        
+    <span class="n">batch_of_patches</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">batch_of_patches</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">batch_of_patches</span></div>
+
+
+
+<div class="viewcode-block" id="mask_and_scale_raster_from_polygons">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#torchtrees.modules.utils.mask_and_scale_raster_from_polygons">[docs]</a>
+<span class="k">def</span> <span class="nf">mask_and_scale_raster_from_polygons</span><span class="p">(</span><span class="n">tiff_path</span><span class="p">,</span> <span class="n">polygons</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">scale_factor</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Masks and optionally scales raster images based on given polygons.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters:</span>
+<span class="sd">        tiff_path (str): Path to the input GeoTIFF file.</span>
+<span class="sd">        polygons (list): A list of shapely geometries (polygons).</span>
+<span class="sd">        output_dir (str): Directory to save the masked raster files.</span>
+<span class="sd">        scale_factor (int): Factor by which to scale the output raster dimensions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output_dir</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">tiff_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">src</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">polygon</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">polygons</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># Mask the raster using the current polygon&#39;s geometry</span>
+                <span class="n">masked_image</span><span class="p">,</span> <span class="n">transform</span> <span class="o">=</span> <span class="n">mask</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="p">[</span><span class="n">mapping</span><span class="p">(</span><span class="n">polygon</span><span class="p">)],</span> <span class="n">crop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+                <span class="c1"># Update metadata for the output raster</span>
+                <span class="n">out_meta</span> <span class="o">=</span> <span class="n">src</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="n">out_meta</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
+                    <span class="s2">&quot;driver&quot;</span><span class="p">:</span> <span class="s2">&quot;GTiff&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;height&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">masked_image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">scale_factor</span><span class="p">),</span>
+                    <span class="s2">&quot;width&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">masked_image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">scale_factor</span><span class="p">),</span>
+                    <span class="s2">&quot;transform&quot;</span><span class="p">:</span> <span class="n">transform</span>
+                <span class="p">})</span>
+
+                <span class="c1"># Define output file path</span>
+                <span class="n">output_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;polygon_</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">.tif&quot;</span><span class="p">)</span>
+
+                <span class="c1"># Save the masked raster</span>
+                <span class="k">with</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">output_file</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">out_meta</span><span class="p">)</span> <span class="k">as</span> <span class="n">dst</span><span class="p">:</span>
+                    <span class="n">dst</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">masked_image</span><span class="p">)</span>
+                    
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Saved masked raster to: </span><span class="si">{</span><span class="n">output_file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error processing polygon </span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="predict_on_tile">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#torchtrees.modules.utils.predict_on_tile">[docs]</a>
+<span class="k">def</span> <span class="nf">predict_on_tile</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">input_tensor</span><span class="p">,</span> <span class="n">patch_size</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span> <span class="n">local_batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">128</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Predict on a single tile of arbitrary dimension.</span>
+
+<span class="sd">    The tile is split into smaller patches that satisfy the criterion given by the segmentation model</span>
+<span class="sd">    that edge length must be divisible by 32. The stride parameter controls the overlap of these small patches.</span>
+<span class="sd">    Inference is run on all small patches in a memory-efficient way. The output is collected and weighted</span>
+<span class="sd">    with the pyramid weight function to reduce artefacts where the patches overlap.</span>
+
+<span class="sd">    The output tensor contains mask, outline, and distance transform in the same shape as the input tensor.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: Trained TorchTrees model.</span>
+<span class="sd">        input_tensor (torch.Tensor): Tensor with the values of the raster tile.</span>
+<span class="sd">        patch_size (int, optional): Patch size used in inference. Defaults to 256.</span>
+<span class="sd">        local_batch_size (int, optional): Length of the batch of patches. Defaults to 32.</span>
+<span class="sd">        stride (int, optional): Apply patches in a strided manner. Defaults to 128.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        torch.Tensor: Model output for the input raster.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># set model to evaluation mode</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+
+    <span class="c1"># retrieve input shapes</span>
+    <span class="n">input_shape</span> <span class="o">=</span> <span class="n">input_tensor</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">Sx</span> <span class="o">=</span> <span class="n">input_tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="c1"># raster edge length</span>
+    <span class="n">Sy</span> <span class="o">=</span> <span class="n">input_tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="c1"># raster edge length</span>
+    <span class="n">S</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">Sx</span><span class="p">,</span> <span class="n">Sy</span><span class="p">)</span> <span class="c1"># shortest edge length</span>
+
+    <span class="c1"># outputs are stored here</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">Sx</span><span class="p">,</span> <span class="n">Sy</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+    <span class="c1"># accumulated weight matrix for normalization</span>
+    <span class="n">accumulated_weight</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Sx</span><span class="p">,</span> <span class="n">Sy</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">Sx</span> <span class="o">&lt;</span> <span class="mi">32</span> <span class="ow">or</span> <span class="n">Sy</span> <span class="o">&lt;</span> <span class="mi">32</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Image smaller than 32x32 must be padded to work with SegmentationModel&#39;</span><span class="p">)</span>
+
+    <span class="c1"># small patch size that is used in inference</span>
+    <span class="k">if</span> <span class="n">S</span> <span class="o">&lt;</span> <span class="n">patch_size</span><span class="p">:</span>
+        <span class="n">patch_size</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">S</span> <span class="o">//</span> <span class="mi">32</span><span class="p">)</span> <span class="o">*</span> <span class="mi">32</span><span class="p">)</span>
+    <span class="n">patch_size</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">patch_size</span><span class="p">)</span>
+
+    <span class="c1"># weight applied to patch</span>
+    <span class="n">patch_weight</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">compute_pyramid_patch_weight_loss</span><span class="p">(</span><span class="n">patch_size</span><span class="p">,</span> <span class="n">patch_size</span><span class="p">))</span>
+    <span class="n">patch_weight</span> <span class="o">=</span> <span class="n">patch_weight</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+    <span class="c1"># start and end indices of patches in x/y</span>
+    <span class="n">ix0_x</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">ix1_x</span> <span class="o">=</span> <span class="n">Sx</span> <span class="o">-</span> <span class="n">patch_size</span>
+    <span class="n">ix0_y</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">ix1_y</span> <span class="o">=</span> <span class="n">Sy</span> <span class="o">-</span> <span class="n">patch_size</span>
+
+    <span class="c1"># stride defines how many patches we create</span>
+    <span class="k">if</span> <span class="n">stride</span> <span class="o">&gt;</span> <span class="n">patch_size</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Stride exceeded patch size, resetting to patch size&#39;</span><span class="p">)</span>
+        <span class="n">stride</span> <span class="o">=</span> <span class="n">patch_size</span>
+
+    <span class="c1"># number of patches along x/y</span>
+    <span class="n">np_x</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">Sx</span> <span class="o">/</span> <span class="n">stride</span><span class="p">))</span>
+    <span class="n">np_y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">Sy</span> <span class="o">/</span> <span class="n">stride</span><span class="p">))</span>
+
+    <span class="c1"># indices of patches along x/y</span>
+    <span class="n">patch_ixs_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">ix0_x</span><span class="p">,</span> <span class="n">ix1_x</span><span class="p">,</span> <span class="n">np_x</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">patch_ixs_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">ix0_y</span><span class="p">,</span> <span class="n">ix1_y</span><span class="p">,</span> <span class="n">np_y</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
+    <span class="c1"># combine in one list</span>
+    <span class="n">patch_ixs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">patch_ixs_x</span><span class="p">,</span> <span class="n">patch_ixs_y</span><span class="p">))</span>
+
+    <span class="c1"># process patches as batches</span>
+    <span class="n">n_batches</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">patch_ixs</span><span class="p">)</span> <span class="o">/</span> <span class="n">local_batch_size</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_batches</span><span class="p">):</span>
+        <span class="c1"># handle last batch being shorter than the others (potentially)</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">n_batches</span> <span class="o">-</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">patch_ixs</span><span class="p">)</span> <span class="o">%</span> <span class="n">local_batch_size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">local_batch_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">patch_ixs</span><span class="p">)</span> <span class="o">%</span> <span class="n">local_batch_size</span>
+        <span class="c1"># create a batch of small patches</span>
+        <span class="n">batch_of_patches</span> <span class="o">=</span> <span class="n">create_batch_of_patches</span><span class="p">(</span><span class="n">input_tensor</span><span class="p">,</span> <span class="n">patch_size</span><span class="p">,</span> <span class="n">patch_ixs</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">local_batch_size</span><span class="p">)</span>
+
+        <span class="c1"># run inference on this batch of patches</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="n">batch_outputs</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">batch_of_patches</span><span class="p">)</span>
+
+        <span class="c1"># update predictions in output array</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">local_batch_size</span><span class="p">):</span>
+            <span class="p">(</span><span class="n">x_start</span><span class="p">,</span> <span class="n">y_start</span><span class="p">)</span> <span class="o">=</span> <span class="n">patch_ixs</span><span class="p">[</span><span class="n">i</span> <span class="o">*</span> <span class="n">local_batch_size</span> <span class="o">+</span> <span class="n">j</span><span class="p">]</span>
+            <span class="n">x_end</span> <span class="o">=</span> <span class="n">x_start</span> <span class="o">+</span> <span class="n">patch_size</span>
+            <span class="n">y_end</span> <span class="o">=</span> <span class="n">y_start</span> <span class="o">+</span> <span class="n">patch_size</span>
+
+            <span class="c1"># add weighted patch output</span>
+            <span class="n">output</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">x_start</span><span class="p">:</span><span class="n">x_end</span><span class="p">,</span> <span class="n">y_start</span><span class="p">:</span><span class="n">y_end</span><span class="p">]</span> <span class="o">+=</span> <span class="n">batch_outputs</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">patch_weight</span>
+            <span class="c1"># keep track of all weights</span>
+            <span class="n">accumulated_weight</span><span class="p">[</span><span class="n">x_start</span><span class="p">:</span><span class="n">x_end</span><span class="p">,</span> <span class="n">y_start</span><span class="p">:</span><span class="n">y_end</span><span class="p">]</span> <span class="o">+=</span> <span class="n">patch_weight</span>
+
+    <span class="c1"># divide output by weights</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="n">output</span> <span class="o">/</span> <span class="n">accumulated_weight</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">output</span>
+    <span class="k">return</span> <span class="n">output</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Taimur Khan, Caroline Arnold, Harsh Grover.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

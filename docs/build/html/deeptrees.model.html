@@ -1,0 +1,580 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>deeptrees.model &mdash; TorchTrees  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="deeptrees.modules" href="deeptrees.modules.html" />
+    <link rel="prev" title="deeptrees.datasets" href="deeptrees.datasets.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            TorchTrees
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Architectural Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guides.html">Developer Guides</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="deeptrees.html">API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="deeptrees.html#deeptrees.download_pre_trained_model_weights"><code class="docutils literal notranslate"><span class="pre">download_pre_trained_model_weights()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="deeptrees.html#deeptrees.predict"><code class="docutils literal notranslate"><span class="pre">predict()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="deeptrees.dataloading.html">deeptrees.dataloading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deeptrees.datasets.html">deeptrees.datasets</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">deeptrees.model</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-deeptrees.model.deeptrees_model">deeptrees.model.deeptrees_model</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#deeptrees.model.deeptrees_model.DeepTreesModel"><code class="docutils literal notranslate"><span class="pre">DeepTreesModel</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#deeptrees.model.deeptrees_model.TreeCrownDelineationModel"><code class="docutils literal notranslate"><span class="pre">TreeCrownDelineationModel</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-deeptrees.model.distance_model">deeptrees.model.distance_model</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#deeptrees.model.distance_model.DistanceModel"><code class="docutils literal notranslate"><span class="pre">DistanceModel</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-deeptrees.model.inference_model">deeptrees.model.inference_model</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#deeptrees.model.inference_model.InferenceModel"><code class="docutils literal notranslate"><span class="pre">InferenceModel</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-deeptrees.model.segmentation_model">deeptrees.model.segmentation_model</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#deeptrees.model.segmentation_model.SegmentationModel"><code class="docutils literal notranslate"><span class="pre">SegmentationModel</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-deeptrees.model">Contents</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="deeptrees.modules.html">deeptrees.modules</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">TorchTrees</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="deeptrees.html">API Reference</a></li>
+      <li class="breadcrumb-item active">deeptrees.model</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/deeptrees.model.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="deeptrees-model">
+<h1>deeptrees.model<a class="headerlink" href="#deeptrees-model" title="Link to this heading"></a></h1>
+<section id="module-deeptrees.model.deeptrees_model">
+<span id="deeptrees-model-deeptrees-model"></span><h2>deeptrees.model.deeptrees_model<a class="headerlink" href="#module-deeptrees.model.deeptrees_model" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="deeptrees.model.deeptrees_model.DeepTreesModel">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">deeptrees.model.deeptrees_model.</span></span><span class="sig-name descname"><span class="pre">DeepTreesModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">in_channels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">architecture</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Unet'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backbone</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'resnet18'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_iou_share</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">apply_sigmoid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freeze_layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">track_running_stats</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_backbones</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">postprocessing_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/deeptrees/model/deeptrees_model.html#DeepTreesModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#deeptrees.model.deeptrees_model.DeepTreesModel" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">LightningModule</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="deeptrees.model.deeptrees_model.DeepTreesModel.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">in_channels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">architecture</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Unet'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backbone</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'resnet18'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_iou_share</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">apply_sigmoid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freeze_layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">track_running_stats</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_backbones</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">postprocessing_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/deeptrees/model/deeptrees_model.html#DeepTreesModel.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#deeptrees.model.deeptrees_model.DeepTreesModel.__init__" title="Link to this definition"></a></dt>
+<dd><p>DeepTrees Model</p>
+<p>The model consists of a TreeCrownDelineation backbone, plus added functionalities for training, fine-tuning, and prediction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>in_channels</strong> – Number of input channels / bands of the input image</p></li>
+<li><p><strong>architecture</strong> (<em>str</em>) – segmentation model architecture</p></li>
+<li><p><strong>backbone</strong> (<em>str</em>) – segmentation model backbone</p></li>
+<li><p><strong>lr</strong> – learning rate</p></li>
+<li><p><strong>apply_sigmode</strong> (<em>bool</em>) – TODO</p></li>
+<li><p><strong>freeze_layers</strong> (<em>bool</em>) – If True, freeze all layers but the segmentation head. Default: False.</p></li>
+<li><p><strong>track_running_stats</strong> (<em>bool</em>) – If True, update batch norm layers. If False, keep them frozen. Default: True.</p></li>
+<li><p><strong>num_backbones</strong> (<em>int</em>) – If &gt; 1, instantiate several TCD backbones and average the model predictions across all of them. Defaults to 1.</p></li>
+<li><p><strong>postprocessing_config</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – Set of parameters to apply in postprocessing (predict step). Default: {}.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="deeptrees.model.deeptrees_model.DeepTreesModel.configure_optimizers">
+<span class="sig-name descname"><span class="pre">configure_optimizers</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/deeptrees/model/deeptrees_model.html#DeepTreesModel.configure_optimizers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#deeptrees.model.deeptrees_model.DeepTreesModel.configure_optimizers" title="Link to this definition"></a></dt>
+<dd><p>Configures the optimizer for the model training.
+If <cite>freeze_layers</cite> is set to True, logs the names of the parameters that will be trained.
+Creates an Adam optimizer with the learning rate specified by <cite>self.lr</cite>, filtering out parameters
+that do not require gradients.
+:returns: A list containing the configured optimizer.
+:rtype: list</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="deeptrees.model.deeptrees_model.DeepTreesModel.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/deeptrees/model/deeptrees_model.html#DeepTreesModel.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#deeptrees.model.deeptrees_model.DeepTreesModel.forward" title="Link to this definition"></a></dt>
+<dd><p>Same as <code class="xref py py-meth docutils literal notranslate"><span class="pre">torch.nn.Module.forward()</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>*args</strong> – Whatever you decide to pass into the forward method.</p></li>
+<li><p><strong>**kwargs</strong> – Keyword arguments are also possible.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Your model’s output</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="deeptrees.model.deeptrees_model.DeepTreesModel.from_checkpoint">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_checkpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">architecture</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Unet'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backbone</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'resnet18'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">in_channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/deeptrees/model/deeptrees_model.html#DeepTreesModel.from_checkpoint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#deeptrees.model.deeptrees_model.DeepTreesModel.from_checkpoint" title="Link to this definition"></a></dt>
+<dd><p>Load a model from a checkpoint file.
+:type path: <span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>
+:param path: The path to the checkpoint file.
+:type path: str
+:type architecture: <span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>
+:param architecture: The architecture of the segmentation model. Defaults to “Unet”.
+:type architecture: str, optional
+:type backbone: <span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>
+:param backbone: The backbone of the segmentation model. Defaults to “resnet18”.
+:type backbone: str, optional
+:type in_channels: <span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></span>
+:param in_channels: The number of input channels for the segmentation model. Defaults to 8.
+:type in_channels: int, optional</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>An instance of the model loaded from the checkpoint.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>NotImplementedError</strong> – If the checkpoint cannot be loaded using the provided method.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="deeptrees.model.deeptrees_model.DeepTreesModel.predict_step">
+<span class="sig-name descname"><span class="pre">predict_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/deeptrees/model/deeptrees_model.html#DeepTreesModel.predict_step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#deeptrees.model.deeptrees_model.DeepTreesModel.predict_step" title="Link to this definition"></a></dt>
+<dd><p>Perform a prediction step on a given batch of data.
+:type batch: 
+:param batch: A tuple containing the input data and the transformation information.
+:type batch: tuple
+:type step: 
+:param step: The current step number, used for saving prediction outputs.
+:type step: int</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>A dictionary containing the extracted polygons and, if active learning is enabled,</dt><dd><p>the mean and median entropy values.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+<p>This function performs the following steps:
+1. Runs inference on the input data to generate output predictions.
+2. Extracts mask, outline, and distance transform from the output.
+3. Saves the predictions if configured to do so.
+4. If active learning is enabled, calculates the probability map and entropy map, logs the mean and median entropy,</p>
+<blockquote>
+<div><p>and saves the entropy maps if configured to do so.</p>
+</div></blockquote>
+<ol class="arabic simple" start="5">
+<li><p>Extracts polygons from the mask, outline, and distance transform using the specified postprocessing configuration.</p></li>
+<li><p>Logs the number of polygons found, inference time, and post-processing time.</p></li>
+</ol>
+<p>7. Returns a dictionary containing the extracted polygons and, if active learning is enabled, the mean and median entropy values.
+.. note:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">-</span> <span class="n">The</span> <span class="n">function</span> <span class="n">contains</span> <span class="n">TODOs</span> <span class="k">for</span> <span class="n">using</span> <span class="n">raster</span> <span class="n">tile</span> <span class="n">names</span> <span class="ow">and</span> <span class="n">rasterizing</span> <span class="n">outputs</span><span class="o">.</span>
+<span class="o">-</span> <span class="n">Additional</span> <span class="n">postprocessing</span> <span class="n">steps</span> <span class="ow">and</span> <span class="n">trait</span> <span class="n">extraction</span> <span class="n">can</span> <span class="n">be</span> <span class="n">added</span> <span class="k">as</span> <span class="n">needed</span><span class="o">.</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="deeptrees.model.deeptrees_model.DeepTreesModel.shared_step">
+<span class="sig-name descname"><span class="pre">shared_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iou_feature_map</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/deeptrees/model/deeptrees_model.html#DeepTreesModel.shared_step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#deeptrees.model.deeptrees_model.DeepTreesModel.shared_step" title="Link to this definition"></a></dt>
+<dd><p>Perform a shared step in the model training or evaluation process.
+:type batch: 
+:param batch: A tuple containing input data (x) and target data (y).
+:type batch: tuple
+:type iou_feature_map: 
+:param iou_feature_map: If True, calculate the IoU for the feature map. Defaults to False.
+:type iou_feature_map: bool, optional</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>A tuple containing the following elements:</dt><dd><ul class="simple">
+<li><p>loss (torch.Tensor): The total loss combining mask, outline, and distance losses.</p></li>
+<li><p>loss_mask (torch.Tensor): The loss for the mask prediction.</p></li>
+<li><p>loss_outline (torch.Tensor): The loss for the outline prediction.</p></li>
+<li><p>loss_distance (torch.Tensor): The loss for the distance prediction.</p></li>
+<li><p>iou (torch.Tensor): The combined IoU of the mask and outline.</p></li>
+<li><p>iou_mask (torch.Tensor): The IoU of the mask.</p></li>
+<li><p>iou_outline (torch.Tensor): The IoU of the outline.</p></li>
+<li><p>iou_fmap (torch.Tensor, optional): The IoU of the feature map, if <cite>iou_feature_map</cite> is True.</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="deeptrees.model.deeptrees_model.DeepTreesModel.test_step">
+<span class="sig-name descname"><span class="pre">test_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/deeptrees/model/deeptrees_model.html#DeepTreesModel.test_step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#deeptrees.model.deeptrees_model.DeepTreesModel.test_step" title="Link to this definition"></a></dt>
+<dd><p>Perform a test step on a given batch of data.
+:type batch: 
+:param batch: The input data batch.
+:type batch: Tensor
+:type step: 
+:param step: The current step number.
+:type step: int</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A dictionary containing the following keys:
+- ‘mask’: The mask output from the model.
+- ‘outline’: The outline output from the model.
+- ‘distance_transform’: The distance transform output from the model.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="deeptrees.model.deeptrees_model.DeepTreesModel.to_torchscript">
+<span class="sig-name descname"><span class="pre">to_torchscript</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'trace'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example_inputs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/deeptrees/model/deeptrees_model.html#DeepTreesModel.to_torchscript"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#deeptrees.model.deeptrees_model.DeepTreesModel.to_torchscript" title="Link to this definition"></a></dt>
+<dd><p>Converts the model to TorchScript format using the specified method.
+:type method: 
+:param method: The method to use for converting the model to TorchScript.</p>
+<blockquote>
+<div><p>Currently, only ‘trace’ is supported.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>example_inputs</strong> (<em>tuple</em><em> or </em><em>torch.Tensor</em>) – Example inputs to be used for tracing the model.
+Required if method is ‘trace’.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The TorchScript representation of the model.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.jit.ScriptModule</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If an unsupported method is provided.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="deeptrees.model.deeptrees_model.DeepTreesModel.training_step">
+<span class="sig-name descname"><span class="pre">training_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/deeptrees/model/deeptrees_model.html#DeepTreesModel.training_step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#deeptrees.model.deeptrees_model.DeepTreesModel.training_step" title="Link to this definition"></a></dt>
+<dd><p>Perform a single training step.
+:type batch: 
+:param batch: The input batch of data.
+:type batch: Tensor
+:type step: 
+:param step: The current training step.
+:type step: int</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The computed loss for the current training step.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Logs:</dt><dd><p>train/loss (float): The overall training loss.
+train/loss_mask (float): The training loss for the mask.
+train/loss_outline (float): The training loss for the outline.
+train/loss_dist (float): The training loss for the distance.
+train/iou (float): The Intersection over Union (IoU) metric.
+train/iou_mask (float): The IoU metric for the mask.
+train/iou_outline (float): The IoU metric for the outline.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="deeptrees.model.deeptrees_model.DeepTreesModel.validation_step">
+<span class="sig-name descname"><span class="pre">validation_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/deeptrees/model/deeptrees_model.html#DeepTreesModel.validation_step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#deeptrees.model.deeptrees_model.DeepTreesModel.validation_step" title="Link to this definition"></a></dt>
+<dd><p>Performs a validation step during the training process.
+:type batch: 
+:param batch: The input batch of data.
+:type batch: Tensor
+:type step: 
+:param step: The current step in the validation process.
+:type step: int</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The computed loss for the validation step.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Logs:</dt><dd><p>val/loss (float): The overall validation loss.
+val/loss_mask (float): The validation loss for the mask.
+val/loss_outline (float): The validation loss for the outline.
+val/loss_dist (float): The validation loss for the distance.
+val/iou (float): The Intersection over Union (IoU) metric.
+val/iou_mask (float): The IoU metric for the mask.
+val/iou_outline (float): The IoU metric for the outline.
+val/iou_feature_map (float): The IoU metric for the feature map.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="deeptrees.model.deeptrees_model.TreeCrownDelineationModel">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">deeptrees.model.deeptrees_model.</span></span><span class="sig-name descname"><span class="pre">TreeCrownDelineationModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">in_channels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">architecture</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Unet'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backbone</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'resnet18'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_iou_share</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">apply_sigmoid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/deeptrees/model/deeptrees_model.html#TreeCrownDelineationModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#deeptrees.model.deeptrees_model.TreeCrownDelineationModel" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">LightningModule</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="deeptrees.model.deeptrees_model.TreeCrownDelineationModel.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">in_channels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">architecture</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Unet'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backbone</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'resnet18'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_iou_share</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">apply_sigmoid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/deeptrees/model/deeptrees_model.html#TreeCrownDelineationModel.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#deeptrees.model.deeptrees_model.TreeCrownDelineationModel.__init__" title="Link to this definition"></a></dt>
+<dd><p>Tree crown delineation model</p>
+<p>The model consists of two sub-netoworks (two U-Nets with ResNet backbone). The first network calculates a tree
+cover mask and the tree outlines, the second calculates the distance transform of the masks (distance to next
+background pixel). The first net receives the input image, the second one receives the input image and the output of network 1.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>in_channels</strong> – Number of input channels / bands of the input image</p></li>
+<li><p><strong>architecture</strong> (<em>str</em>) – segmentation model architecture</p></li>
+<li><p><strong>backbone</strong> (<em>str</em>) – segmentation model backbone</p></li>
+<li><p><strong>lr</strong> – learning rate</p></li>
+<li><p><strong>apply_sigmoid</strong> (<em>bool</em>) – If True, apply sigmoid function to mask/outline outputs. Defaults to False.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="deeptrees.model.deeptrees_model.TreeCrownDelineationModel.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/deeptrees/model/deeptrees_model.html#TreeCrownDelineationModel.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#deeptrees.model.deeptrees_model.TreeCrownDelineationModel.forward" title="Link to this definition"></a></dt>
+<dd><p>Same as <code class="xref py py-meth docutils literal notranslate"><span class="pre">torch.nn.Module.forward()</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>*args</strong> – Whatever you decide to pass into the forward method.</p></li>
+<li><p><strong>**kwargs</strong> – Keyword arguments are also possible.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Your model’s output</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-deeptrees.model.distance_model">
+<span id="deeptrees-model-distance-model"></span><h2>deeptrees.model.distance_model<a class="headerlink" href="#module-deeptrees.model.distance_model" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="deeptrees.model.distance_model.DistanceModel">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">deeptrees.model.distance_model.</span></span><span class="sig-name descname"><span class="pre">DistanceModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">in_channels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">architecture</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Unet'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backbone</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'resnet18'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/deeptrees/model/distance_model.html#DistanceModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#deeptrees.model.distance_model.DistanceModel" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">LightningModule</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="deeptrees.model.distance_model.DistanceModel.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">in_channels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">architecture</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Unet'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backbone</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'resnet18'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/deeptrees/model/distance_model.html#DistanceModel.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#deeptrees.model.distance_model.DistanceModel.__init__" title="Link to this definition"></a></dt>
+<dd><p>Distance transform model</p>
+<p>The model is the second part in the tree crown delineation model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>in_channels</strong> (<em>int</em>) – Number of input channels</p></li>
+<li><p><strong>architecture</strong> (<em>str</em>) – One of ‘Unet, Unet++, Linknet, FPN, PSPNet, PAN, DeepLabV3, DeepLabV3+’</p></li>
+<li><p><strong>backbone</strong> (<em>str</em>) – One of the backbones supported by the [pytorch segmentation models package](<a class="reference external" href="https://github.com/qubvel/segmentation_models.pytorch">https://github.com/qubvel/segmentation_models.pytorch</a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="deeptrees.model.distance_model.DistanceModel.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_and_outline</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">from_logits</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/deeptrees/model/distance_model.html#DistanceModel.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#deeptrees.model.distance_model.DistanceModel.forward" title="Link to this definition"></a></dt>
+<dd><p>Distance transform forward pass</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>img</strong> (<em>torch.Tensor</em>) – Input image</p></li>
+<li><p><strong>mask_and_outline</strong> (<em>torch.Tensor</em>) – Tensor containing mask and outlines concatenated in channel dimension,                 coming from the first sub-network.</p></li>
+<li><p><strong>from_logits</strong> (<em>bool</em>) – If set to true, sigmoid activation is applied to the mask_and_outline tensor.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Model output of dimension N1HW</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-deeptrees.model.inference_model">
+<span id="deeptrees-model-inference-model"></span><h2>deeptrees.model.inference_model<a class="headerlink" href="#module-deeptrees.model.inference_model" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="deeptrees.model.inference_model.InferenceModel">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">deeptrees.model.inference_model.</span></span><span class="sig-name descname"><span class="pre">InferenceModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/deeptrees/model/inference_model.html#InferenceModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#deeptrees.model.inference_model.InferenceModel" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<p>Just a wrapper to apply the sigmoid activation to mask and outlines during inference..</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="deeptrees.model.inference_model.InferenceModel.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/deeptrees/model/inference_model.html#InferenceModel.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#deeptrees.model.inference_model.InferenceModel.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="deeptrees.model.inference_model.InferenceModel.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/deeptrees/model/inference_model.html#InferenceModel.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#deeptrees.model.inference_model.InferenceModel.forward" title="Link to this definition"></a></dt>
+<dd><p>Perform a forward pass through the model.
+:type x: 
+:param x: Input tensor to the model.
+:type x: torch.Tensor</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>If the model output contains two elements, returns a tuple (y, metric) where y is the
+output tensor with sigmoid activation applied to the first two columns, and metric is the second element of
+the output. If the model output contains only one element, returns y with sigmoid activation applied to the
+first two columns.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>torch.Tensor or tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-deeptrees.model.segmentation_model">
+<span id="deeptrees-model-segmentation-model"></span><h2>deeptrees.model.segmentation_model<a class="headerlink" href="#module-deeptrees.model.segmentation_model" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="deeptrees.model.segmentation_model.SegmentationModel">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">deeptrees.model.segmentation_model.</span></span><span class="sig-name descname"><span class="pre">SegmentationModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">in_channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">architecture</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Unet'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backbone</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'resnet18'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/deeptrees/model/segmentation_model.html#SegmentationModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#deeptrees.model.segmentation_model.SegmentationModel" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">LightningModule</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="deeptrees.model.segmentation_model.SegmentationModel.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">in_channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">architecture</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Unet'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backbone</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'resnet18'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/deeptrees/model/segmentation_model.html#SegmentationModel.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#deeptrees.model.segmentation_model.SegmentationModel.__init__" title="Link to this definition"></a></dt>
+<dd><p>Segmentation model</p>
+<p>A segmentation model which takes an input image and returns a foreground / background mask along with object
+outlines.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>in_channels</strong> (<em>int</em>) – Number of input channels</p></li>
+<li><p><strong>architecture</strong> (<em>str</em>) – One of ‘Unet, Unet++, Linknet, FPN, PSPNet, PAN, DeepLabV3, DeepLabV3+’</p></li>
+<li><p><strong>backbone</strong> (<em>str</em>) – One of the backbones supported by the [pytorch segmentation models package](<a class="reference external" href="https://github.com/qubvel/segmentation_models.pytorch">https://github.com/qubvel/segmentation_models.pytorch</a>)</p></li>
+<li><p><strong>between.</strong> (<em>one means only the mask loss is relevant. Linear in</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="deeptrees.model.segmentation_model.SegmentationModel.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/deeptrees/model/segmentation_model.html#SegmentationModel.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#deeptrees.model.segmentation_model.SegmentationModel.forward" title="Link to this definition"></a></dt>
+<dd><p>Same as <code class="xref py py-meth docutils literal notranslate"><span class="pre">torch.nn.Module.forward()</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>*args</strong> – Whatever you decide to pass into the forward method.</p></li>
+<li><p><strong>**kwargs</strong> – Keyword arguments are also possible.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Your model’s output</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-deeptrees.model">
+<span id="contents"></span><h2>Contents<a class="headerlink" href="#module-deeptrees.model" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="deeptrees.datasets.html" class="btn btn-neutral float-left" title="deeptrees.datasets" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="deeptrees.modules.html" class="btn btn-neutral float-right" title="deeptrees.modules" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Taimur Khan, Caroline Arnold, Harsh Grover.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
