@@ -29,7 +29,7 @@ build-docs:
   stage: docs
   before_script:
     - python -m pip install --upgrade pip
-    - pip3 install sphinx sphinx-rtd-theme
+    - pip3 install sphinx sphinx-rtd-theme sphinx_autodoc_typehints
   script:
     - sphinx-build -b html docs/source public
   artifacts:
