@@ -6,7 +6,7 @@
 <br/>
 </div>
 
-This repository is based on https://github.com/AWF-GAUG/TreeCrownDelineation. The original repository is licensed under the MIT License. The original repository was forked and modified to work with the data provided by UFZ for the project "Deep Learning for Tree Crown Delineation". The added functionality includes data processing, training and further downstream processing of the original repository. We have also added a semantic versioning system to the repository, and the repository is licensed under the Prosperity Public License 3.0.0.
+This repository is based on https://github.com/AWF-GAUG/TreeCrownDelineation. The original repository is licensed under the MIT License. The original repository was forked and modified to work with the data provided by UFZ for the project "Deep Learning for Tree Crown Delineation". The added functionality includes data processing, training and further downstream processing of the original repository. We have also added a semantic versioning system to the repository, and the repository is licensed under the MIT License.
 
 ## Installation
 
@@ -30,7 +30,15 @@ pip install deeptrees
 
 ## Documentation
 
-Documentation website: <URL>
+This library is documented using Sphinx. To build the documentation, run the following command.
+
+```bash
+sphinx-apidoc -o docs/source deeptrees 
+cd docs
+make html
+```
+
+This will create the documentation in the `docs/build` directory. Open the `index.html` file in your browser to view the documentation.
 
 ## Predict on a list of images
 
@@ -137,7 +145,7 @@ The implementation is based on. https://mobiuscode.dev/posts/Automatic-Semantic-
 
 # License
 
-This repository is licensed under the Prosperity Public License 3.0.0. For more information, see the [LICENSE.md](LICENSE.md) file.
+This repository is licensed under the MIT License. For more information, see the [LICENSE.md](LICENSE.md) file.
 
 # Cite as
 

@@ -1,0 +1,293 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>deeptrees.modules.traits &mdash; TorchTrees  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            TorchTrees
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../overview.html">Architectural Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides.html">Developer Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deeptrees.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">TorchTrees</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../deeptrees.html">deeptrees</a></li>
+      <li class="breadcrumb-item active">deeptrees.modules.traits</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for deeptrees.modules.traits</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">shapely.wkb</span> <span class="k">as</span> <span class="nn">wkb</span>
+<span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">Polygon</span>
+<span class="kn">from</span> <span class="nn">shapely</span> <span class="kn">import</span> <span class="n">LineString</span><span class="p">,</span> <span class="n">Point</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+
+<span class="c1"># Calculate the crown spread for each polygon</span>
+<span class="c1"># Function to calculate the longest spread</span>
+<div class="viewcode-block" id="longest_spread">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#deeptrees.modules.traits.longest_spread">[docs]</a>
+<span class="k">def</span> <span class="nf">longest_spread</span><span class="p">(</span><span class="n">polygon</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the longest distance between any two points on the exterior of a polygon.</span>
+<span class="sd">    Parameters:</span>
+<span class="sd">    polygon (shapely.geometry.Polygon): A shapely Polygon object. If the polygon is None or not a valid polygon, the function returns (None, None).</span>
+<span class="sd">    Returns:</span>
+<span class="sd">    tuple: A tuple containing the maximum distance (float) and the pair of points (tuple of shapely.geometry.Point) that are farthest apart. </span>
+<span class="sd">           If the polygon is invalid, returns (None, None).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="c1"># Check if the polygon is None or not a valid polygon</span>
+    <span class="k">if</span> <span class="n">polygon</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">polygon</span><span class="p">,</span> <span class="s1">&#39;exterior&#39;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span> 
+    
+    <span class="c1"># Extract the exterior points of the polygon</span>
+    <span class="n">points</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">polygon</span><span class="o">.</span><span class="n">exterior</span><span class="o">.</span><span class="n">coords</span><span class="p">)</span>
+    <span class="n">max_distance</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">point_pair</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># Calculate the maximum distance between any two points in the exterior</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">point1</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">points</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">point2</span> <span class="ow">in</span> <span class="n">points</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">:]:</span>
+            <span class="n">dist</span> <span class="o">=</span> <span class="n">Point</span><span class="p">(</span><span class="n">point1</span><span class="p">)</span><span class="o">.</span><span class="n">distance</span><span class="p">(</span><span class="n">Point</span><span class="p">(</span><span class="n">point2</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">dist</span> <span class="o">&gt;</span> <span class="n">max_distance</span><span class="p">:</span>
+                <span class="n">max_distance</span> <span class="o">=</span> <span class="n">dist</span>
+                <span class="n">point_pair</span> <span class="o">=</span> <span class="p">(</span><span class="n">Point</span><span class="p">(</span><span class="n">point1</span><span class="p">),</span> <span class="n">Point</span><span class="p">(</span><span class="n">point2</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">max_distance</span><span class="p">,</span> <span class="n">point_pair</span></div>
+
+
+<span class="c1"># Function to calculate the longest cross-spread</span>
+<div class="viewcode-block" id="longest_cross_spread">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#deeptrees.modules.traits.longest_cross_spread">[docs]</a>
+<span class="k">def</span> <span class="nf">longest_cross_spread</span><span class="p">(</span><span class="n">polygon</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the longest cross spread of a given polygon.</span>
+<span class="sd">    The longest cross spread is defined as the maximum distance between two points</span>
+<span class="sd">    on the polygon&#39;s boundary that are perpendicular to the longest spread line of the polygon.</span>
+<span class="sd">    Parameters:</span>
+<span class="sd">    polygon (shapely.geometry.Polygon): The input polygon for which the longest cross spread is calculated.</span>
+<span class="sd">    Returns:</span>
+<span class="sd">    tuple: A tuple containing:</span>
+<span class="sd">        - max_cross_distance (float): The maximum cross distance found.</span>
+<span class="sd">        - cross_point_pair (tuple): A tuple of two shapely.geometry.Point objects representing the endpoints of the longest cross spread.</span>
+<span class="sd">          If the polygon is None or invalid, or if no valid cross spread is found, returns (None, None).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="c1"># Check if the polygon is None or invalid</span>
+    <span class="k">if</span> <span class="n">polygon</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">polygon</span><span class="p">,</span> <span class="s1">&#39;exterior&#39;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>  
+
+    <span class="c1"># Get the longest spread and endpoints</span>
+    <span class="n">longest_spread_result</span> <span class="o">=</span> <span class="n">longest_spread</span><span class="p">(</span><span class="n">polygon</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">longest_spread_result</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">longest_spread_result</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>  
+
+    <span class="n">max_distance</span><span class="p">,</span> <span class="p">(</span><span class="n">point1</span><span class="p">,</span> <span class="n">point2</span><span class="p">)</span> <span class="o">=</span> <span class="n">longest_spread_result</span>
+    
+    <span class="c1"># Define the longest spread line and calculate the perpendicular direction</span>
+    <span class="n">spread_line</span> <span class="o">=</span> <span class="n">LineString</span><span class="p">([</span><span class="n">point1</span><span class="p">,</span> <span class="n">point2</span><span class="p">])</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="n">point2</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">point1</span><span class="o">.</span><span class="n">x</span>
+    <span class="n">dy</span> <span class="o">=</span> <span class="n">point2</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">point1</span><span class="o">.</span><span class="n">y</span>
+    <span class="n">perpendicular_angle</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">atan2</span><span class="p">(</span><span class="n">dy</span><span class="p">,</span> <span class="n">dx</span><span class="p">)</span> <span class="o">+</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span>  <span class="c1"># 90-degree rotation</span>
+    
+    <span class="c1"># Initialize maximum cross distance variables</span>
+    <span class="n">max_cross_distance</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">cross_point_pair</span> <span class="o">=</span> <span class="kc">None</span>
+    
+    <span class="c1"># Iterate over all boundary points and measure perpendicular distances</span>
+    <span class="n">points</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">polygon</span><span class="o">.</span><span class="n">exterior</span><span class="o">.</span><span class="n">coords</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">point</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">points</span><span class="p">):</span>
+        <span class="n">candidate_point</span> <span class="o">=</span> <span class="n">Point</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+        
+        <span class="c1"># Find the direction vector perpendicular to the spread line</span>
+        <span class="n">perp_dx</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">perpendicular_angle</span><span class="p">)</span>
+        <span class="n">perp_dy</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">perpendicular_angle</span><span class="p">)</span>
+        
+        <span class="c1"># Extend the candidate point in both positive and negative perpendicular directions</span>
+        <span class="n">max_proj_point</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">max_proj_distance</span> <span class="o">=</span> <span class="mi">0</span>
+        
+        <span class="k">for</span> <span class="n">sign</span> <span class="ow">in</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]:</span>  <span class="c1"># Check both directions</span>
+            <span class="n">extended_point</span> <span class="o">=</span> <span class="n">Point</span><span class="p">(</span>
+                <span class="n">candidate_point</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">sign</span> <span class="o">*</span> <span class="n">perp_dx</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">,</span>  <span class="c1"># Extend sufficiently far in each direction</span>
+                <span class="n">candidate_point</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="n">sign</span> <span class="o">*</span> <span class="n">perp_dy</span> <span class="o">*</span> <span class="mi">1000</span>
+            <span class="p">)</span>
+            
+            <span class="c1"># Find the intersection of the extended line with the polygon boundary</span>
+            <span class="n">perp_line</span> <span class="o">=</span> <span class="n">LineString</span><span class="p">([</span><span class="n">candidate_point</span><span class="p">,</span> <span class="n">extended_point</span><span class="p">])</span>
+            <span class="n">intersection</span> <span class="o">=</span> <span class="n">perp_line</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">polygon</span><span class="o">.</span><span class="n">exterior</span><span class="p">)</span>
+            
+            <span class="c1"># Calculate distance if there is an intersection point</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">intersection</span><span class="o">.</span><span class="n">is_empty</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">intersection</span><span class="o">.</span><span class="n">geom_type</span> <span class="o">==</span> <span class="s2">&quot;MultiPoint&quot;</span><span class="p">:</span>
+                    <span class="c1"># If multiple points intersect, find the farthest point</span>
+                    <span class="k">for</span> <span class="n">pt</span> <span class="ow">in</span> <span class="n">intersection</span><span class="o">.</span><span class="n">geoms</span><span class="p">:</span>
+                        <span class="n">dist</span> <span class="o">=</span> <span class="n">candidate_point</span><span class="o">.</span><span class="n">distance</span><span class="p">(</span><span class="n">pt</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">dist</span> <span class="o">&gt;</span> <span class="n">max_proj_distance</span><span class="p">:</span>
+                            <span class="n">max_proj_distance</span> <span class="o">=</span> <span class="n">dist</span>
+                            <span class="n">max_proj_point</span> <span class="o">=</span> <span class="n">pt</span>
+                <span class="k">elif</span> <span class="n">intersection</span><span class="o">.</span><span class="n">geom_type</span> <span class="o">==</span> <span class="s2">&quot;Point&quot;</span><span class="p">:</span>
+                    <span class="n">dist</span> <span class="o">=</span> <span class="n">candidate_point</span><span class="o">.</span><span class="n">distance</span><span class="p">(</span><span class="n">intersection</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">dist</span> <span class="o">&gt;</span> <span class="n">max_proj_distance</span><span class="p">:</span>
+                        <span class="n">max_proj_distance</span> <span class="o">=</span> <span class="n">dist</span>
+                        <span class="n">max_proj_point</span> <span class="o">=</span> <span class="n">intersection</span>
+        
+        <span class="c1"># Update the maximum cross distance if found</span>
+        <span class="k">if</span> <span class="n">max_proj_distance</span> <span class="o">&gt;</span> <span class="n">max_cross_distance</span><span class="p">:</span>
+            <span class="n">max_cross_distance</span> <span class="o">=</span> <span class="n">max_proj_distance</span>
+            <span class="n">cross_point_pair</span> <span class="o">=</span> <span class="p">(</span><span class="n">candidate_point</span><span class="p">,</span> <span class="n">max_proj_point</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">max_cross_distance</span><span class="p">,</span> <span class="n">cross_point_pair</span></div>
+
+
+<div class="viewcode-block" id="chlorophyll_index">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#deeptrees.modules.traits.chlorophyll_index">[docs]</a>
+<span class="k">def</span> <span class="nf">chlorophyll_index</span><span class="p">(</span><span class="n">red</span><span class="p">,</span> <span class="n">green</span><span class="p">,</span> <span class="n">nir</span><span class="p">,</span> <span class="n">save_to</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the Chlorophyll Index-Green (CIG) from the given bands.</span>
+<span class="sd">    The Chlorophyll Index Green (CIG) is defined as (NIR/Green)-1.</span>
+<span class="sd">    Parameters:</span>
+<span class="sd">    red (numpy.ndarray): The red band values.</span>
+<span class="sd">    green (numpy.ndarray): The green band values.</span>
+<span class="sd">    nir (numpy.ndarray): The near-infrared (NIR) band values.</span>
+<span class="sd">    save_to (str): The file path to save the calculated GCI values as a CSV file. Default is None.</span>
+<span class="sd">    Returns:</span>
+<span class="sd">    numpy.ndarray: The calculated  Chlorophyll Index (CIG) values.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cig</span> <span class="o">=</span> <span class="p">(</span><span class="n">nir</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span> <span class="o">/</span> <span class="n">green</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span> <span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="n">save_to</span><span class="p">:</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">cig</span><span class="p">)</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">save_to</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">cig</span></div>
+
+
+<div class="viewcode-block" id="green_chlorophyll_index">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#deeptrees.modules.traits.green_chlorophyll_index">[docs]</a>
+<span class="k">def</span> <span class="nf">green_chlorophyll_index</span><span class="p">(</span><span class="n">red</span><span class="p">,</span> <span class="n">green</span><span class="p">,</span> <span class="n">nir</span><span class="p">,</span> <span class="n">save_to</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the Green Chlorophyll Index (GCI) from the given bands.</span>
+<span class="sd">    The Green Chlorophyll Index (GCI) is defined as (NIR-Green)/(NIR+Green).</span>
+<span class="sd">    Parameters:</span>
+<span class="sd">    red (numpy.ndarray): The red band values.</span>
+<span class="sd">    green (numpy.ndarray): The green band values.</span>
+<span class="sd">    nir (numpy.ndarray): The near-infrared (NIR) band values.</span>
+<span class="sd">    save_to (str): The file path to save the calculated GCI values as a CSV file. Default is None.</span>
+<span class="sd">    Returns:</span>
+<span class="sd">    numpy.ndarray: The calculated Green Chlorophyll Index (GCI) values.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">gci</span> <span class="o">=</span> <span class="p">(</span><span class="n">nir</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span> <span class="o">-</span> <span class="n">green</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="n">nir</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span> <span class="o">+</span> <span class="n">green</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">save_to</span><span class="p">:</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">gci</span><span class="p">)</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">save_to</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">gci</span></div>
+
+
+<div class="viewcode-block" id="hue_index">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#deeptrees.modules.traits.hue_index">[docs]</a>
+<span class="k">def</span> <span class="nf">hue_index</span><span class="p">(</span><span class="n">red</span><span class="p">,</span> <span class="n">green</span><span class="p">,</span> <span class="n">blue</span><span class="p">,</span> <span class="n">save_to</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the Hue Index from the given bands.</span>
+<span class="sd">    The Hue Index is defined as arctan((2*green - red - blue) / sqrt(3) * (red - blue)).</span>
+<span class="sd">    Parameters:</span>
+<span class="sd">    red (numpy.ndarray): The red band values.</span>
+<span class="sd">    green (numpy.ndarray): The green band values.</span>
+<span class="sd">    blue (numpy.ndarray): The blue band values.</span>
+<span class="sd">    save_to (str): The file path to save the calculated Hue Index values as a CSV file. Default is None.</span>
+<span class="sd">    Returns:</span>
+<span class="sd">    numpy.ndarray: The calculated Hue Index values.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">hue</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">((</span><span class="mi">2</span> <span class="o">*</span> <span class="n">green</span> <span class="o">-</span> <span class="n">red</span> <span class="o">-</span> <span class="n">blue</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">red</span> <span class="o">-</span> <span class="n">blue</span><span class="p">)))</span>
+    <span class="k">if</span> <span class="n">save_to</span><span class="p">:</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">hue</span><span class="p">)</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">save_to</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">hue</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Taimur Khan, Caroline Arnold, Harsh Grover.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

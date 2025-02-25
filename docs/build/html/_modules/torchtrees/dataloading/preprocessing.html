@@ -1,0 +1,456 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>torchtrees.dataloading.preprocessing &mdash; TorchTrees  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            TorchTrees
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../overview.html">Architectural Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides.html">Developer Guides</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">TorchTrees</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">torchtrees.dataloading.preprocessing</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for torchtrees.dataloading.preprocessing</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Classes to be used in preprocessing labels -&gt; ground truth rasters</span>
+
+<span class="sd">Based on scripts/rasterize.py and scripts/rasterize_to_distance_transform.py</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
+
+<span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">xarray</span> <span class="k">as</span> <span class="nn">xr</span>
+<span class="kn">import</span> <span class="nn">geopandas</span> <span class="k">as</span> <span class="nn">gpd</span>
+<span class="kn">import</span> <span class="nn">rioxarray</span>
+<span class="kn">from</span> <span class="nn">shapely</span> <span class="kn">import</span> <span class="n">Polygon</span>
+<span class="kn">from</span> <span class="nn">scipy.ndimage</span> <span class="kn">import</span> <span class="n">distance_transform_edt</span>
+<span class="kn">from</span> <span class="nn">multiprocessing</span> <span class="kn">import</span> <span class="n">Pool</span>
+
+<span class="kn">from</span> <span class="nn">torchtrees.modules</span> <span class="kn">import</span> <span class="n">rasterize_utils</span> <span class="k">as</span> <span class="n">rutils</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="GroundTruthGenerator">
+<a class="viewcode-back" href="../../../deeptrees.dataloading.html#torchtrees.dataloading.preprocessing.GroundTruthGenerator">[docs]</a>
+<span class="k">class</span> <span class="nc">GroundTruthGenerator</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;GroundTruthGenerator</span>
+
+<span class="sd">    Base class to generate ground truth (masks, outlines, distance transforms)</span>
+
+<span class="sd">    Based on scripts/rasterize.py</span>
+
+<span class="sd">    Loads a raster and a vector file, then rasterizes the vector file within the</span>
+<span class="sd">    extent of the raster with the same resolution. Uses gdal_rasterize</span>
+<span class="sd">    under the hood, but provides some more features like specifying which classes</span>
+<span class="sd">    to rasterize into which layer of the output. If you want to infer the output</span>
+<span class="sd">    file names, the input file name suffixes have to be delimited by an &#39;_&#39;.&quot;,</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="GroundTruthGenerator.__init__">
+<a class="viewcode-back" href="../../../deeptrees.dataloading.html#torchtrees.dataloading.preprocessing.GroundTruthGenerator.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">rasters</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">],</span>
+        <span class="n">output_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">output_file_prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">ground_truth_labels</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">],</span>
+        <span class="n">valid_class_ids</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;all&quot;</span><span class="p">,</span>
+        <span class="n">class_column_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;class&quot;</span><span class="p">,</span>  <span class="c1"># TODO</span>
+        <span class="n">crs</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;EPSG:25832&quot;</span><span class="p">,</span>
+        <span class="n">nproc</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;__init__</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            rasters (Union[str, list]): (List of) file path(s) to the raster files</span>
+<span class="sd">            output_path (str): Output directory</span>
+<span class="sd">            output_file_prefix (str): Output file prefix. Suffix is infered from raster files.</span>
+<span class="sd">            ground_truth_labels (Union[str, gpd.GeoDataFrame]): Path to ground truth labels or frame with labels</span>
+<span class="sd">            nproc (int, optional): Number of parallel processes to use. Defaults to 1.</span>
+<span class="sd">            valid_class_ids (Union[str, list]): Valid class IDs in ground_truth_labels.</span>
+<span class="sd">                Defaults to &#39;all&#39; (use all classes).</span>
+<span class="sd">            class_column_name (str): Column name of class ID in ground_truth_labels.</span>
+<span class="sd">            crs (str): Coordinate reference system. Defaults to EPSG:25832.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">rasters</span> <span class="o">=</span> <span class="n">rasters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_path</span> <span class="o">=</span> <span class="n">output_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_file_prefix</span> <span class="o">=</span> <span class="n">output_file_prefix</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_class_ids</span> <span class="o">=</span> <span class="n">valid_class_ids</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">class_column_name</span> <span class="o">=</span> <span class="n">class_column_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">crs</span> <span class="o">=</span> <span class="n">crs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nproc</span> <span class="o">=</span> <span class="n">nproc</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ground_truth_labels</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ground_truth_labels</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">ground_truth_labels</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ground_truth_labels</span> <span class="o">=</span> <span class="n">ground_truth_labels</span></div>
+
+
+<div class="viewcode-block" id="GroundTruthGenerator.output_filename">
+<a class="viewcode-back" href="../../../deeptrees.dataloading.html#torchtrees.dataloading.preprocessing.GroundTruthGenerator.output_filename">[docs]</a>
+    <span class="k">def</span> <span class="nf">output_filename</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;setup_process</span>
+
+<span class="sd">        - Construct output file name from input file name</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            input_file (str): input file</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: output file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">input_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">input_file</span><span class="p">)</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">input_fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">input_file</span><span class="p">)</span>
+
+        <span class="c1"># this is the pattern for the tiles and associated labels</span>
+        <span class="n">pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;\d+_\d+&quot;</span>  <span class="c1"># TODO this may change in the future</span>
+        <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">input_fname</span><span class="p">)</span>
+        <span class="n">suffix</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">()</span>
+        <span class="c1"># suffix = input_fname.split(&#39;.&#39;)[0].split(&#39;_&#39;)[-1]</span>
+
+        <span class="n">output_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_path</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">output_file_prefix</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">suffix</span><span class="si">}</span><span class="s2">.tif&quot;</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">output_file</span></div>
+
+
+<div class="viewcode-block" id="GroundTruthGenerator.constrain_geometry_to_tile">
+<a class="viewcode-back" href="../../../deeptrees.dataloading.html#torchtrees.dataloading.preprocessing.GroundTruthGenerator.constrain_geometry_to_tile">[docs]</a>
+    <span class="k">def</span> <span class="nf">constrain_geometry_to_tile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Polygon</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;constrain_geometry_to_raster</span>
+
+<span class="sd">        Filter the ground truth labels that fall within the bounding box of the</span>
+<span class="sd">        given raster image.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            input_file (str): path to input raster file</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list[Polygon]: list of polygons within tile bounding box</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># assure labels and images are in the same CRS</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">crs</span> <span class="o">!=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ground_truth_labels</span><span class="o">.</span><span class="n">crs</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;CRS was expected to be </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">crs</span><span class="si">}</span><span class="s2"> but is </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ground_truth_labels</span><span class="o">.</span><span class="n">crs</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">bbox</span> <span class="o">=</span> <span class="n">rutils</span><span class="o">.</span><span class="n">get_bbox_polygon</span><span class="p">(</span><span class="n">input_file</span><span class="p">)</span>
+        <span class="c1"># constrain to current tile</span>
+        <span class="n">features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ground_truth_labels</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">ground_truth_labels</span><span class="o">.</span><span class="n">intersects</span><span class="p">(</span><span class="n">bbox</span><span class="p">)]</span>
+        <span class="c1"># filter for valid classes</span>
+        <span class="n">features</span> <span class="o">=</span> <span class="n">rutils</span><span class="o">.</span><span class="n">filter_geometry</span><span class="p">(</span>
+            <span class="n">features</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_class_ids</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_column_name</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">features</span></div>
+
+
+<div class="viewcode-block" id="GroundTruthGenerator.process">
+<a class="viewcode-back" href="../../../deeptrees.dataloading.html#torchtrees.dataloading.preprocessing.GroundTruthGenerator.process">[docs]</a>
+    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Process function that works on one tile. Needs to be defined in subclass.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          input_file (str): Path to input input_file file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="GroundTruthGenerator.apply_process">
+<a class="viewcode-back" href="../../../deeptrees.dataloading.html#torchtrees.dataloading.preprocessing.GroundTruthGenerator.apply_process">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply_process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Apply the processing function in parallel.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="n">Pool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nproc</span><span class="p">)</span> <span class="k">as</span> <span class="n">p</span><span class="p">:</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rasters</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="MaskOutlinesGenerator">
+<a class="viewcode-back" href="../../../deeptrees.dataloading.html#torchtrees.dataloading.preprocessing.MaskOutlinesGenerator">[docs]</a>
+<span class="k">class</span> <span class="nc">MaskOutlinesGenerator</span><span class="p">(</span><span class="n">GroundTruthGenerator</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;MaskOutlinesGenerator</span>
+
+<span class="sd">    Generate masks and outlines from tiles and ground truth labels.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="MaskOutlinesGenerator.__init__">
+<a class="viewcode-back" href="../../../deeptrees.dataloading.html#torchtrees.dataloading.preprocessing.MaskOutlinesGenerator.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">rasters</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">],</span>
+        <span class="n">output_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">output_file_prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">ground_truth_labels</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">],</span>
+        <span class="n">valid_class_ids</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;all&quot;</span><span class="p">,</span>
+        <span class="n">class_column_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;class&quot;</span><span class="p">,</span>  <span class="c1"># TODO</span>
+        <span class="n">crs</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;EPSG:25832&quot;</span><span class="p">,</span>
+        <span class="n">nproc</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">generate_outlines</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the MaskOutlinesGenerator instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            rasters (Union[str, list]): (List of) file path(s) to the raster files</span>
+<span class="sd">            output_path (str): Output directory</span>
+<span class="sd">            output_file_prefix (str): Output file prefix. Suffix is infered from raster files.</span>
+<span class="sd">            ground_truth_labels (Union[str, gpd.GeoDataFrame]): Path to ground truth labels or frame with labels</span>
+<span class="sd">            nproc (int, optional): Number of parallel processes to use. Defaults to 1.</span>
+<span class="sd">            valid_class_ids (Union[str, list]): Valid class IDs in ground_truth_labels.</span>
+<span class="sd">              Defaults to &#39;all&#39; (use all classes).</span>
+<span class="sd">            class_column_name (str): Column name of class ID in ground_truth_labels.</span>
+<span class="sd">            crs (str): Coordinate reference system. Defaults to EPSG:25832.</span>
+<span class="sd">            generate_outlines (bool): If True, generate outlines. If False, generate masks.</span>
+<span class="sd">              Defaults to False.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">rasters</span><span class="p">,</span>
+            <span class="n">output_path</span><span class="p">,</span>
+            <span class="n">output_file_prefix</span><span class="p">,</span>
+            <span class="n">ground_truth_labels</span><span class="p">,</span>
+            <span class="n">valid_class_ids</span><span class="p">,</span>
+            <span class="n">class_column_name</span><span class="p">,</span>
+            <span class="n">crs</span><span class="p">,</span>
+            <span class="n">nproc</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">generate_outlines</span> <span class="o">=</span> <span class="n">generate_outlines</span></div>
+
+
+<div class="viewcode-block" id="MaskOutlinesGenerator.process">
+<a class="viewcode-back" href="../../../deeptrees.dataloading.html#torchtrees.dataloading.preprocessing.MaskOutlinesGenerator.process">[docs]</a>
+    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;process Create raster mask/outline from input tile</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            input_file (str): input raster file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">rioxarray</span><span class="o">.</span><span class="n">open_rasterio</span><span class="p">(</span><span class="n">input_file</span><span class="p">)</span>
+        <span class="n">output_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_filename</span><span class="p">(</span><span class="n">input_file</span><span class="p">)</span>
+        <span class="n">features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constrain_geometry_to_tile</span><span class="p">(</span><span class="n">input_file</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_outlines</span><span class="p">:</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">rutils</span><span class="o">.</span><span class="n">rasterize</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">rutils</span><span class="o">.</span><span class="n">to_outline</span><span class="p">(</span><span class="n">features</span><span class="p">),</span> <span class="n">dim_ordering</span><span class="o">=</span><span class="s2">&quot;CHW&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">rutils</span><span class="o">.</span><span class="n">rasterize</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">features</span><span class="p">,</span> <span class="n">dim_ordering</span><span class="o">=</span><span class="s2">&quot;CHW&quot;</span><span class="p">)</span>
+        <span class="n">res</span><span class="o">.</span><span class="n">rio</span><span class="o">.</span><span class="n">to_raster</span><span class="p">(</span><span class="n">output_file</span><span class="p">,</span> <span class="n">compress</span><span class="o">=</span><span class="s2">&quot;DEFLATE&quot;</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="DistanceTransformGenerator">
+<a class="viewcode-back" href="../../../deeptrees.dataloading.html#torchtrees.dataloading.preprocessing.DistanceTransformGenerator">[docs]</a>
+<span class="k">class</span> <span class="nc">DistanceTransformGenerator</span><span class="p">(</span><span class="n">GroundTruthGenerator</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;DistanceTransformGenerator</span>
+
+<span class="sd">    Generate distance transforms from tiles and ground truth labels.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="DistanceTransformGenerator.__init__">
+<a class="viewcode-back" href="../../../deeptrees.dataloading.html#torchtrees.dataloading.preprocessing.DistanceTransformGenerator.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">rasters</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">],</span>
+        <span class="n">output_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">output_file_prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">ground_truth_labels</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">],</span>
+        <span class="n">valid_class_ids</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;all&quot;</span><span class="p">,</span>
+        <span class="n">class_column_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;class&quot;</span><span class="p">,</span>  <span class="c1"># TODO</span>
+        <span class="n">crs</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;EPSG:25832&quot;</span><span class="p">,</span>
+        <span class="n">nproc</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">area_max</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">area_min</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the MaskOutlinesGenerator instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            rasters (Union[str, list]): (List of) file path(s) to the raster files</span>
+<span class="sd">            output_path (str): Output directory</span>
+<span class="sd">            output_file_prefix (str): Output file prefix. Suffix is infered from raster files.</span>
+<span class="sd">            ground_truth_labels (Union[str, gpd.GeoDataFrame]): Path to ground truth labels or frame with labels</span>
+<span class="sd">            nproc (int, optional): Number of parallel processes to use. Defaults to 1.</span>
+<span class="sd">            valid_class_ids (Union[str, list]): Valid class IDs in ground_truth_labels.</span>
+<span class="sd">              Defaults to &#39;all&#39; (use all classes).</span>
+<span class="sd">            class_column_name (str): Column name of class ID in ground_truth_labels.</span>
+<span class="sd">            crs (str): Coordinate reference system. Defaults to EPSG:25832.</span>
+<span class="sd">            area_max (int): Maximum area of polygons to consider. Defaults to None.</span>
+<span class="sd">            area_min (int): Minimum area of polygons to consider. Defaults to 3.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">rasters</span><span class="p">,</span>
+            <span class="n">output_path</span><span class="p">,</span>
+            <span class="n">output_file_prefix</span><span class="p">,</span>
+            <span class="n">ground_truth_labels</span><span class="p">,</span>
+            <span class="n">valid_class_ids</span><span class="p">,</span>
+            <span class="n">class_column_name</span><span class="p">,</span>
+            <span class="n">crs</span><span class="p">,</span>
+            <span class="n">nproc</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">area_max</span> <span class="o">=</span> <span class="n">area_max</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">area_min</span> <span class="o">=</span> <span class="n">area_min</span></div>
+
+
+<div class="viewcode-block" id="DistanceTransformGenerator.process">
+<a class="viewcode-back" href="../../../deeptrees.dataloading.html#torchtrees.dataloading.preprocessing.DistanceTransformGenerator.process">[docs]</a>
+    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_file</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;process Create raster distance_transform from input tile</span>
+
+<span class="sd">        The distance transform is normalized per polygon (better for instance</span>
+<span class="sd">        segmentation).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            input_file (str): input raster file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">img</span> <span class="o">=</span> <span class="n">rioxarray</span><span class="o">.</span><span class="n">open_rasterio</span><span class="p">(</span><span class="n">input_file</span><span class="p">)</span>
+        <span class="n">output_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_filename</span><span class="p">(</span><span class="n">input_file</span><span class="p">)</span>
+        <span class="n">features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constrain_geometry_to_tile</span><span class="p">(</span><span class="n">input_file</span><span class="p">)</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">img</span><span class="p">[[</span><span class="mi">0</span><span class="p">]])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span>
+            <span class="s2">&quot;float32&quot;</span>
+        <span class="p">)</span>  <span class="c1"># dirty hack to get three layers</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">polygon</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">features</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">area_max</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">polygon</span><span class="o">.</span><span class="n">area</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">area_max</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;skipping polygon </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> because it is too large with area </span><span class="si">{</span><span class="n">polygon</span><span class="o">.</span><span class="n">area</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+                <span class="k">continue</span>
+
+            <span class="k">if</span> <span class="n">polygon</span><span class="o">.</span><span class="n">area</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">area_min</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;skipping polygon </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> because it is too small with area </span><span class="si">{</span><span class="n">polygon</span><span class="o">.</span><span class="n">area</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># restrict to rectangle bounding box of current polygon</span>
+            <span class="n">xmin_p</span><span class="p">,</span> <span class="n">ymin_p</span><span class="p">,</span> <span class="n">xmax_p</span><span class="p">,</span> <span class="n">ymax_p</span> <span class="o">=</span> <span class="n">polygon</span><span class="o">.</span><span class="n">bounds</span>
+            <span class="n">polygon_area</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">ymax_p</span><span class="p">:</span><span class="n">ymin_p</span><span class="p">,</span> <span class="n">xmin_p</span><span class="p">:</span><span class="n">xmax_p</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float32&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="mi">0</span> <span class="ow">in</span> <span class="n">polygon_area</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>  <span class="c1"># polygon below resolution</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># mask for current polygon</span>
+            <span class="n">rasterized</span> <span class="o">=</span> <span class="n">rutils</span><span class="o">.</span><span class="n">rasterize</span><span class="p">(</span><span class="n">polygon_area</span><span class="p">,</span> <span class="p">[</span><span class="n">polygon</span><span class="p">],</span> <span class="n">dim_ordering</span><span class="o">=</span><span class="s2">&quot;CHW&quot;</span><span class="p">)[</span>
+                <span class="mi">0</span>
+            <span class="p">]</span>
+
+            <span class="c1"># calculate distance transform</span>
+            <span class="n">padded</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">rasterized</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">distance_transformed</span> <span class="o">=</span> <span class="n">distance_transform_edt</span><span class="p">(</span><span class="n">padded</span><span class="p">)[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span>
+                <span class="s2">&quot;float32&quot;</span>
+            <span class="p">)</span>
+            <span class="n">distance_transformed</span> <span class="o">/=</span> <span class="nb">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">distance_transformed</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">polygon_area</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">distance_transformed</span>
+            <span class="c1"># distance transform added to output mask</span>
+            <span class="n">mask</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">ymax_p</span><span class="p">:</span><span class="n">ymin_p</span><span class="p">,</span> <span class="n">xmin_p</span><span class="p">:</span><span class="n">xmax_p</span><span class="p">]</span> <span class="o">+=</span> <span class="n">polygon_area</span>
+
+        <span class="c1"># clip excess distances</span>
+        <span class="n">mask</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">mask</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">mask</span><span class="o">.</span><span class="n">rio</span><span class="o">.</span><span class="n">to_raster</span><span class="p">(</span><span class="n">output_file</span><span class="p">,</span> <span class="n">compress</span><span class="o">=</span><span class="s2">&quot;DEFLATE&quot;</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Taimur Khan, Caroline Arnold, Harsh Grover.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

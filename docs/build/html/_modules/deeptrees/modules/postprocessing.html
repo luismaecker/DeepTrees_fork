@@ -1,0 +1,547 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>deeptrees.modules.postprocessing &mdash; TorchTrees  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            TorchTrees
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../overview.html">Architectural Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides.html">Developer Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deeptrees.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">TorchTrees</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../deeptrees.html">deeptrees</a></li>
+      <li class="breadcrumb-item active">deeptrees.modules.postprocessing</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for deeptrees.modules.postprocessing</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">rootutils</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="c1"># path = rootutils.find_root(search_from=__file__, indicator=&quot;.project-root&quot;)</span>
+<span class="n">path</span> <span class="o">=</span> <span class="n">rootutils</span><span class="o">.</span><span class="n">find_root</span><span class="p">(</span><span class="n">search_from</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">),</span> <span class="n">indicator</span><span class="o">=</span><span class="s2">&quot;.project-root&quot;</span><span class="p">)</span>
+<span class="c1"># set root directory</span>
+<span class="n">rootutils</span><span class="o">.</span><span class="n">set_root</span><span class="p">(</span>
+    <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span>  <span class="c1"># path to the root directory</span>
+    <span class="n">project_root_env_var</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># set the PROJECT_ROOT environment variable to root directory</span>
+    <span class="n">dotenv</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># load environment variables from .env if exists in root directory</span>
+    <span class="n">pythonpath</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># add root directory to the PYTHONPATH (helps with imports)</span>
+    <span class="n">cwd</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="c1"># we do not want that with hydra</span>
+<span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">Polygon</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">ndimage</span> <span class="k">as</span> <span class="n">ndi</span>
+<span class="kn">from</span> <span class="nn">skimage</span> <span class="kn">import</span> <span class="n">filters</span>
+<span class="kn">from</span> <span class="nn">skimage.segmentation</span> <span class="kn">import</span> <span class="n">watershed</span>
+<span class="kn">from</span> <span class="nn">skimage.feature</span> <span class="kn">import</span> <span class="n">corner_peaks</span>
+<span class="kn">from</span> <span class="nn">hyperopt</span> <span class="kn">import</span> <span class="n">fmin</span><span class="p">,</span> <span class="n">tpe</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">STATUS_OK</span>
+<span class="kn">from</span> <span class="nn">rasterio.transform</span> <span class="kn">import</span> <span class="n">IDENTITY</span>
+<span class="kn">from</span> <span class="nn">rasterio.features</span> <span class="kn">import</span> <span class="n">shapes</span>
+
+<span class="kn">from</span> <span class="nn">deeptrees.modules</span> <span class="kn">import</span> <span class="n">utils</span>
+<span class="kn">from</span> <span class="nn">deeptrees.modules</span> <span class="kn">import</span> <span class="n">polygon_metrics</span> <span class="k">as</span> <span class="n">pm</span>
+
+
+<div class="viewcode-block" id="find_treecrowns">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#deeptrees.modules.postprocessing.find_treecrowns">[docs]</a>
+<span class="k">def</span> <span class="nf">find_treecrowns</span><span class="p">(</span>
+    <span class="n">mask</span><span class="p">,</span>
+    <span class="n">contour</span><span class="p">,</span>
+    <span class="n">mask_exp</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">outline_multiplier</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
+    <span class="n">outline_exp</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+    <span class="n">sig</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+    <span class="n">min_dist</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">binary_threshold</span><span class="o">=</span><span class="mf">0.16</span><span class="p">,</span>
+    <span class="n">label_threshold</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+    <span class="n">dist_exp</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Takes a mask and a contour and returns a segmentation into labeled areas.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        An image (numpy array) where each found object&#39;s area is labeled by a different index.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">mask</span><span class="o">**</span><span class="n">mask_exp</span> <span class="o">-</span> <span class="n">outline_multiplier</span> <span class="o">*</span> <span class="n">contour</span><span class="o">**</span><span class="n">outline_exp</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">filters</span><span class="o">.</span><span class="n">gaussian</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">sig</span><span class="p">)</span>
+    <span class="n">res_checkpoint</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+    <span class="n">binary_img</span> <span class="o">=</span> <span class="n">res</span> <span class="o">&gt;</span> <span class="n">binary_threshold</span>
+    <span class="n">distance</span> <span class="o">=</span> <span class="n">ndi</span><span class="o">.</span><span class="n">distance_transform_edt</span><span class="p">(</span><span class="n">binary_img</span><span class="p">)</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">res</span> <span class="o">*</span> <span class="n">distance</span><span class="o">**</span><span class="n">dist_exp</span>
+    <span class="n">local_max</span> <span class="o">=</span> <span class="n">corner_peaks</span><span class="p">(</span>
+        <span class="n">res</span><span class="p">,</span>
+        <span class="n">indices</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">min_distance</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">min_dist</span><span class="p">),</span>
+        <span class="n">threshold_abs</span><span class="o">=</span><span class="n">label_threshold</span><span class="p">,</span>
+        <span class="n">exclude_border</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">markers</span> <span class="o">=</span> <span class="n">ndi</span><span class="o">.</span><span class="n">label</span><span class="p">(</span><span class="n">local_max</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">labels</span> <span class="o">=</span> <span class="n">watershed</span><span class="p">(</span><span class="o">-</span><span class="n">res_checkpoint</span><span class="p">,</span> <span class="n">markers</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">binary_img</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">labels</span></div>
+
+
+
+<div class="viewcode-block" id="find_treecrowns_from_dist_trafo">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#deeptrees.modules.postprocessing.find_treecrowns_from_dist_trafo">[docs]</a>
+<span class="k">def</span> <span class="nf">find_treecrowns_from_dist_trafo</span><span class="p">(</span>
+    <span class="n">mask</span><span class="p">,</span>
+    <span class="n">outlines</span><span class="p">,</span>
+    <span class="n">dist_trafo</span><span class="p">,</span>
+    <span class="n">mask_exp</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">outline_multiplier</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+    <span class="n">outline_exp</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">dist_exp</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+    <span class="n">min_dist</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">sigma</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">binary_threshold</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+    <span class="n">label_threshold</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+    <span class="n">return_indices</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Takes a mask and a distance transform and returns a segmentation into labeled areas.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        An image (numpy array) where each found object&#39;s area is labeled by a different index.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># binary_img = mask &gt; binary_threshold</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">mask</span><span class="o">**</span><span class="n">mask_exp</span> <span class="o">-</span> <span class="n">outline_multiplier</span> <span class="o">*</span> <span class="n">outlines</span><span class="o">**</span><span class="n">outline_exp</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">dist_trafo</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">**</span> <span class="n">dist_exp</span>
+    <span class="p">)</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">filters</span><span class="o">.</span><span class="n">gaussian</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">)</span>
+    <span class="n">binary_img</span> <span class="o">=</span> <span class="n">res</span> <span class="o">&gt;</span> <span class="n">binary_threshold</span>
+    <span class="n">markers</span> <span class="o">=</span> <span class="n">corner_peaks</span><span class="p">(</span>
+        <span class="n">res</span><span class="p">,</span>
+        <span class="n">indices</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">min_distance</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">min_dist</span><span class="p">),</span>
+        <span class="n">threshold_abs</span><span class="o">=</span><span class="n">label_threshold</span><span class="p">,</span>
+        <span class="n">exclude_border</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">p_norm</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+    <span class="n">ndi</span><span class="o">.</span><span class="n">label</span><span class="p">(</span><span class="n">markers</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="n">markers</span><span class="p">)</span>
+    <span class="n">labels</span> <span class="o">=</span> <span class="n">watershed</span><span class="p">(</span><span class="o">-</span><span class="n">res</span><span class="p">,</span> <span class="n">markers</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">binary_img</span><span class="p">,</span> <span class="n">connectivity</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">return_indices</span><span class="p">:</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="n">corner_peaks</span><span class="p">(</span>
+            <span class="n">res</span><span class="p">,</span>
+            <span class="n">indices</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">min_distance</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">min_dist</span><span class="p">),</span>
+            <span class="n">threshold_abs</span><span class="o">=</span><span class="n">label_threshold</span><span class="p">,</span>
+            <span class="n">exclude_border</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">p_norm</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">labels</span><span class="p">,</span> <span class="n">indices</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">labels</span></div>
+
+
+
+<div class="viewcode-block" id="extract_polygons">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#deeptrees.modules.postprocessing.extract_polygons">[docs]</a>
+<span class="k">def</span> <span class="nf">extract_polygons</span><span class="p">(</span>
+    <span class="n">mask</span><span class="p">,</span>
+    <span class="n">outline</span><span class="p">,</span>
+    <span class="n">dist</span><span class="p">,</span>
+    <span class="n">transform</span><span class="o">=</span><span class="n">IDENTITY</span><span class="p">,</span>
+    <span class="n">area_min</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="n">area_max</span><span class="o">=</span><span class="mi">10</span><span class="o">**</span><span class="mi">6</span><span class="p">,</span>
+    <span class="n">simplify</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Takes a mask and a contour and returns the found polygons.&quot;&quot;&quot;</span>
+    <span class="c1"># new_args = {k,v for k,v in kwargs.items() if k not in (&quot;area_min&quot;)}</span>
+    <span class="n">labels</span> <span class="o">=</span> <span class="n">find_treecrowns_from_dist_trafo</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">outline</span><span class="p">,</span> <span class="n">dist</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span> <span class="o">==</span> <span class="nb">tuple</span><span class="p">:</span>
+        <span class="n">labels</span><span class="p">,</span> <span class="n">indices</span> <span class="o">=</span> <span class="n">labels</span>
+
+    <span class="n">shape_gen</span> <span class="o">=</span> <span class="n">shapes</span><span class="p">(</span>
+        <span class="n">labels</span><span class="p">,</span> <span class="n">labels</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">),</span> <span class="n">transform</span><span class="o">=</span><span class="n">transform</span>
+    <span class="p">)</span>  <span class="c1"># &quot;polygon producer&quot;</span>
+    <span class="n">found_polygons</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">shape_gen</span><span class="p">:</span>
+        <span class="n">poly</span> <span class="o">=</span> <span class="n">Polygon</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;coordinates&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">area_min</span> <span class="o">&lt;</span> <span class="n">poly</span><span class="o">.</span><span class="n">area</span> <span class="o">&lt;</span> <span class="n">area_max</span><span class="p">:</span>  <span class="c1"># area units depend on transformation</span>
+            <span class="n">found_polygons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">poly</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">simplify</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">found_polygons</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">simplified_polygons</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">simplify</span><span class="p">(</span><span class="n">simplify</span><span class="p">,</span> <span class="n">preserve_topology</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">found_polygons</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="n">simplified_polygons</span></div>
+
+
+
+<div class="viewcode-block" id="objective">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#deeptrees.modules.postprocessing.objective">[docs]</a>
+<span class="k">def</span> <span class="nf">objective</span><span class="p">(</span><span class="n">prediction</span><span class="p">,</span> <span class="n">true_polygons</span><span class="p">,</span> <span class="n">ds</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculates the accuracy of the post-processing steps given a certain set of hyperparameters.</span>
+<span class="sd">    This calculation is based on the raw network output and the ground truth polygons.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        prediction: List of predictions in HWC layout</span>
+<span class="sd">        true_polygons: List of shapely polygons</span>
+<span class="sd">        ds: Dataset containing the rasters from which the predictions were made; needed to geotransform the resulting polygons</span>
+<span class="sd">        kwargs: Hyperparameters of the polygon extraction - see optimization space below</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dictionary containing: loss, tp, fp, fn and status</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tp</span> <span class="o">=</span> <span class="n">fp</span> <span class="o">=</span> <span class="n">fn</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c1"># compare each tile individually</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">pred</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">prediction</span><span class="p">):</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">pred</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">contour</span> <span class="o">=</span> <span class="n">pred</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">xres</span><span class="p">,</span> <span class="n">yres</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_xarray_extent</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">rasters</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+        <span class="c1"># arg_rest = {k: v for k, v in kwargs.items() if k not in (&quot;amin&quot;, &quot;amax&quot;)}</span>
+        <span class="n">arg_rest</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;amin&quot;</span><span class="p">,</span> <span class="s2">&quot;amax&quot;</span><span class="p">)}</span>
+        <span class="n">found_polygons</span> <span class="o">=</span> <span class="n">extract_polygons</span><span class="p">(</span>
+            <span class="n">mask</span><span class="p">,</span>
+            <span class="n">contour</span><span class="p">,</span>
+            <span class="n">xmin</span><span class="p">,</span>
+            <span class="n">ymax</span><span class="p">,</span>
+            <span class="n">xres</span><span class="p">,</span>
+            <span class="n">yres</span><span class="p">,</span>
+            <span class="n">area_min</span><span class="o">=</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;amin&quot;</span><span class="p">],</span>
+            <span class="n">area_max</span><span class="o">=</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;amax&quot;</span><span class="p">],</span>
+            <span class="o">**</span><span class="n">arg_rest</span>
+        <span class="p">)</span>
+        <span class="n">tp_</span><span class="p">,</span> <span class="n">fp_</span><span class="p">,</span> <span class="n">fn_</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">tp_fp_fn_polygons_counts</span><span class="p">(</span><span class="n">found_polygons</span><span class="p">,</span> <span class="n">true_polygons</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="n">tp</span> <span class="o">+=</span> <span class="n">tp_</span>
+        <span class="n">fp</span> <span class="o">+=</span> <span class="n">fp_</span>
+        <span class="n">fn</span> <span class="o">+=</span> <span class="n">fn_</span>
+
+    <span class="n">acc</span> <span class="o">=</span> <span class="n">tp</span> <span class="o">/</span> <span class="p">(</span><span class="n">tp</span> <span class="o">+</span> <span class="n">fp</span> <span class="o">+</span> <span class="n">fn</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;loss&quot;</span><span class="p">:</span> <span class="o">-</span><span class="n">acc</span><span class="p">,</span> <span class="s2">&quot;tp&quot;</span><span class="p">:</span> <span class="n">tp</span><span class="p">,</span> <span class="s2">&quot;fp&quot;</span><span class="p">:</span> <span class="n">fp</span><span class="p">,</span> <span class="s2">&quot;fn&quot;</span><span class="p">:</span> <span class="n">fn</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="n">STATUS_OK</span><span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="optimize_postprocessing">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#deeptrees.modules.postprocessing.optimize_postprocessing">[docs]</a>
+<span class="k">def</span> <span class="nf">optimize_postprocessing</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span> <span class="n">val_ds</span><span class="p">,</span> <span class="n">test_ds</span><span class="p">,</span> <span class="n">val_polygon_file</span><span class="p">,</span> <span class="n">test_polygon_file</span><span class="p">,</span> <span class="n">max_evals</span><span class="o">=</span><span class="mi">100</span>
+<span class="p">):</span>
+    <span class="n">y_validation</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">load_filtered_polygons</span><span class="p">(</span><span class="n">val_polygon_file</span><span class="p">,</span> <span class="n">val_ds</span><span class="o">.</span><span class="n">rasters</span><span class="p">)</span>
+    <span class="n">y_test</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">load_filtered_polygons</span><span class="p">(</span>
+        <span class="n">test_polygon_file</span><span class="p">,</span> <span class="n">test_ds</span><span class="o">.</span><span class="n">rasters</span><span class="p">,</span> <span class="n">minimum_area</span><span class="o">=</span><span class="mi">3</span>
+    <span class="p">)</span>
+    <span class="n">y_pred_val</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">predict_on_array</span><span class="p">(</span>
+            <span class="n">model</span><span class="p">,</span>
+            <span class="n">raster</span><span class="o">.</span><span class="n">data</span><span class="p">,</span>
+            <span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+            <span class="n">drop_border</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>
+            <span class="n">batchsize</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>
+            <span class="n">stride</span><span class="o">=</span><span class="mi">112</span><span class="p">,</span>
+            <span class="n">augmentation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">raster</span> <span class="ow">in</span> <span class="n">val_ds</span><span class="o">.</span><span class="n">rasters</span>
+    <span class="p">]</span>
+
+    <span class="n">optimization_space</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;mask_exp&quot;</span><span class="p">:</span> <span class="n">hp</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="s2">&quot;mask_exp&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span>
+        <span class="s2">&quot;contour_exp&quot;</span><span class="p">:</span> <span class="n">hp</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="s2">&quot;contour_exp&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+        <span class="s2">&quot;contour_multiplier&quot;</span><span class="p">:</span> <span class="n">hp</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="s2">&quot;contour_multiplier&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+        <span class="s2">&quot;dist_exp&quot;</span><span class="p">:</span> <span class="n">hp</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="s2">&quot;dist_exp&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+        <span class="s2">&quot;sigma&quot;</span><span class="p">:</span> <span class="n">hp</span><span class="o">.</span><span class="n">uniformint</span><span class="p">(</span><span class="s2">&quot;sigma&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span>
+        <span class="s2">&quot;min_dist&quot;</span><span class="p">:</span> <span class="n">hp</span><span class="o">.</span><span class="n">uniformint</span><span class="p">(</span><span class="s2">&quot;min_dist&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">15</span><span class="p">),</span>
+        <span class="s2">&quot;label_threshold&quot;</span><span class="p">:</span> <span class="n">hp</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="s2">&quot;label_threshold&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+        <span class="s2">&quot;binary_threshold&quot;</span><span class="p">:</span> <span class="n">hp</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="s2">&quot;binary_threshold&quot;</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">),</span>
+        <span class="s2">&quot;amin&quot;</span><span class="p">:</span> <span class="n">hp</span><span class="o">.</span><span class="n">uniformint</span><span class="p">(</span><span class="s2">&quot;amin&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">50</span><span class="o">**</span><span class="mi">2</span><span class="p">),</span>
+        <span class="s2">&quot;amax&quot;</span><span class="p">:</span> <span class="n">hp</span><span class="o">.</span><span class="n">uniformint</span><span class="p">(</span><span class="s2">&quot;amax&quot;</span><span class="p">,</span> <span class="mi">80</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="mi">200</span><span class="o">**</span><span class="mi">2</span><span class="p">),</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">optimize_me</span><span class="p">(</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">objective</span><span class="p">(</span><span class="n">y_pred_val</span><span class="p">,</span> <span class="n">y_validation</span><span class="p">,</span> <span class="n">val_ds</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="c1"># carry out the actual optimization</span>
+    <span class="n">best_args</span> <span class="o">=</span> <span class="n">fmin</span><span class="p">(</span>
+        <span class="n">optimize_me</span><span class="p">,</span> <span class="n">optimization_space</span><span class="p">,</span> <span class="n">algo</span><span class="o">=</span><span class="n">tpe</span><span class="o">.</span><span class="n">suggest</span><span class="p">,</span> <span class="n">max_evals</span><span class="o">=</span><span class="n">max_evals</span>
+    <span class="p">)</span>
+    <span class="n">val_acc</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">optimize_me</span><span class="p">(</span><span class="n">best_args</span><span class="p">)[</span><span class="s2">&quot;loss&quot;</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Accuracy on validation set:&quot;</span><span class="p">,</span> <span class="n">val_acc</span><span class="p">)</span>
+
+    <span class="c1"># predict on the test set</span>
+    <span class="n">y_pred_test</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">predict_on_array</span><span class="p">(</span>
+            <span class="n">model</span><span class="p">,</span>
+            <span class="n">raster</span><span class="o">.</span><span class="n">data</span><span class="p">,</span>
+            <span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+            <span class="n">drop_border</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>
+            <span class="n">batchsize</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>
+            <span class="n">stride</span><span class="o">=</span><span class="mi">56</span><span class="p">,</span>
+            <span class="n">augmentation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">raster</span> <span class="ow">in</span> <span class="n">test_ds</span><span class="o">.</span><span class="n">rasters</span>
+    <span class="p">]</span>
+
+    <span class="n">test_res</span> <span class="o">=</span> <span class="n">objective</span><span class="p">(</span><span class="n">y_pred_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">,</span> <span class="n">test_ds</span><span class="p">,</span> <span class="n">best_args</span><span class="p">)</span>
+    <span class="n">test_acc</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">test_res</span><span class="p">[</span><span class="s2">&quot;loss&quot;</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Accuracy on test set:&quot;</span><span class="p">,</span> <span class="n">test_acc</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;hyperparams&quot;</span><span class="p">:</span> <span class="n">best_args</span><span class="p">,</span> <span class="o">**</span><span class="n">test_res</span><span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="calculate_probability_map">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#deeptrees.modules.postprocessing.calculate_probability_map">[docs]</a>
+<span class="k">def</span> <span class="nf">calculate_probability_map</span><span class="p">(</span>
+    <span class="n">mask</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">outline</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">distance_transform</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">mask_exp</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="n">outline_multiplier</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+    <span class="n">outline_exp</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">dist_exp</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+    <span class="n">sigma</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate a probability map.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        mask (np.ndarray): mask generated by the model.</span>
+<span class="sd">        outline (np.ndarray): outline generated by the model.</span>
+<span class="sd">        distance_transform (np.ndarray): distance_transform generated by the model.</span>
+<span class="sd">        mask_exp (int, optional): _description_. Defaults to 2.</span>
+<span class="sd">        outline_multiplier (int, optional): _description_. Defaults to 5.</span>
+<span class="sd">        outline_exp (int, optional): _description_. Defaults to 1.</span>
+<span class="sd">        dist_exp (int, optional): _description_. Defaults to 0.5.</span>
+<span class="sd">        sigma (int, optional): _description_. Defaults to 1.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        _type_: _description_</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate a probability map based on a predicted mask, outline, and distance_transform.</span>
+<span class="sd">    The weighting of these components is adjusted.</span>
+
+
+<span class="sd">    Args:</span>
+<span class="sd">        mask (_type_): _description_</span>
+<span class="sd">        outline (_type_): _description_</span>
+<span class="sd">        distance_transform (_type_): _description_</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">pmap</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">mask</span><span class="o">**</span><span class="n">mask_exp</span> <span class="o">-</span> <span class="n">outline_multiplier</span> <span class="o">*</span> <span class="n">outline</span><span class="o">**</span><span class="n">outline_exp</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">distance_transform</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">**</span> <span class="n">dist_exp</span>
+    <span class="p">)</span>
+    <span class="n">pmap</span> <span class="o">=</span> <span class="n">filters</span><span class="o">.</span><span class="n">gaussian</span><span class="p">(</span><span class="n">pmap</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">pmap</span></div>
+
+
+
+<div class="viewcode-block" id="calculate_feature_map">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#deeptrees.modules.postprocessing.calculate_feature_map">[docs]</a>
+<span class="k">def</span> <span class="nf">calculate_feature_map</span><span class="p">(</span>
+    <span class="n">mask</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">outline</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">distance_transform</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">mask_exp</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="n">outline_multiplier</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+    <span class="n">outline_exp</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">dist_exp</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+    <span class="n">sigma</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">binary_threshold</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate feature map (where probability exceeds the given threshold).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        mask (np.ndarray|torch.Tensor): mask generated by the model.</span>
+<span class="sd">        outline (np.ndarray|torch.Tensor): outline generated by the model.</span>
+<span class="sd">        distance_transform (np.ndarray|torch.Tensor): distance_transform generated by the model.</span>
+<span class="sd">        mask_exp (int, optional): _description_. Defaults to 2.</span>
+<span class="sd">        outline_multiplier (int, optional): _description_. Defaults to 5.</span>
+<span class="sd">        outline_exp (int, optional): _description_. Defaults to 1.</span>
+<span class="sd">        dist_exp (int, optional): _description_. Defaults to 0.5.</span>
+<span class="sd">        sigma (int, optional): _description_. Defaults to 1.</span>
+<span class="sd">        binary_threshold (int, optional): Threshold for separating feature from background. Defaults to 0.1.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        _type_: _description_</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate a probability map based on a predicted mask, outline, and distance_transform.</span>
+<span class="sd">    The weighting of these components is adjusted.</span>
+
+
+<span class="sd">    Args:</span>
+<span class="sd">        mask (_type_): _description_</span>
+<span class="sd">        outline (_type_): _description_</span>
+<span class="sd">        distance_transform (_type_): _description_</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">is_tensor</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+        <span class="n">is_tensor</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">outline</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+        <span class="n">outline</span> <span class="o">=</span> <span class="n">outline</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">distance_transform</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+        <span class="n">distance_transform</span> <span class="o">=</span> <span class="n">distance_transform</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+
+    <span class="n">pmap</span> <span class="o">=</span> <span class="n">calculate_probability_map</span><span class="p">(</span>
+        <span class="n">mask</span><span class="p">,</span>
+        <span class="n">outline</span><span class="p">,</span>
+        <span class="n">distance_transform</span><span class="p">,</span>
+        <span class="n">mask_exp</span><span class="o">=</span><span class="n">mask_exp</span><span class="p">,</span>
+        <span class="n">outline_multiplier</span><span class="o">=</span><span class="n">outline_multiplier</span><span class="p">,</span>
+        <span class="n">outline_exp</span><span class="o">=</span><span class="n">outline_exp</span><span class="p">,</span>
+        <span class="n">dist_exp</span><span class="o">=</span><span class="n">dist_exp</span><span class="p">,</span>
+        <span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">fmap</span> <span class="o">=</span> <span class="n">pmap</span> <span class="o">&gt;</span> <span class="n">binary_threshold</span>
+
+    <span class="k">if</span> <span class="n">is_tensor</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">fmap</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">fmap</span></div>
+
+
+
+<div class="viewcode-block" id="calculate_entropy">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#deeptrees.modules.postprocessing.calculate_entropy">[docs]</a>
+<span class="k">def</span> <span class="nf">calculate_entropy</span><span class="p">(</span><span class="n">probability_map</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the entropy of a given probability map.</span>
+
+<span class="sd">    This function computes the entropy for each value in the provided `probability_map`.</span>
+<span class="sd">    Entropy is a measure of uncertainty or randomness, commonly used in information theory.</span>
+<span class="sd">    Here, the binary entropy formula is used, which is defined for probabilities `p` as:</span>
+
+<span class="sd">        H(p) = -[p * log(p) + (1 - p) * log(1 - p)]</span>
+
+<span class="sd">    To avoid issues with log(0), which is undefined, the function clips probability values</span>
+<span class="sd">    to a minimum of `1e-6` and a maximum of `1 - 1e-6`.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    ----------</span>
+<span class="sd">    probability_map : numpy array</span>
+<span class="sd">        A numpy array containing probability values, where each value represents</span>
+<span class="sd">        the probability of an event occurring (0 &lt;= p &lt;= 1).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    -------</span>
+<span class="sd">    entropy : numpy array</span>
+<span class="sd">        A numpy array of the same shape as `probability_map`, containing the entropy</span>
+<span class="sd">        values for each probability in the input array.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; probability_map = np.array([0.2, 0.5, 0.8])</span>
+<span class="sd">    &gt;&gt;&gt; calculate_entropy(probability_map)</span>
+<span class="sd">    array([0.50040242, 0.69314718, 0.50040242])</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">    ------</span>
+<span class="sd">    - The formula used here is specifically for binary entropy, which is typically</span>
+<span class="sd">      used when probabilities are defined for binary outcomes.</span>
+<span class="sd">    - Values near 0 or 1 have low entropy (low uncertainty), while values near 0.5</span>
+<span class="sd">      have high entropy (high uncertainty).</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Ensure the probability map values are within a small tolerance to prevent log(0) errors</span>
+    <span class="n">probability_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">probability_map</span><span class="p">,</span> <span class="mf">1e-6</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="mf">1e-6</span><span class="p">)</span>
+
+    <span class="c1"># Calculate entropy using the binary entropy formula</span>
+    <span class="n">entropy</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span>
+        <span class="n">probability_map</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">probability_map</span><span class="p">)</span>
+        <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">probability_map</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">probability_map</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">entropy</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Taimur Khan, Caroline Arnold, Harsh Grover.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,226 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>torchtrees.modules.indices &mdash; TorchTrees  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            TorchTrees
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../overview.html">Architectural Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides.html">Developer Guides</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">TorchTrees</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">torchtrees.modules.indices</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for torchtrees.modules.indices</h1><div class="highlight"><pre>
+<div class="viewcode-block" id="ndvi_xarray">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#torchtrees.modules.indices.ndvi_xarray">[docs]</a>
+<span></span><span class="k">def</span> <span class="nf">ndvi_xarray</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">red</span><span class="p">,</span> <span class="n">nir</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculates the Normalized Difference Vegetation Index (NDVI) from a given image.</span>
+
+<span class="sd">    NDVI is calculated using the formula: (NIR - Red) / (NIR + Red + 1E-10).</span>
+<span class="sd">    The input image bands are implicitly converted to Float32 for the calculation.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    img (xarray.DataArray): The input image as an xarray DataArray.</span>
+<span class="sd">    red (int or str): The band index or name corresponding to the red band.</span>
+<span class="sd">    nir (int or str): The band index or name corresponding to the near-infrared (NIR) band.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    xarray.DataArray: The NDVI values as an xarray DataArray.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculates the NDVI from a given image. Implicitly converts to Float32.&quot;&quot;&quot;</span>
+    <span class="n">redl</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">band</span><span class="o">=</span><span class="n">red</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span>
+    <span class="n">nirl</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">band</span><span class="o">=</span><span class="n">nir</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">nirl</span> <span class="o">-</span> <span class="n">redl</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">nirl</span> <span class="o">+</span> <span class="n">redl</span> <span class="o">+</span> <span class="mf">1E-10</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="ndvi">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#torchtrees.modules.indices.ndvi">[docs]</a>
+<span class="k">def</span> <span class="nf">ndvi</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">red</span><span class="p">,</span> <span class="n">nir</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculates the Normalized Difference Vegetation Index (NDVI) from a given image.</span>
+
+<span class="sd">    NDVI is calculated using the formula: (NIR - Red) / (NIR + Red + 1E-10)</span>
+<span class="sd">    The function implicitly converts the input image bands to Float32 to ensure precision.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    img (numpy.ndarray): The input image array.</span>
+<span class="sd">    red (int): The index of the red band in the image array.</span>
+<span class="sd">    nir (int): The index of the near-infrared (NIR) band in the image array.</span>
+<span class="sd">    axis (int, optional): The axis along which the bands are indexed. Default is -1.</span>
+<span class="sd">                          -1 or 2 indicates that the bands are in the last dimension.</span>
+<span class="sd">                          0 indicates that the bands are in the first dimension.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    numpy.ndarray: The NDVI values as a float32 array.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">    ValueError: If the specified axis is not supported.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">axis</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">or</span> <span class="n">axis</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">redl</span> <span class="o">=</span> <span class="n">img</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">red</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span>
+        <span class="n">nirl</span> <span class="o">=</span> <span class="n">img</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">nir</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">axis</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">redl</span> <span class="o">=</span> <span class="n">img</span><span class="p">[</span><span class="n">red</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span>
+        <span class="n">nirl</span> <span class="o">=</span> <span class="n">img</span><span class="p">[</span><span class="n">nir</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Calculating NDVI along axis </span><span class="si">{}</span><span class="s2"> not supported.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">axis</span><span class="p">))</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">nirl</span> <span class="o">-</span> <span class="n">redl</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">nirl</span> <span class="o">+</span> <span class="n">redl</span> <span class="o">+</span> <span class="mf">1E-10</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="gci">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#torchtrees.modules.indices.gci">[docs]</a>
+<span class="k">def</span> <span class="nf">gci</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">red</span><span class="p">,</span> <span class="n">green</span><span class="p">,</span> <span class="n">nir</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculates the Green Chlorophyll Index (GCI) from a given image. Implicitly converts to Float32.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    img (numpy.ndarray): The input image array.</span>
+<span class="sd">    red (int): The index of the red band in the image.</span>
+<span class="sd">    green (int): The index of the green band in the image.</span>
+<span class="sd">    nir (int): The index of the near-infrared (NIR) band in the image.</span>
+<span class="sd">    axis (int, optional): The axis along which the bands are indexed. Default is -1.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    numpy.ndarray: The calculated Green Chlorophyll Index (GCI) as a float32 array.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">    ValueError: If the specified axis is not supported.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">axis</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">or</span> <span class="n">axis</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">redl</span> <span class="o">=</span> <span class="n">img</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">red</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span>
+        <span class="n">greenl</span> <span class="o">=</span> <span class="n">img</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">green</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span>
+        <span class="n">nirl</span> <span class="o">=</span> <span class="n">img</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">nir</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">axis</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">redl</span> <span class="o">=</span> <span class="n">img</span><span class="p">[</span><span class="n">red</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span>
+        <span class="n">greenl</span> <span class="o">=</span> <span class="n">img</span><span class="p">[</span><span class="n">green</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span>
+        <span class="n">nirl</span> <span class="o">=</span> <span class="n">img</span><span class="p">[</span><span class="n">nir</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Calculating GCI along axis </span><span class="si">{}</span><span class="s2"> not supported.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">axis</span><span class="p">))</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">nirl</span> <span class="o">-</span> <span class="n">greenl</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">nirl</span> <span class="o">+</span> <span class="n">greenl</span> <span class="o">+</span> <span class="mf">1E-10</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="hue">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#torchtrees.modules.indices.hue">[docs]</a>
+<span class="k">def</span> <span class="nf">hue</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">red</span><span class="p">,</span> <span class="n">green</span><span class="p">,</span> <span class="n">blue</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculates the Hue from a given image. Implicitly converts to Float32.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    img (numpy.ndarray): The input image array.</span>
+<span class="sd">    red (int): The index of the red channel.</span>
+<span class="sd">    green (int): The index of the green channel.</span>
+<span class="sd">    blue (int): The index of the blue channel.</span>
+<span class="sd">    axis (int, optional): The axis along which to calculate the hue. Default is -1 (last axis).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    numpy.ndarray: The calculated hue values.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">    ValueError: If the specified axis is not supported.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">axis</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">or</span> <span class="n">axis</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">redl</span> <span class="o">=</span> <span class="n">img</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">red</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span>
+        <span class="n">greenl</span> <span class="o">=</span> <span class="n">img</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">green</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span>
+        <span class="n">bluel</span> <span class="o">=</span> <span class="n">img</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">blue</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">axis</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">redl</span> <span class="o">=</span> <span class="n">img</span><span class="p">[</span><span class="n">red</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span>
+        <span class="n">greenl</span> <span class="o">=</span> <span class="n">img</span><span class="p">[</span><span class="n">green</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span>
+        <span class="n">bluel</span> <span class="o">=</span> <span class="n">img</span><span class="p">[</span><span class="n">blue</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Calculating Hue along axis </span><span class="si">{}</span><span class="s2"> not supported.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">axis</span><span class="p">))</span>
+    <span class="n">hue</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">redl</span> <span class="o">-</span> <span class="n">greenl</span> <span class="o">-</span> <span class="n">bluel</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">redl</span> <span class="o">-</span> <span class="n">greenl</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">redl</span> <span class="o">-</span> <span class="n">bluel</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">greenl</span> <span class="o">-</span> <span class="n">bluel</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">hue</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Taimur Khan, Caroline Arnold, Harsh Grover.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
