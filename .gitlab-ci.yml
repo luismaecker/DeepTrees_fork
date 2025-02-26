@@ -31,6 +31,8 @@ pages:
     - python -m pip install --upgrade pip
     - pip3 install sphinx sphinx-rtd-theme sphinx_autodoc_typehints
   script:
+    - sphinx-apidoc -o docs/source deeptrees
+    - sphinx-autogen docs/source/*.rst
     - sphinx-build -b html docs/source public
   artifacts:
     paths:
