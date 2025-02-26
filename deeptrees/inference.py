@@ -226,8 +226,13 @@ class TreeCrownPredictor:
                 log.info(f"Post-processing time: {t_process:.2f} seconds")
                 
                 all_polygons.extend(polygons)  # Process your predictions here
-                log.info(f"Saving all polygons to {os.path.join(os.getcwd(), self.config['polygon_file'])}.")
-                utils.save_polygons(all_polygons, self.config['polygon_file'], crs=self.config['crs'])
+                
+                # create a diectory and save all polygons to that directory
+                polygon_file =  os.path.basename(raster_name).split('.')[0] + '.shp'
+                os.makedirs('./saved_polygons', exist_ok=True)
+                polygon_path = os.path.join(os.getcwd(), 'saved_polygons' ,polygon_file)
+                log.info(f'Saving all polygons to {polygon_path}')
+                utils.save_polygons(all_polygons, polygon_path, crs=self.config['crs'])
       
 
 # For command parsing run the main function
