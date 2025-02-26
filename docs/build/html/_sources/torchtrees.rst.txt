@@ -1,0 +1,19 @@
+API Reference
+=================
+
+.. automodule:: torchtrees
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. toctree::
+   :maxdepth: 4
+   :hidden:
+
+   torchtrees
+   torchtrees.dataloading
+   torchtrees.datasets
+   torchtrees.model
+   torchtrees.modules
+   torchtrees.inference
+   torchtrees.pretrained

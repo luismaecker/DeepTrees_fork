@@ -1,31 +1,133 @@
- <div align="center" style="text-align:center">
-  <h1 > DeepTrees 🌳</h1>
-  <b>End-to-end pipeline for tree crown delineation and analysis in high-resolution DOP images based on U-Net.</b>  
-    <br/>
-<img src="./static/header.png" alt="DeepTrees" width="300"/>
+
+<a href="https://www.helmholtz.ai" target="_blank">
+<img src="static/hai.png" alt="HelmholtzAI" align="right" height="60px" style="margin-top: 0; margin-right: 30px" />
+</a>
+<a href="https://www.ufz.de" target="_blank">
+<img src="static/ufz.png" alt="UFZLogo" align="right" height="60px" style="margin-top: 0; margin-right: 10px" />
+</a>
 <br/>
+<br/>
+
+<div align="left" style="text-align:left">
+<h1>DeepTrees 🌳</h1>
 </div>
 
-This repository is based on https://github.com/AWF-GAUG/TreeCrownDelineation. The original repository is licensed under the MIT License. The original repository was forked and modified to work with the data provided by UFZ for the project "Deep Learning for Tree Crown Delineation". The added functionality includes data processing, training and further downstream processing of the original repository. We have also added a semantic versioning system to the repository, and the repository is licensed under the Prosperity Public License 3.0.0.
+<div align="center" style="text-align:center">
+  <h3>Tree Crown Segmentation and Analysis in Remote Sensing Imagery with PyTorch</h3>  
+  <img src="./static/header.png" alt="DeepTrees" width="300"/>
+  <br/>
+  <br/>
+</div>
+
+<div align="center">
+  <a href="https://badge.fury.io/py/deeptrees">
+    <img src="https://badge.fury.io/py/deeptrees.svg" alt="PyPI version">
+  </a>
+  <a href="https://doi.org/10.5281/zenodo.5555555">
+    <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.5555555.svg" alt="DOI">
+  </a>
+  <a href="https://opensource.org/licenses/MIT">
+    <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT">
+  </a>
+  <a href="https://codebase.helmholtz.cloud/taimur.khan/DeepTrees/-/pipelines">
+    <img src="https://codebase.helmholtz.cloud/taimur.khan/DeepTrees/badges/main/pipeline.svg" alt="CI Build">
+  </a>
+</div>
+
+DeepTrees is a PyTorch-based library for tree crown segmentation and analysis in remote sensing imagery. It provides a modular and flexible framework for training and deploying deep learning models for tree crown segmentation. The library is designed to be easy to use and extend, with a focus on reproducibility and scalability. It includes a variety of pre-trained models, datasets, and tree allometrical metrics to help you get started quickly. 
+
+This software is a result of the [DeepTrees](https://deeptrees.de) project at the Helmholtz Centre for Environmental Research -- UFZ, in collaboration with Helmholtz AI.
 
 ## Installation
 
 To install the package, clone the repository and install the dependencies.
 
 ```bash
-git clone https://codebase.helmholtz.cloud/ai-consultants-dkrz/DeepTrees.git
+git clone https://codebase.helmholtz.cloud/taimur.khan/DeepTrees.git
 cd DeepTrees
+
+## create a new conda environment
 pip install -r requirements.txt
 ```
-or from pip.
+
+or from Gitlab registry:
+
+```bash
+pip install deeptrees --index-url https://codebase.helmholtz.cloud/api/v4/projects/13888/packages/pypi/simple
+```
+
+
+or from PyPI.
 
 ```bash
 pip install deeptrees
 ```
 
+> Note: DeepTrees uses python libaries that depend on GDAL. Make sure to have GDAL installed on your system. 
+
 ## Documentation
 
-Documentation website: <URL>
+You can view the documentation on: https://taimur.khan.pages.hzdr.de/deeptrees
+
+This library is documented using Sphinx. To build the documentation, run the following command.
+
+```bash
+sphinx-apidoc -o docs/source deeptrees 
+cd docs
+make html
+```
+
+This will create the documentation in the `docs/build` directory. Open the `index.html` file in your browser to view the documentation.
+
+## Configuration
+
+This software requires Hydra for configuration management. The configuration **yaml** files are stored in the `config` directory. 
+
+The configuration schema can be found in
+This software uses Hydra for configuration management. The configuration files are stored in the `config` directory. 
+
+The confirguration schema can be found in the `config/schema.yaml` file.
+
+You can find sample configuration files for training and prediction in the following links:
+- [Training Configs](https://taimur.khan.pages.hzdr.de/deeptrees/config/train/)
+- [Prediction Configs](https://taimur.khan.pages.hzdr.de/deeptrees/config/predict/)
+
+A list of prediction configurations can be found in: [/docs/prediction_config.md](/docs/prediction_config.md)
+
+## Pretrained Models
+
+DeepTrees provides a set of pretrained models for tree crown segmentation. Currently following models are available:
+
+| Author | Model Weights |
+|--------|---------------|
+| [Freudenberg et al., 2022](https://doi.org/10.1007/s00521-022-07640-4) | [k=3](https://syncandshare.desy.de/index.php/s/NcFgPM4gX2dtSQq/download/lUnet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=3_jitted.pt) |
+| Caroline Arnold | |
+
+> Note: We are in the process of adding more pretrained models.
+
+Download the pretrained models from the links:
+
+```python
+from deeptrees.pretrained import freudenberg2022
+
+freundenberg2022(
+  filename="name_your_file", # name of the file to save the model
+  k=0, # number of k-fold cross validation
+  return_dict=True # returns the weight pytorch model weights dictionary
+)
+```
+
+## Datasets
+
+DeepTrees also provides a lablled DOP dataset with DOP20cm rasters and corresponding polygon labels as `.shp` files. The dataset is available for download:
+
+```python
+from deeptrees.datasets.halleDOP20 import load_tiles, load_labels
+
+load_tiles(zip_filename="path/to/tiles.zip") #give the path to where you want to save the tiles
+load_labels(zip_filename="path/to/labels.zip") #give the path to where you want to save the labels
+```
+> Note: We are in the process of adding more datasets and updating the current datasets.
 
 ## Predict on a list of images
 
@@ -37,39 +139,9 @@ from deeptrees import predict
 predict(image_path=["list of image_paths"],  config_path = "config_path")
 ```
 
+## Training
 
-## Scripts
-
-### Preprocessing
-
-#### Expected Directory structure
-
-The root folder is `/work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/`. Sync the folder `tiles` and `labels` with the labeled tiles provided by UFZ. The unlabeled tiles go into `pool_tiles`.
-
-```
-|-- tiles
-|   |-- tile_0_0.tif
-|   |-- tile_0_1.tif
-|   |-- ...
-|-- labels
-|   |-- label_tile_0_0.shp
-|   |-- label_tile_0_1.shp
-|   |-- ...
-|-- pool_tiles
-|   |-- tile_4_7.tif
-|   |-- tile_4_8.tif
-|   |-- ...
-```
-
-Create the new empty directories
-
-```
-|-- masks
-|-- outlines
-|-- dist_trafo
-```
-
-### Training
+To train the model, you need to have the labeled tiles in the `tiles` and `labels` directories. The unlabeled tiles go into `pool_tiles`. Your polygon labels need to be in ESRI shapefile format.
 
 Adapt your own config file based on the defaults in `train_halle.yaml` as needed. For inspiration for a derived config file for finetuning, check `finetune_halle.yaml`.
 
@@ -94,6 +166,46 @@ To resume training from a checkpoint, take care to pass the hydra arguments in q
 ```bash
 python scripts/train.py 'model.pretrained_model="Unet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=0_jitted.pt"'
 ```
+
+#### Expected Directory structure
+
+Before you embark onSync the folder `tiles` and `labels` with the labeled tiles. The unlabeled tiles go into `pool_tiles`.
+
+```
+|-- tiles
+|   |-- tile_0_0.tif
+|   |-- tile_0_1.tif
+|   |-- ...
+|-- labels
+|   |-- label_tile_0_0.shp
+|   |-- label_tile_0_1.shp
+|   |-- ...
+|-- pool_tiles
+|   |-- tile_4_7.tif
+|   |-- tile_4_8.tif
+|   |-- ...
+```
+
+Create the new empty directories
+
+```
+|-- masks
+|-- outlines
+|-- dist_trafo
+```
+
+### Training Classes
+
+We use the following classes for training:
+
+0 = tree
+1 = cluster of trees 
+2 = unsure 
+3 = dead trees (haven’t added yet)
+
+However, you can adjust classes as needed in your own training workflow.
+
+
 
 #### Training Logs
 
@@ -132,10 +244,18 @@ The implementation is based on. https://mobiuscode.dev/posts/Automatic-Semantic-
 
 # License
 
-This repository is licensed under the Prosperity Public License 3.0.0. For more information, see the [LICENSE.md](LICENSE.md) file.
+This repository is licensed under the MIT License. For more information, see the [LICENSE.md](LICENSE.md) file.
 
 # Cite as
 
 ```bib
-
+@article{khan2025torchtrees,
+        author    = {Taimur Khan and Caroline Arnold and Harsh Grover},
+        title     = {DeepTrees: Tree Crown Segmentation and Analysis in Remote Sensing Imagery with PyTorch},
+        journal   = {arXiv},
+        year      = {2025},
+        archivePrefix = {arXiv},
+        eprint    = {XXXXX.YYYYY},  
+        primaryClass = {cs.CV}      
+      }
 ```

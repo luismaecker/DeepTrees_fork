@@ -1,0 +1,18 @@
+torchtrees.datasets
+==========================
+
+torchtrees.datasets.halleDOP20
+------------------------------------
+
+.. automodule:: torchtrees.datasets.halleDOP20
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Contents
+---------------
+
+.. automodule:: torchtrees.datasets
+   :members:
+   :show-inheritance:
+   :undoc-members:

@@ -21,7 +21,7 @@
       }],
       "@semantic-release/release-notes-generator",
       ["@semantic-release/gitlab", {
-        "gitlabUrl": "https://codebase.helmholtz.cloud/ai-consultants-dkrz/DeepTrees"
+        "gitlabUrl": "https://codebase.helmholtz.cloud/taimur.khan/DeepTrees"
       }]
     ]
   }

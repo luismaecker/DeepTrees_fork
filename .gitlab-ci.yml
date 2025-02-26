@@ -1,5 +1,8 @@
 stages:
   - release
+  - docs
+  - build
+  - publish
 
 semantic-versioning:
   image: node:lts
@@ -19,3 +22,65 @@ semantic-versioning:
       semantic-release
   only:
     - main
+
+
+pages:
+  image: python:3.10
+  stage: docs
+  before_script:
+    - python -m pip install --upgrade pip
+    - pip3 install sphinx sphinx-rtd-theme sphinx_autodoc_typehints
+  script:
+    - sphinx-apidoc -o docs/source deeptrees
+    - sphinx-autogen docs/source/*.rst
+    - sphinx-build -b html docs/source public
+  artifacts:
+    paths:
+      - public/
+  only:
+    - main
+
+build-package:
+  image: python:3.10
+  stage: build
+  before_script:
+    - python -m pip install --upgrade pip
+    - pip install setuptools wheel
+  script:
+    - python setup.py sdist bdist_wheel
+  artifacts:
+    paths:
+      - dist/
+  only:
+    - main
+  dependencies:
+    - semantic-versioning
+
+publish-package:
+  image: python:3.10
+  stage: publish
+  before_script:
+    - python -m pip install --upgrade pip
+    - pip install setuptools wheel twine
+  script:
+    - TWINE_PASSWORD=${CI_JOB_TOKEN} TWINE_USERNAME=gitlab-ci-token python -m twine upload --repository-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi dist/*
+  only:
+    - tags
+  dependencies:
+    - build-package
+
+
+publish-package:
+  image: python:3.10
+  stage: publish
+  before_script:
+    - python -m pip install --upgrade pip
+    - pip install setuptools wheel twine
+  script:
+    - TWINE_PASSWORD=${PYPI_TOKEN} TWINE_USERNAME=__token__ python -m twine upload dist/*
+  only:
+    - main
+  dependencies:
+    - build-package
+
+

@@ -1,0 +1,564 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>deeptrees.dataloading.datasets &mdash; TorchTrees  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            TorchTrees
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../overview.html">Architectural Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides.html">Developer Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deeptrees.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">TorchTrees</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../deeptrees.html">deeptrees</a></li>
+      <li class="breadcrumb-item active">deeptrees.dataloading.datasets</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for deeptrees.dataloading.datasets</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">re</span>
+
+<span class="kn">import</span> <span class="nn">xarray</span> <span class="k">as</span> <span class="nn">xr</span>
+<span class="kn">import</span> <span class="nn">rioxarray</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">torchvision.transforms</span> <span class="kn">import</span> <span class="n">v2</span>
+<span class="kn">from</span> <span class="nn">torchvision</span> <span class="kn">import</span> <span class="n">tv_tensors</span>
+
+
+<span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <span class="n">IterableDataset</span><span class="p">,</span> <span class="n">Dataset</span>
+
+<span class="kn">from</span> <span class="nn">deeptrees.modules.indices</span> <span class="kn">import</span> <span class="n">ndvi</span>
+<span class="kn">from</span> <span class="nn">deeptrees.modules.utils</span> <span class="kn">import</span> <span class="n">dilate_img</span><span class="p">,</span> <span class="n">get_rioxarray_trafo</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="TreeCrownDelineationBaseDataset">
+<a class="viewcode-back" href="../../../deeptrees.dataloading.html#deeptrees.dataloading.datasets.TreeCrownDelineationBaseDataset">[docs]</a>
+<span class="k">class</span> <span class="nc">TreeCrownDelineationBaseDataset</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    In-memory remote sensing dataset for image segmentation.</span>
+
+<span class="sd">    This base dataset class handles the loading and preprocessing of raster and target files for</span>
+<span class="sd">    tree crown delineation, and image segmentation task.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    - raster_files (list[str]): List of file paths to the raster images.</span>
+<span class="sd">    - target_files (list[str]): List of file paths to the target images.</span>
+<span class="sd">    - augmentation (Dict[str, Any]): Dictionary containing augmentation configurations.</span>
+<span class="sd">    - ndvi_config (Dict[str, Any], optional): Configuration for NDVI, default is {&#39;concatenate&#39;: False}.</span>
+<span class="sd">    - dilate_outlines (int, optional): Number of pixels to dilate the outlines, default is 0.</span>
+<span class="sd">    - overwrite_nan_with_zeros (bool, optional): Whether to overwrite NaN values with zeros, default is True.</span>
+<span class="sd">    - in_memory (bool, optional): Whether to load the data into memory, default is True.</span>
+<span class="sd">    - dim_ordering (str, optional): Dimension ordering, default is &quot;CHW&quot;.</span>
+<span class="sd">    - dtype (str, optional): Data type of the raster images, default is &quot;float32&quot;.</span>
+<span class="sd">    - divide_by (int, optional): Value to divide the raster data by, default is 1.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="TreeCrownDelineationBaseDataset.__init__">
+<a class="viewcode-back" href="../../../deeptrees.dataloading.html#deeptrees.dataloading.datasets.TreeCrownDelineationBaseDataset.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> 
+                 <span class="n">raster_files</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> 
+                 <span class="n">target_files</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> 
+                 <span class="n">augmentation</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+                 <span class="n">ndvi_config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;concatenate&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+                 <span class="n">dilate_outlines</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                 <span class="n">overwrite_nan_with_zeros</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                 <span class="n">in_memory</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                 <span class="n">dim_ordering</span><span class="o">=</span><span class="s2">&quot;CHW&quot;</span><span class="p">,</span>
+                 <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float32&quot;</span><span class="p">,</span>
+                 <span class="n">divide_by</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;__init__ </span>
+
+<span class="sd">        Creates a dataset containing images and targets (masks, outlines, and distance_transforms).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            raster_files (list[str]): List of file paths to source rasters. File names must be of the form &#39;.../the_name_i.tif&#39; where i is some index</span>
+<span class="sd">            target_files (list[str]): mask_files: A tuple containing lists of file paths to different sorts of &#39;masks&#39;, e.g. mask, outline, distance transform.</span>
+<span class="sd">                  The mask and raster file names must have the same index ending.</span>
+<span class="sd">            augmentation (Dict[str, Any]): Dictionary defining augmentations. Keys correspond to torchvision transforms, values to their kwargs.</span>
+<span class="sd">            ndvi_config (_type_, optional): Dictionary defining NDVI concatenation. Defaults to {&#39;concatenate&#39;: False}.</span>
+<span class="sd">            dilate_outlines (int, optional): If present, dilate outlines by give amount of pixels. Defaults to 0.</span>
+<span class="sd">            overwrite_nan_with_zeros (bool, optional): If True, fill missing values in targets with 0. Defaults to True.</span>
+<span class="sd">            in_memory (bool, optional): If True, load all rasters and targets into memory (works for small datasets, beware of OOM error). Defaults to True.</span>
+<span class="sd">            dim_ordering (str, optional): Order of dimensions. Defaults to &quot;CHW&quot;.</span>
+<span class="sd">            dtype (str, optional): torch Datatype. Defaults to &quot;float32&quot;.</span>
+<span class="sd">            divide_by (int, optional): Scalar to divide the raster pixel values by. Defaults to 1.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="c1"># initial sanity checks</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">raster_files</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;List of given rasters is empty.&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">raster_files</span> <span class="o">=</span> <span class="n">raster_files</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_files</span> <span class="o">=</span> <span class="n">target_files</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">divide_by</span> <span class="o">=</span> <span class="n">divide_by</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">augmentation</span> <span class="o">=</span> <span class="n">augmentation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ndvi_config</span> <span class="o">=</span> <span class="n">ndvi_config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dilate_outlines</span> <span class="o">=</span> <span class="n">dilate_outlines</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">in_memory</span> <span class="o">=</span> <span class="n">in_memory</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">overwrite_nan</span> <span class="o">=</span> <span class="n">overwrite_nan_with_zeros</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span> <span class="o">=</span> <span class="n">dtype</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dim_ordering</span> <span class="o">=</span> <span class="n">dim_ordering</span>
+        <span class="k">if</span> <span class="n">dim_ordering</span> <span class="o">==</span> <span class="s2">&quot;CHW&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">chax</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># channel axis of imported arrays</span>
+        <span class="k">elif</span> <span class="n">dim_ordering</span> <span class="o">==</span> <span class="s2">&quot;HWC&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">chax</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Dim ordering </span><span class="si">{}</span><span class="s2"> not supported. Choose one of &#39;CHW&#39; or &#39;HWC&#39;.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dim_ordering</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lateral_ax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">chax</span><span class="o">==</span><span class="mi">0</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span>
+
+        <span class="c1"># load all rasters and targets into memory</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">in_memory</span><span class="p">:</span>
+            <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Loading all data into memory&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">load_data</span><span class="p">()</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Finished loading data into memory in </span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span><span class="si">:</span><span class="s1">.1f</span><span class="si">}</span><span class="s1"> seconds.&#39;</span><span class="p">)</span>
+
+        <span class="c1"># add augmentation functions</span>
+        <span class="c1"># FIXME we need to cut and rotate rasters and targets in the same way, but we should only scale the rasters and not the targets!</span>
+        <span class="n">raster_transforms</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">target_transforms</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">joint_transforms</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">augmentation</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Adding augmentation </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1"> with parameter </span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="k">match</span> <span class="n">key</span><span class="p">:</span>
+                <span class="k">case</span> <span class="s1">&#39;RandomResizedCrop&#39;</span><span class="p">:</span>
+                    <span class="n">joint_transforms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v2</span><span class="o">.</span><span class="n">RandomResizedCrop</span><span class="p">(</span><span class="o">**</span><span class="n">val</span><span class="p">))</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cutout_size</span> <span class="o">=</span> <span class="p">(</span><span class="n">val</span><span class="p">[</span><span class="s1">&#39;size&#39;</span><span class="p">],</span> <span class="n">val</span><span class="p">[</span><span class="s1">&#39;size&#39;</span><span class="p">])</span>
+                <span class="k">case</span> <span class="s1">&#39;RandomCrop&#39;</span><span class="p">:</span>
+                    <span class="n">joint_transforms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v2</span><span class="o">.</span><span class="n">RandomCrop</span><span class="p">(</span><span class="o">**</span><span class="n">val</span><span class="p">))</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cutout_size</span> <span class="o">=</span> <span class="p">(</span><span class="n">val</span><span class="p">[</span><span class="s1">&#39;size&#39;</span><span class="p">],</span> <span class="n">val</span><span class="p">[</span><span class="s1">&#39;size&#39;</span><span class="p">])</span>
+                <span class="k">case</span> <span class="s1">&#39;Resize&#39;</span><span class="p">:</span>
+                    <span class="n">joint_transforms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v2</span><span class="o">.</span><span class="n">Resize</span><span class="p">(</span><span class="o">**</span><span class="n">val</span><span class="p">))</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cutout_size</span> <span class="o">=</span> <span class="p">(</span><span class="n">val</span><span class="p">[</span><span class="s1">&#39;size&#39;</span><span class="p">],</span> <span class="n">val</span><span class="p">[</span><span class="s1">&#39;size&#39;</span><span class="p">])</span>
+                <span class="k">case</span> <span class="s1">&#39;RandomHorizontalFlip&#39;</span><span class="p">:</span>
+                    <span class="n">joint_transforms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v2</span><span class="o">.</span><span class="n">RandomHorizontalFlip</span><span class="p">(</span><span class="o">**</span><span class="n">val</span><span class="p">))</span>
+                <span class="k">case</span> <span class="s1">&#39;RandomVerticalFlip&#39;</span><span class="p">:</span>
+                    <span class="n">joint_transforms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v2</span><span class="o">.</span><span class="n">RandomVerticalFlip</span><span class="p">(</span><span class="o">**</span><span class="n">val</span><span class="p">))</span>
+                <span class="k">case</span> <span class="s1">&#39;ColorJitter&#39;</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;Augmentation not implemented:&#39;</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+                <span class="k">case</span> <span class="s1">&#39;Normalize&#39;</span><span class="p">:</span> <span class="c1"># applies only to rasters</span>
+                    <span class="n">raster_transforms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v2</span><span class="o">.</span><span class="n">Normalize</span><span class="p">(</span><span class="o">**</span><span class="n">val</span><span class="p">))</span>
+                <span class="k">case</span> <span class="s1">&#39;Pad&#39;</span><span class="p">:</span>
+                    <span class="n">raster_transforms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v2</span><span class="o">.</span><span class="n">Pad</span><span class="p">(</span><span class="o">**</span><span class="n">val</span><span class="p">))</span>
+                <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Augmentation not defined: </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">joint_transforms</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">lc</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span>
+            <span class="n">joint_transforms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v2</span><span class="o">.</span><span class="n">Lambda</span><span class="p">(</span><span class="n">lc</span><span class="p">))</span>
+        <span class="n">raster_transforms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v2</span><span class="o">.</span><span class="n">ToDtype</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">augment_joint</span> <span class="o">=</span> <span class="n">v2</span><span class="o">.</span><span class="n">Compose</span><span class="p">(</span><span class="n">joint_transforms</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">target_transforms</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">augment_target</span> <span class="o">=</span> <span class="n">v2</span><span class="o">.</span><span class="n">Compose</span><span class="p">(</span><span class="n">target_transforms</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">augment_target</span> <span class="o">=</span> <span class="kc">None</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">augment_raster</span> <span class="o">=</span> <span class="n">v2</span><span class="o">.</span><span class="n">Compose</span><span class="p">(</span><span class="n">raster_transforms</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TreeCrownDelineationBaseDataset.load_raster">
+<a class="viewcode-back" href="../../../deeptrees.dataloading.html#deeptrees.dataloading.datasets.TreeCrownDelineationBaseDataset.load_raster">[docs]</a>
+    <span class="k">def</span> <span class="nf">load_raster</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">used_bands</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Loads a raster from disk.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            file (str): file to load</span>
+<span class="sd">            used_bands (list): bands to use, indexing starts from 0, default &#39;None&#39; loads all bands</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            raster</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">raster</span> <span class="o">=</span> <span class="n">rioxarray</span><span class="o">.</span><span class="n">open_rasterio</span><span class="p">(</span><span class="n">file</span><span class="p">)</span><span class="o">.</span><span class="n">load</span><span class="p">()</span> <span class="c1"># xarray.open_rasterio is deprecated</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_ordering</span> <span class="o">==</span> <span class="s1">&#39;CHW&#39;</span><span class="p">:</span>
+            <span class="n">raster</span> <span class="o">=</span> <span class="n">raster</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="s1">&#39;band&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_ordering</span> <span class="o">==</span> <span class="s1">&#39;HWC&#39;</span><span class="p">:</span>
+            <span class="n">raster</span> <span class="o">=</span> <span class="n">raster</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;band&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">used_bands</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">raster</span> <span class="o">=</span> <span class="n">raster</span><span class="o">.</span><span class="n">isel</span><span class="p">(</span><span class="n">bands</span><span class="o">=</span><span class="n">used_bands</span><span class="p">)</span>
+
+        <span class="c1"># need to normalize before concatenating NDVI</span>
+        <span class="n">raster</span> <span class="o">=</span> <span class="n">raster</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">divide_by</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ndvi_config</span><span class="p">[</span><span class="s1">&#39;concatenate&#39;</span><span class="p">]:</span>
+            <span class="n">raster</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">concatenate_ndvi_to_raster</span><span class="p">(</span><span class="n">raster</span><span class="p">,</span>
+                                                     <span class="n">red</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ndvi_config</span><span class="p">[</span><span class="s1">&#39;red&#39;</span><span class="p">],</span>
+                                                     <span class="n">nir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ndvi_config</span><span class="p">[</span><span class="s1">&#39;nir&#39;</span><span class="p">],</span>
+                                                     <span class="n">dim_ordering</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_ordering</span><span class="p">,</span>
+                                                     <span class="n">rescale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ndvi_config</span><span class="p">[</span><span class="s1">&#39;rescale&#39;</span><span class="p">]</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">raster</span></div>
+
+
+<div class="viewcode-block" id="TreeCrownDelineationBaseDataset.load_target">
+<a class="viewcode-back" href="../../../deeptrees.dataloading.html#deeptrees.dataloading.datasets.TreeCrownDelineationBaseDataset.load_target">[docs]</a>
+    <span class="k">def</span> <span class="nf">load_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="o">|</span><span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load target  raster from disk.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            file (str): path to file. </span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            xr.Dataset or xr.DataArray: Raster.</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
+        <span class="n">target</span> <span class="o">=</span> <span class="n">rioxarray</span><span class="o">.</span><span class="n">open_rasterio</span><span class="p">(</span><span class="n">file</span><span class="p">)</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_ordering</span> <span class="o">==</span> <span class="s1">&#39;CHW&#39;</span><span class="p">:</span>
+            <span class="n">target</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="s1">&#39;band&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_ordering</span> <span class="o">==</span> <span class="s1">&#39;HWC&#39;</span><span class="p">:</span>
+            <span class="n">target</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;band&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">overwrite_nan</span><span class="p">:</span>
+            <span class="n">target</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mf">0.</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">target</span></div>
+
+
+<div class="viewcode-block" id="TreeCrownDelineationBaseDataset.load_data">
+<a class="viewcode-back" href="../../../deeptrees.dataloading.html#deeptrees.dataloading.datasets.TreeCrownDelineationBaseDataset.load_data">[docs]</a>
+    <span class="k">def</span> <span class="nf">load_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Load all rasters and targets into memory.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rasters</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">raster_file</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">raster_files</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rasters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">load_raster</span><span class="p">(</span><span class="n">raster_file</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">targets</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">files</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">target_files</span><span class="p">):</span>
+            <span class="n">targets</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">load_target</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span><span class="p">]</span>
+            <span class="c1"># &quot;override&quot; ensures that small differences in geotransorm are neglected</span>
+            <span class="n">target</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">targets</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="s2">&quot;band&quot;</span><span class="p">,</span> <span class="n">join</span><span class="o">=</span><span class="s2">&quot;override&quot;</span><span class="p">)</span>
+            <span class="c1"># dilate masks</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dilate_outlines</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_ordering</span> <span class="o">==</span> <span class="s1">&#39;CHW&#39;</span><span class="p">:</span>
+                    <span class="n">target</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">dilate_img</span><span class="p">(</span><span class="n">target</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:],</span> <span class="bp">self</span><span class="o">.</span><span class="n">dilate_outlines</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_ordering</span> <span class="o">==</span> <span class="s1">&#39;HWC&#39;</span><span class="p">:</span>
+                    <span class="n">target</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">dilate_img</span><span class="p">(</span><span class="n">target</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">dilate_outlines</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">targets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">target</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TreeCrownDelineationBaseDataset.concatenate_ndvi_to_raster">
+<a class="viewcode-back" href="../../../deeptrees.dataloading.html#deeptrees.dataloading.datasets.TreeCrownDelineationBaseDataset.concatenate_ndvi_to_raster">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">concatenate_ndvi_to_raster</span><span class="p">(</span><span class="n">raster</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+                                   <span class="n">red</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                                   <span class="n">nir</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+                                   <span class="n">dim_ordering</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;CHW&#39;</span><span class="p">,</span>
+                                   <span class="n">rescale</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;concatenate_ndvi_to_raster</span>
+
+<span class="sd">        Concatenate NDVI to the raster.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            raster (xr.Dataset): loaded raster tile</span>
+<span class="sd">            red (int, optional): Index of red channel in raster bands. Defaults to 0.</span>
+<span class="sd">            nir (int, optional): Index of NIR channel in raster bands. Defaults to 3.</span>
+<span class="sd">            rescale (bool, optional): Rescale NDVI to [0, 1]. Defaults to False.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            xr.Dataset: _description_</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">dim_ordering</span> <span class="o">==</span> <span class="s1">&#39;CHW&#39;</span><span class="p">:</span>
+            <span class="n">chax</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">elif</span> <span class="n">dim_ordering</span> <span class="o">==</span> <span class="s1">&#39;HWC&#39;</span><span class="p">:</span>
+            <span class="n">chax</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid dim_ordering: &#39;</span><span class="p">,</span> <span class="n">dim_ordering</span><span class="p">)</span>
+
+        <span class="n">ndvi_band</span> <span class="o">=</span> <span class="n">ndvi</span><span class="p">(</span><span class="n">raster</span><span class="p">,</span> <span class="n">red</span><span class="p">,</span> <span class="n">nir</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">chax</span><span class="p">)</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="s1">&#39;band&#39;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">chax</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">rescale</span><span class="p">:</span>
+            <span class="n">ndvi_band</span> <span class="o">=</span> <span class="p">(</span><span class="n">ndvi_band</span> <span class="o">+</span> <span class="mf">1.</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.</span>
+        <span class="n">ndvi_band</span> <span class="o">=</span> <span class="n">ndvi_band</span><span class="o">.</span><span class="n">assign_coords</span><span class="p">({</span><span class="s1">&#39;band&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">raster</span><span class="o">.</span><span class="n">band</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">]})</span>
+        <span class="n">raster</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">raster</span><span class="p">,</span> <span class="n">ndvi_band</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="s1">&#39;band&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">raster</span></div>
+</div>
+
+
+<div class="viewcode-block" id="TreeCrownDelineationDataset">
+<a class="viewcode-back" href="../../../deeptrees.dataloading.html#deeptrees.dataloading.datasets.TreeCrownDelineationDataset">[docs]</a>
+<span class="k">class</span> <span class="nc">TreeCrownDelineationDataset</span><span class="p">(</span><span class="n">TreeCrownDelineationBaseDataset</span><span class="p">,</span> <span class="n">IterableDataset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Iterable TreeCrownDelineation dataset.</span>
+
+<span class="sd">    Yields samples from all rasters until, statistically, each pixel has been </span>
+<span class="sd">    covered once. If the raster edge length exceeds the sample edge length,</span>
+<span class="sd">    this implies that multiple samples can be sampled from one raster.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+<div class="viewcode-block" id="TreeCrownDelineationDataset.__init__">
+<a class="viewcode-back" href="../../../deeptrees.dataloading.html#deeptrees.dataloading.datasets.TreeCrownDelineationDataset.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> 
+                 <span class="n">raster_files</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> 
+                 <span class="n">target_files</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> 
+                 <span class="n">augmentation</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+                 <span class="n">ndvi_config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;concatenate&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+                 <span class="n">dilate_outlines</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                 <span class="n">overwrite_nan_with_zeros</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                 <span class="n">in_memory</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                 <span class="n">dim_ordering</span><span class="o">=</span><span class="s2">&quot;CHW&quot;</span><span class="p">,</span>
+                 <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float32&quot;</span><span class="p">,</span>
+                 <span class="n">divide_by</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;__init__ </span>
+
+<span class="sd">        Creates a dataset containing images and targets (masks, outlines, and distance_transforms).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            raster_files (list[str]): List of file paths to source rasters. File names must be of the form &#39;.../the_name_i.tif&#39; where i is some index</span>
+<span class="sd">            target_files (list[str]): mask_files: A tuple containing lists of file paths to different sorts of &#39;masks&#39;, e.g. mask, outline, distance transform.</span>
+<span class="sd">                  The mask and raster file names must have the same index ending.</span>
+<span class="sd">            augmentation (Dict[str, Any]): Dictionary defining augmentations. Keys correspond to torchvision transforms, values to their kwargs.</span>
+<span class="sd">            ndvi_config (_type_, optional): Dictionary defining NDVI concatenation. Defaults to {&#39;concatenate&#39;: False}.</span>
+<span class="sd">            dilate_outlines (int, optional): If present, dilate outlines by give amount of pixels. Defaults to 0.</span>
+<span class="sd">            overwrite_nan_with_zeros (bool, optional): If True, fill missing values in targets with 0. Defaults to True.</span>
+<span class="sd">            in_memory (bool, optional): If True, load all rasters and targets into memory (works for small datasets, beware of OOM error). Defaults to True.</span>
+<span class="sd">            dim_ordering (str, optional): Order of dimensions. Defaults to &quot;CHW&quot;.</span>
+<span class="sd">            dtype (str, optional): torch Datatype. Defaults to &quot;float32&quot;.</span>
+<span class="sd">            divide_by (int, optional): Scalar to divide the raster pixel values by. Defaults to 1.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">raster_files</span><span class="p">,</span> <span class="n">target_files</span><span class="p">,</span> <span class="n">augmentation</span><span class="p">,</span> <span class="n">ndvi_config</span><span class="p">,</span> <span class="n">dilate_outlines</span><span class="p">,</span>
+                         <span class="n">overwrite_nan_with_zeros</span><span class="p">,</span> <span class="n">in_memory</span><span class="p">,</span> <span class="n">dim_ordering</span><span class="p">,</span> <span class="n">dtype</span><span class="p">,</span> <span class="n">divide_by</span>
+                         <span class="p">)</span>
+
+        <span class="c1"># Check that raster ID matches target ID - only in iterable dataset used in training!</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">target_files</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Mask list </span><span class="si">{}</span><span class="s2"> is empty.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">raster_files</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;The length of the given lists must be equal.&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">raster_files</span><span class="p">):</span>
+                <span class="n">raster_file_index</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;(_\d+_\d+.tif)&#39;</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span><span class="o">.</span><span class="n">group</span><span class="p">()</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">m</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">raster_file_index</span><span class="p">):</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">m</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The raster and mask lists must be sorted equally.&quot;</span><span class="p">)</span></div>
+
+
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Length of the dataset.</span>
+
+<span class="sd">        For this iterable dataset, we can define a length that stops the iteration.</span>
+
+<span class="sd">        Here, we define the length as the total pixels divided by the cutout (sample)</span>
+<span class="sd">        pixels. This implies that, on average, each pixel has been included once</span>
+<span class="sd">        in a sample.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: Prescribed dataset length.</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
+        <span class="c1"># sum of product of all raster sizes</span>
+        <span class="n">total_pixels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">shape</span><span class="p">)[</span><span class="bp">self</span><span class="o">.</span><span class="n">lateral_ax</span><span class="p">])</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rasters</span><span class="p">])</span>
+        <span class="c1"># product of the shape of cutout done by the transformation</span>
+        <span class="n">cutout_pixels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cutout_size</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">total_pixels</span> <span class="o">/</span> <span class="n">cutout_pixels</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Iterate the dataset and yield a sample.</span>
+
+<span class="sd">        A sample is a cutout of an original raster file, can include augmentations.</span>
+
+<span class="sd">        Yields:</span>
+<span class="sd">            torch.Tensor: raster</span>
+<span class="sd">            torch.Tensor: target (mask, outline, and distance transform stacked)</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rasters</span><span class="p">)))</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">in_memory</span><span class="p">:</span> <span class="c1"># retrieve preloaded tiles</span>
+                <span class="n">raster</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rasters</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+                <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">targets</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+            <span class="k">else</span><span class="p">:</span> <span class="c1"># load from disk</span>
+                <span class="n">raster</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_raster</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raster_files</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+                <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_target</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_files</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+
+            <span class="n">raster</span> <span class="o">=</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="n">raster</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+            <span class="n">target</span> <span class="o">=</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+            <span class="n">raster</span><span class="p">,</span> <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">augment_joint</span><span class="p">(</span><span class="n">raster</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+            <span class="n">raster</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">augment_raster</span><span class="p">(</span><span class="n">raster</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">augment_target</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">augment_target</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">yield</span> <span class="n">raster</span><span class="p">,</span> <span class="n">target</span></div>
+
+    
+<div class="viewcode-block" id="TreeCrownDelineationInferenceDataset">
+<a class="viewcode-back" href="../../../deeptrees.dataloading.html#deeptrees.dataloading.datasets.TreeCrownDelineationInferenceDataset">[docs]</a>
+<span class="k">class</span> <span class="nc">TreeCrownDelineationInferenceDataset</span><span class="p">(</span><span class="n">TreeCrownDelineationBaseDataset</span><span class="p">,</span> <span class="n">Dataset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Map-style (&quot;standard&quot;) dataset for the TreeCrownDelineation data.</span>
+
+<span class="sd">    This dataset is used for inference and returns complete rasters along with selected metadata.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    - raster_files (list[str]): List of file paths to the raster images.</span>
+<span class="sd">    - augmentation (Dict[str, Any]): Dictionary containing augmentation configurations.</span>
+<span class="sd">    - ndvi_config (Dict[str, Any], optional): Configuration for NDVI, default is {&#39;concatenate&#39;: False}.</span>
+<span class="sd">    - dilate_outlines (int, optional): Number of pixels to dilate the outlines, default is 0.</span>
+<span class="sd">    - overwrite_nan_with_zeros (bool, optional): Whether to overwrite NaN values with zeros, default is True.</span>
+<span class="sd">    - in_memory (bool, optional): Whether to load the data into memory, default is True.</span>
+<span class="sd">    - dim_ordering (str, optional): Dimension ordering, default is &quot;CHW&quot;.</span>
+<span class="sd">    - dtype (str, optional): Data type of the raster images, default is &quot;float32&quot;.</span>
+<span class="sd">    - divide_by (int, optional): Value to divide the raster data by, default is 1.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+<div class="viewcode-block" id="TreeCrownDelineationInferenceDataset.__init__">
+<a class="viewcode-back" href="../../../deeptrees.dataloading.html#deeptrees.dataloading.datasets.TreeCrownDelineationInferenceDataset.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> 
+                 <span class="n">raster_files</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> 
+                 <span class="n">augmentation</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+                 <span class="n">ndvi_config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;concatenate&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+                 <span class="n">dilate_outlines</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                 <span class="n">overwrite_nan_with_zeros</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                 <span class="n">in_memory</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                 <span class="n">dim_ordering</span><span class="o">=</span><span class="s2">&quot;CHW&quot;</span><span class="p">,</span>
+                 <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float32&quot;</span><span class="p">,</span>
+                 <span class="n">divide_by</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;__init__ </span>
+
+<span class="sd">        Creates a dataset containing images and targets (masks, outlines, and distance_transforms).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            raster_files (list[str]): List of file paths to source rasters. File names must be of the form &#39;.../the_name_i.tif&#39; where i is some index</span>
+<span class="sd">            target_files (list[str]): mask_files: A tuple containing lists of file paths to different sorts of &#39;masks&#39;, e.g. mask, outline, distance transform.</span>
+<span class="sd">                  The mask and raster file names must have the same index ending.</span>
+<span class="sd">            augmentation (Dict[str, Any]): Dictionary defining augmentations. Keys correspond to torchvision transforms, values to their kwargs.</span>
+<span class="sd">            ndvi_config (_type_, optional): Dictionary defining NDVI concatenation. Defaults to {&#39;concatenate&#39;: False}.</span>
+<span class="sd">            dilate_outlines (int, optional): If present, dilate outlines by give amount of pixels. Defaults to 0.</span>
+<span class="sd">            overwrite_nan_with_zeros (bool, optional): If True, fill missing values in targets with 0. Defaults to True.</span>
+<span class="sd">            in_memory (bool, optional): If True, load all rasters and targets into memory (works for small datasets, beware of OOM error). Defaults to True.</span>
+<span class="sd">            dim_ordering (str, optional): Order of dimensions. Defaults to &quot;CHW&quot;.</span>
+<span class="sd">            dtype (str, optional): torch Datatype. Defaults to &quot;float32&quot;.</span>
+<span class="sd">            divide_by (int, optional): Scalar to divide the raster pixel values by. Defaults to 1.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">raster_files</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">augmentation</span><span class="p">,</span> <span class="n">ndvi_config</span><span class="p">,</span> <span class="n">dilate_outlines</span><span class="p">,</span>
+                         <span class="n">overwrite_nan_with_zeros</span><span class="p">,</span> <span class="n">in_memory</span><span class="p">,</span> <span class="n">dim_ordering</span><span class="p">,</span> <span class="n">dtype</span><span class="p">,</span> <span class="n">divide_by</span>
+                         <span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Returns length of the dataset: number of raster files&#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raster_files</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
+
+<span class="sd">        Get one sample into the test/predict pipeline.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            idx (int): Index.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            - *raster*: Raster for making the prediction. Can be augmented.</span>
+<span class="sd">            - Dictionary with the keys</span>
+<span class="sd">               *trafo*:  Coordinates of current raster for post-processing.</span>
+<span class="sd">               *raster_id*: File name to be used in post-processing.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Predicting on </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">raster_files</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">in_memory</span><span class="p">:</span> <span class="c1"># retrieve preloaded tiles</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;Inference only works with loading data on-the-fly&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span> <span class="c1"># load from disk</span>
+            <span class="n">raster</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_raster</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raster_files</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+
+        <span class="n">output_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;trafo&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">get_rioxarray_trafo</span><span class="p">(</span><span class="n">raster</span><span class="p">)),</span>
+                       <span class="s1">&#39;raster_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">raster_files</span><span class="p">[</span><span class="n">idx</span><span class="p">]}</span>
+
+
+        <span class="n">raster</span> <span class="o">=</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="n">raster</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">raster</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">augment_raster</span><span class="p">(</span><span class="n">raster</span><span class="p">)</span>
+                
+        <span class="k">return</span> <span class="n">raster</span><span class="p">,</span> <span class="n">output_dict</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Taimur Khan, Caroline Arnold, Harsh Grover.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

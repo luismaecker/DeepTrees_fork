@@ -1,5 +1,4 @@
-__author__ = "Max Freudenberg"
-__version__ = "0.1.0"
+__version__ = "v1.6.0"
 
 from . import model
 from . import modules

@@ -1,0 +1,654 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>deeptrees.model.deeptrees_model &mdash; TorchTrees  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            TorchTrees
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../overview.html">Architectural Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides.html">Developer Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deeptrees.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">TorchTrees</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../deeptrees.html">deeptrees</a></li>
+      <li class="breadcrumb-item active">deeptrees.model.deeptrees_model</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for deeptrees.model.deeptrees_model</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">rootutils</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="c1"># path = rootutils.find_root(search_from=__file__, indicator=&quot;.project-root&quot;)</span>
+<span class="n">path</span> <span class="o">=</span> <span class="n">rootutils</span><span class="o">.</span><span class="n">find_root</span><span class="p">(</span><span class="n">search_from</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">),</span> <span class="n">indicator</span><span class="o">=</span><span class="s2">&quot;.project-root&quot;</span><span class="p">)</span>
+
+<span class="c1"># set root directory</span>
+<span class="n">rootutils</span><span class="o">.</span><span class="n">set_root</span><span class="p">(</span>
+    <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span>  <span class="c1"># path to the root directory</span>
+    <span class="n">project_root_env_var</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># set the PROJECT_ROOT environment variable to root directory</span>
+    <span class="n">dotenv</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># load environment variables from .env if exists in root directory</span>
+    <span class="n">pythonpath</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># add root directory to the PYTHONPATH (helps with imports)</span>
+    <span class="n">cwd</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="c1"># we do not want that with hydra</span>
+<span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span>
+<span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
+<span class="kn">import</span> <span class="nn">lightning</span> <span class="k">as</span> <span class="nn">L</span>
+<span class="kn">from</span> <span class="nn">torchmetrics.functional.segmentation</span> <span class="kn">import</span> <span class="n">mean_iou</span>
+
+<span class="kn">from</span> <span class="nn">deeptrees.model.segmentation_model</span> <span class="kn">import</span> <span class="n">SegmentationModel</span>
+<span class="kn">from</span> <span class="nn">deeptrees.model.distance_model</span> <span class="kn">import</span> <span class="n">DistanceModel</span>
+<span class="kn">from</span> <span class="nn">deeptrees.modules</span> <span class="kn">import</span> <span class="n">metrics</span>
+<span class="kn">from</span> <span class="nn">deeptrees.modules.losses</span> <span class="kn">import</span> <span class="n">BinarySegmentationLossWithLogits</span>
+<span class="kn">from</span> <span class="nn">deeptrees.modules</span> <span class="kn">import</span> <span class="n">postprocessing</span> <span class="k">as</span> <span class="n">tcdpp</span>
+<span class="kn">from</span> <span class="nn">deeptrees.modules</span> <span class="kn">import</span> <span class="n">utils</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="TreeCrownDelineationModel">
+<a class="viewcode-back" href="../../../deeptrees.model.html#deeptrees.model.deeptrees_model.TreeCrownDelineationModel">[docs]</a>
+<span class="k">class</span> <span class="nc">TreeCrownDelineationModel</span><span class="p">(</span><span class="n">L</span><span class="o">.</span><span class="n">LightningModule</span><span class="p">):</span>
+<div class="viewcode-block" id="TreeCrownDelineationModel.__init__">
+<a class="viewcode-back" href="../../../deeptrees.model.html#deeptrees.model.deeptrees_model.TreeCrownDelineationModel.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">,</span>
+                 <span class="n">architecture</span><span class="o">=</span><span class="s1">&#39;Unet&#39;</span><span class="p">,</span>
+                 <span class="n">backbone</span><span class="o">=</span><span class="s1">&#39;resnet18&#39;</span><span class="p">,</span>
+                 <span class="n">lr</span><span class="o">=</span><span class="mf">1E-4</span><span class="p">,</span>
+                 <span class="n">mask_iou_share</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+                 <span class="n">apply_sigmoid</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Tree crown delineation model</span>
+
+<span class="sd">        The model consists of two sub-netoworks (two U-Nets with ResNet backbone). The first network calculates a tree</span>
+<span class="sd">        cover mask and the tree outlines, the second calculates the distance transform of the masks (distance to next</span>
+<span class="sd">        background pixel). The first net receives the input image, the second one receives the input image and the output of network 1.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            in_channels: Number of input channels / bands of the input image</span>
+<span class="sd">            architecture (str): segmentation model architecture</span>
+<span class="sd">            backbone (str): segmentation model backbone</span>
+<span class="sd">            lr: learning rate</span>
+<span class="sd">            apply_sigmoid (bool): If True, apply sigmoid function to mask/outline outputs. Defaults to False.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seg_model</span> <span class="o">=</span> <span class="n">SegmentationModel</span><span class="p">(</span><span class="n">in_channels</span><span class="o">=</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">architecture</span><span class="o">=</span><span class="n">architecture</span><span class="p">,</span> <span class="n">backbone</span><span class="o">=</span><span class="n">backbone</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dist_model</span> <span class="o">=</span> <span class="n">DistanceModel</span><span class="p">(</span><span class="n">in_channels</span><span class="o">=</span><span class="n">in_channels</span> <span class="o">+</span> <span class="mi">2</span><span class="p">,</span> <span class="n">architecture</span><span class="o">=</span><span class="n">architecture</span><span class="p">,</span> <span class="n">backbone</span><span class="o">=</span><span class="n">backbone</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">apply_sigmoid</span> <span class="o">=</span> <span class="n">apply_sigmoid</span></div>
+
+
+<div class="viewcode-block" id="TreeCrownDelineationModel.forward">
+<a class="viewcode-back" href="../../../deeptrees.model.html#deeptrees.model.deeptrees_model.TreeCrownDelineationModel.forward">[docs]</a>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
+        <span class="n">mask_and_outline</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">seg_model</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+        <span class="n">dist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dist_model</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">mask_and_outline</span><span class="p">,</span> <span class="n">from_logits</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># dist = dist * mask_and_outline[:, [0]]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_sigmoid</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">mask_and_outline</span><span class="p">),</span> <span class="n">dist</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">mask_and_outline</span><span class="p">,</span> <span class="n">dist</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
+</div>
+
+<div class="viewcode-block" id="DeepTreesModel">
+<a class="viewcode-back" href="../../../deeptrees.model.html#deeptrees.model.deeptrees_model.DeepTreesModel">[docs]</a>
+<span class="k">class</span> <span class="nc">DeepTreesModel</span><span class="p">(</span><span class="n">L</span><span class="o">.</span><span class="n">LightningModule</span><span class="p">):</span>
+<div class="viewcode-block" id="DeepTreesModel.__init__">
+<a class="viewcode-back" href="../../../deeptrees.model.html#deeptrees.model.deeptrees_model.DeepTreesModel.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">,</span>
+                 <span class="n">architecture</span><span class="o">=</span><span class="s1">&#39;Unet&#39;</span><span class="p">,</span>
+                 <span class="n">backbone</span><span class="o">=</span><span class="s1">&#39;resnet18&#39;</span><span class="p">,</span>
+                 <span class="n">lr</span><span class="o">=</span><span class="mf">1E-4</span><span class="p">,</span>
+                 <span class="n">mask_iou_share</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+                 <span class="n">apply_sigmoid</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">freeze_layers</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">track_running_stats</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">num_backbones</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                 <span class="n">postprocessing_config</span><span class="o">=</span><span class="p">{}</span>
+                 <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;DeepTrees Model</span>
+
+<span class="sd">        The model consists of a TreeCrownDelineation backbone, plus added functionalities for training, fine-tuning, and prediction.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            in_channels: Number of input channels / bands of the input image</span>
+<span class="sd">            architecture (str): segmentation model architecture</span>
+<span class="sd">            backbone (str): segmentation model backbone</span>
+<span class="sd">            lr: learning rate</span>
+<span class="sd">            apply_sigmode (bool): TODO</span>
+<span class="sd">            freeze_layers (bool): If True, freeze all layers but the segmentation head. Default: False.</span>
+<span class="sd">            track_running_stats (bool): If True, update batch norm layers. If False, keep them frozen. Default: True.</span>
+<span class="sd">            num_backbones (int): If &gt; 1, instantiate several TCD backbones and average the model predictions across all of them. Defaults to 1.</span>
+<span class="sd">            postprocessing_config (Dict[str, Any]): Set of parameters to apply in postprocessing (predict step). Default: {}.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_backbones</span> <span class="o">=</span> <span class="n">num_backbones</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_backbones</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tcd_backbone</span> <span class="o">=</span> <span class="n">TreeCrownDelineationModel</span><span class="p">(</span><span class="n">in_channels</span><span class="o">=</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">architecture</span><span class="o">=</span><span class="n">architecture</span><span class="p">,</span> <span class="n">backbone</span><span class="o">=</span><span class="n">backbone</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">,</span> <span class="n">mask_iou_share</span><span class="o">=</span><span class="n">mask_iou_share</span><span class="p">,</span> <span class="n">apply_sigmoid</span><span class="o">=</span><span class="n">apply_sigmoid</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tcd_dict</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_backbones</span><span class="p">):</span>
+                <span class="n">tcd_dict</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;model_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">TreeCrownDelineationModel</span><span class="p">(</span><span class="n">in_channels</span><span class="o">=</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">architecture</span><span class="o">=</span><span class="n">architecture</span><span class="p">,</span> <span class="n">backbone</span><span class="o">=</span><span class="n">backbone</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">,</span> <span class="n">mask_iou_share</span><span class="o">=</span><span class="n">mask_iou_share</span><span class="p">,</span> <span class="n">apply_sigmoid</span><span class="o">=</span><span class="n">apply_sigmoid</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tcd_backbone</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleDict</span><span class="p">(</span><span class="n">tcd_dict</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">freeze_layers</span> <span class="o">=</span> <span class="n">freeze_layers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">track_running_stats</span> <span class="o">=</span> <span class="n">track_running_stats</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mask_iou_share</span> <span class="o">=</span> <span class="n">mask_iou_share</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lr</span> <span class="o">=</span> <span class="n">lr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">apply_sigmoid</span> <span class="o">=</span> <span class="n">apply_sigmoid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">postprocessing_config</span> <span class="o">=</span> <span class="n">postprocessing_config</span>
+
+        <span class="c1"># freeze all layers but segmentation head</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">freeze_layers</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s2">&quot;segmentation_head&quot;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+                    <span class="n">param</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">param</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># freeze the batch norm layers</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">track_running_stats</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">():</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">):</span>
+                    <span class="n">module</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+                    <span class="n">module</span><span class="o">.</span><span class="n">track_running_stats</span> <span class="o">=</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="DeepTreesModel.forward">
+<a class="viewcode-back" href="../../../deeptrees.model.html#deeptrees.model.deeptrees_model.DeepTreesModel.forward">[docs]</a>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_backbones</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tcd_backbone</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">outputs</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_backbones</span><span class="p">):</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tcd_backbone</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;model_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">](</span><span class="n">img</span><span class="p">)</span>
+                <span class="n">outputs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+            
+            <span class="n">outputs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">outputs</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DeepTreesModel.shared_step">
+<a class="viewcode-back" href="../../../deeptrees.model.html#deeptrees.model.deeptrees_model.DeepTreesModel.shared_step">[docs]</a>
+    <span class="k">def</span> <span class="nf">shared_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">iou_feature_map</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Perform a shared step in the model training or evaluation process.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            batch (tuple): A tuple containing input data (x) and target data (y).</span>
+<span class="sd">            iou_feature_map (bool, optional): If True, calculate the IoU for the feature map. Defaults to False.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: A tuple containing the following elements:</span>
+<span class="sd">                - loss (torch.Tensor): The total loss combining mask, outline, and distance losses.</span>
+<span class="sd">                - loss_mask (torch.Tensor): The loss for the mask prediction.</span>
+<span class="sd">                - loss_outline (torch.Tensor): The loss for the outline prediction.</span>
+<span class="sd">                - loss_distance (torch.Tensor): The loss for the distance prediction.</span>
+<span class="sd">                - iou (torch.Tensor): The combined IoU of the mask and outline.</span>
+<span class="sd">                - iou_mask (torch.Tensor): The IoU of the mask.</span>
+<span class="sd">                - iou_outline (torch.Tensor): The IoU of the outline.</span>
+<span class="sd">                - iou_fmap (torch.Tensor, optional): The IoU of the feature map, if `iou_feature_map` is True.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">batch</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">output</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">outline</span> <span class="o">=</span> <span class="n">output</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">dist</span> <span class="o">=</span> <span class="n">output</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span>
+
+        <span class="n">mask_t</span> <span class="o">=</span> <span class="n">y</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">outline_t</span> <span class="o">=</span> <span class="n">y</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">dist_t</span> <span class="o">=</span> <span class="n">y</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span>
+
+        <span class="n">iou_mask</span> <span class="o">=</span> <span class="n">metrics</span><span class="o">.</span><span class="n">iou</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">mask</span><span class="p">),</span> <span class="n">mask_t</span><span class="p">)</span>
+        <span class="n">iou_outline</span> <span class="o">=</span> <span class="n">metrics</span><span class="o">.</span><span class="n">iou</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">outline</span><span class="p">),</span> <span class="n">outline_t</span><span class="p">)</span>
+
+        <span class="n">loss_mask</span> <span class="o">=</span> <span class="n">BinarySegmentationLossWithLogits</span><span class="p">(</span><span class="n">reduction</span><span class="o">=</span><span class="s2">&quot;mean&quot;</span><span class="p">)(</span><span class="n">mask</span><span class="p">,</span> <span class="n">mask_t</span><span class="p">)</span>
+        <span class="n">loss_outline</span> <span class="o">=</span> <span class="n">BinarySegmentationLossWithLogits</span><span class="p">(</span><span class="n">reduction</span><span class="o">=</span><span class="s2">&quot;mean&quot;</span><span class="p">)(</span>
+            <span class="n">outline</span><span class="p">,</span> <span class="n">outline_t</span>
+        <span class="p">)</span>
+        <span class="n">loss_distance</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">mse_loss</span><span class="p">(</span><span class="n">dist</span><span class="p">,</span> <span class="n">dist_t</span><span class="p">)</span>
+
+        <span class="c1"># lower mask loss results in unlearning the masks</span>
+        <span class="c1"># lower distance loss results in artifacts in the distance transform</span>
+        <span class="c1"># TODO add option to weight the different losses</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="n">loss_mask</span> <span class="o">+</span> <span class="n">loss_outline</span> <span class="o">+</span> <span class="n">loss_distance</span>
+
+        <span class="n">iou</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_iou_share</span> <span class="o">*</span> <span class="n">iou_mask</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_iou_share</span><span class="p">)</span> <span class="o">*</span> <span class="n">iou_outline</span>
+
+        <span class="k">if</span> <span class="n">iou_feature_map</span><span class="p">:</span>
+            <span class="n">fmap_pred</span> <span class="o">=</span> <span class="n">tcdpp</span><span class="o">.</span><span class="n">calculate_feature_map</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">outline</span><span class="p">,</span> <span class="n">dist</span><span class="p">)</span>
+            <span class="n">fmap_target</span> <span class="o">=</span> <span class="n">tcdpp</span><span class="o">.</span><span class="n">calculate_feature_map</span><span class="p">(</span><span class="n">mask_t</span><span class="p">,</span> <span class="n">outline_t</span><span class="p">,</span> <span class="n">dist_t</span><span class="p">)</span>
+            <span class="n">iou_fmap</span> <span class="o">=</span> <span class="n">metrics</span><span class="o">.</span><span class="n">iou</span><span class="p">(</span><span class="n">fmap_pred</span><span class="p">,</span> <span class="n">fmap_target</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="n">loss</span><span class="p">,</span>
+                <span class="n">loss_mask</span><span class="p">,</span>
+                <span class="n">loss_outline</span><span class="p">,</span>
+                <span class="n">loss_distance</span><span class="p">,</span>
+                <span class="n">iou</span><span class="p">,</span>
+                <span class="n">iou_mask</span><span class="p">,</span>
+                <span class="n">iou_outline</span><span class="p">,</span>
+                <span class="n">iou_fmap</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">loss</span><span class="p">,</span> <span class="n">loss_mask</span><span class="p">,</span> <span class="n">loss_outline</span><span class="p">,</span> <span class="n">loss_distance</span><span class="p">,</span> <span class="n">iou</span><span class="p">,</span> <span class="n">iou_mask</span><span class="p">,</span> <span class="n">iou_outline</span></div>
+
+
+<div class="viewcode-block" id="DeepTreesModel.training_step">
+<a class="viewcode-back" href="../../../deeptrees.model.html#deeptrees.model.deeptrees_model.DeepTreesModel.training_step">[docs]</a>
+    <span class="k">def</span> <span class="nf">training_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Perform a single training step.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            batch (Tensor): The input batch of data.</span>
+<span class="sd">            step (int): The current training step.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Tensor: The computed loss for the current training step.</span>
+<span class="sd">        Logs:</span>
+<span class="sd">            train/loss (float): The overall training loss.</span>
+<span class="sd">            train/loss_mask (float): The training loss for the mask.</span>
+<span class="sd">            train/loss_outline (float): The training loss for the outline.</span>
+<span class="sd">            train/loss_dist (float): The training loss for the distance.</span>
+<span class="sd">            train/iou (float): The Intersection over Union (IoU) metric.</span>
+<span class="sd">            train/iou_mask (float): The IoU metric for the mask.</span>
+<span class="sd">            train/iou_outline (float): The IoU metric for the outline.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">loss</span><span class="p">,</span> <span class="n">loss_mask</span><span class="p">,</span> <span class="n">loss_outline</span><span class="p">,</span> <span class="n">loss_distance</span><span class="p">,</span> <span class="n">iou</span><span class="p">,</span> <span class="n">iou_mask</span><span class="p">,</span> <span class="n">iou_outline</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shared_step</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;train/loss&quot;</span><span class="p">,</span> <span class="n">loss</span><span class="p">,</span> <span class="n">on_step</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">on_epoch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sync_dist</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
+            <span class="s2">&quot;train/loss_mask&quot;</span><span class="p">,</span> <span class="n">loss_mask</span><span class="p">,</span> <span class="n">on_step</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">on_epoch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sync_dist</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
+            <span class="s2">&quot;train/loss_outline&quot;</span><span class="p">,</span>
+            <span class="n">loss_outline</span><span class="p">,</span>
+            <span class="n">on_step</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">on_epoch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">sync_dist</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
+            <span class="s2">&quot;train/loss_dist&quot;</span><span class="p">,</span>
+            <span class="n">loss_distance</span><span class="p">,</span>
+            <span class="n">on_step</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">on_epoch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">sync_dist</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;train/iou&quot;</span><span class="p">,</span> <span class="n">iou</span><span class="p">,</span> <span class="n">on_step</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">on_epoch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sync_dist</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
+            <span class="s2">&quot;train/iou_mask&quot;</span><span class="p">,</span> <span class="n">iou_mask</span><span class="p">,</span> <span class="n">on_step</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">on_epoch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sync_dist</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
+            <span class="s2">&quot;train/iou_outline&quot;</span><span class="p">,</span>
+            <span class="n">iou_outline</span><span class="p">,</span>
+            <span class="n">on_step</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">on_epoch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">sync_dist</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">loss</span></div>
+
+
+<div class="viewcode-block" id="DeepTreesModel.validation_step">
+<a class="viewcode-back" href="../../../deeptrees.model.html#deeptrees.model.deeptrees_model.DeepTreesModel.validation_step">[docs]</a>
+    <span class="k">def</span> <span class="nf">validation_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Performs a validation step during the training process.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            batch (Tensor): The input batch of data.</span>
+<span class="sd">            step (int): The current step in the validation process.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Tensor: The computed loss for the validation step.</span>
+<span class="sd">        Logs:</span>
+<span class="sd">            val/loss (float): The overall validation loss.</span>
+<span class="sd">            val/loss_mask (float): The validation loss for the mask.</span>
+<span class="sd">            val/loss_outline (float): The validation loss for the outline.</span>
+<span class="sd">            val/loss_dist (float): The validation loss for the distance.</span>
+<span class="sd">            val/iou (float): The Intersection over Union (IoU) metric.</span>
+<span class="sd">            val/iou_mask (float): The IoU metric for the mask.</span>
+<span class="sd">            val/iou_outline (float): The IoU metric for the outline.</span>
+<span class="sd">            val/iou_feature_map (float): The IoU metric for the feature map.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="p">(</span>
+            <span class="n">loss</span><span class="p">,</span>
+            <span class="n">loss_mask</span><span class="p">,</span>
+            <span class="n">loss_outline</span><span class="p">,</span>
+            <span class="n">loss_distance</span><span class="p">,</span>
+            <span class="n">iou</span><span class="p">,</span>
+            <span class="n">iou_mask</span><span class="p">,</span>
+            <span class="n">iou_outline</span><span class="p">,</span>
+            <span class="n">iou_fmap</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shared_step</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">iou_feature_map</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;val/loss&quot;</span><span class="p">,</span> <span class="n">loss</span><span class="p">,</span> <span class="n">on_step</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">on_epoch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sync_dist</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
+            <span class="s2">&quot;val/loss_mask&quot;</span><span class="p">,</span> <span class="n">loss_mask</span><span class="p">,</span> <span class="n">on_step</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">on_epoch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sync_dist</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
+            <span class="s2">&quot;val/loss_outline&quot;</span><span class="p">,</span>
+            <span class="n">loss_outline</span><span class="p">,</span>
+            <span class="n">on_step</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">on_epoch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">sync_dist</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
+            <span class="s2">&quot;val/loss_dist&quot;</span><span class="p">,</span> <span class="n">loss_distance</span><span class="p">,</span> <span class="n">on_step</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">on_epoch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sync_dist</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;val/iou&quot;</span><span class="p">,</span> <span class="n">iou</span><span class="p">,</span> <span class="n">on_step</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">on_epoch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sync_dist</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;val/iou_mask&quot;</span><span class="p">,</span> <span class="n">iou_mask</span><span class="p">,</span> <span class="n">on_step</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">on_epoch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sync_dist</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
+            <span class="s2">&quot;val/iou_outline&quot;</span><span class="p">,</span> <span class="n">iou_outline</span><span class="p">,</span> <span class="n">on_step</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">on_epoch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sync_dist</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
+            <span class="s2">&quot;val/iou_feature_map&quot;</span><span class="p">,</span>
+            <span class="n">iou_fmap</span><span class="p">,</span>
+            <span class="n">on_step</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">on_epoch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">sync_dist</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">loss</span></div>
+
+
+<div class="viewcode-block" id="DeepTreesModel.test_step">
+<a class="viewcode-back" href="../../../deeptrees.model.html#deeptrees.model.deeptrees_model.DeepTreesModel.test_step">[docs]</a>
+    <span class="k">def</span> <span class="nf">test_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Perform a test step on a given batch of data.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            batch (Tensor): The input data batch.</span>
+<span class="sd">            step (int): The current step number.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: A dictionary containing the following keys:</span>
+<span class="sd">            - &#39;mask&#39;: The mask output from the model.</span>
+<span class="sd">            - &#39;outline&#39;: The outline output from the model.</span>
+<span class="sd">            - &#39;distance_transform&#39;: The distance transform output from the model.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="n">batch</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="n">output_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;mask&quot;</span><span class="p">:</span> <span class="n">output</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+            <span class="s2">&quot;outline&quot;</span><span class="p">:</span> <span class="n">output</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span>
+            <span class="s2">&quot;distance_transform&quot;</span><span class="p">:</span> <span class="n">output</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">output_dict</span></div>
+
+
+<div class="viewcode-block" id="DeepTreesModel.predict_step">
+<a class="viewcode-back" href="../../../deeptrees.model.html#deeptrees.model.deeptrees_model.DeepTreesModel.predict_step">[docs]</a>
+    <span class="k">def</span> <span class="nf">predict_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Perform a prediction step on a given batch of data.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            batch (tuple): A tuple containing the input data and the transformation information.</span>
+<span class="sd">            step (int): The current step number, used for saving prediction outputs.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: A dictionary containing the extracted polygons and, if active learning is enabled,</span>
+<span class="sd">                  the mean and median entropy values.</span>
+<span class="sd">        This function performs the following steps:</span>
+<span class="sd">        1. Runs inference on the input data to generate output predictions.</span>
+<span class="sd">        2. Extracts mask, outline, and distance transform from the output.</span>
+<span class="sd">        3. Saves the predictions if configured to do so.</span>
+<span class="sd">        4. If active learning is enabled, calculates the probability map and entropy map, logs the mean and median entropy,</span>
+<span class="sd">           and saves the entropy maps if configured to do so.</span>
+<span class="sd">        5. Extracts polygons from the mask, outline, and distance transform using the specified postprocessing configuration.</span>
+<span class="sd">        6. Logs the number of polygons found, inference time, and post-processing time.</span>
+<span class="sd">        7. Returns a dictionary containing the extracted polygons and, if active learning is enabled, the mean and median entropy values.</span>
+<span class="sd">        Note:</span>
+<span class="sd">            - The function contains TODOs for using raster tile names and rasterizing outputs.</span>
+<span class="sd">            - Additional postprocessing steps and trait extraction can be added as needed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">raster_dict</span> <span class="o">=</span> <span class="n">batch</span>
+
+        <span class="c1"># predict step assumes batch size is 1 - extract first list entry</span>
+        <span class="k">assert</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Predict batch size must be 1&quot;</span><span class="p">)</span>
+        <span class="n">trafo</span> <span class="o">=</span> <span class="n">raster_dict</span><span class="p">[</span><span class="s1">&#39;trafo&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">raster_name</span> <span class="o">=</span> <span class="n">raster_dict</span><span class="p">[</span><span class="s1">&#39;raster_id&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">raster_suffix</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">raster_name</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;tile_&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Predicting on </span><span class="si">{</span><span class="n">raster_name</span><span class="si">}</span><span class="s1"> ...&#39;</span><span class="p">)</span>
+
+        <span class="c1"># We need to apply this patch-wise to fulfil the requirement that edge length // 32 == 0</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">predict_on_tile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+        <span class="n">t_inference</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span>
+
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">output</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+        <span class="n">outline</span> <span class="o">=</span> <span class="n">output</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+        <span class="n">distance_transform</span> <span class="o">=</span> <span class="n">output</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">postprocessing_config</span><span class="p">[</span><span class="s1">&#39;save_predictions&#39;</span><span class="p">]:</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">array_to_tif</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;./predictions/mask_</span><span class="si">{</span><span class="n">raster_suffix</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">src_raster</span><span class="o">=</span><span class="n">raster_name</span><span class="p">,</span> <span class="n">num_bands</span><span class="o">=</span><span class="s1">&#39;single&#39;</span><span class="p">)</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">array_to_tif</span><span class="p">(</span><span class="n">outline</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;./predictions/outline_</span><span class="si">{</span><span class="n">raster_suffix</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">src_raster</span><span class="o">=</span><span class="n">raster_name</span><span class="p">,</span> <span class="n">num_bands</span><span class="o">=</span><span class="s1">&#39;single&#39;</span><span class="p">)</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">array_to_tif</span><span class="p">(</span><span class="n">distance_transform</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;./predictions/distance_transform_</span><span class="si">{</span><span class="n">raster_suffix</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">src_raster</span><span class="o">=</span><span class="n">raster_name</span><span class="p">,</span> <span class="n">num_bands</span><span class="o">=</span><span class="s1">&#39;single&#39;</span><span class="p">)</span>
+
+        <span class="c1"># active learning</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">postprocessing_config</span><span class="p">[</span><span class="s2">&quot;active_learning&quot;</span><span class="p">]:</span>
+            <span class="n">pmap</span> <span class="o">=</span> <span class="n">tcdpp</span><span class="o">.</span><span class="n">calculate_probability_map</span><span class="p">(</span>
+                <span class="n">mask</span><span class="p">,</span>
+                <span class="n">outline</span><span class="p">,</span>
+                <span class="n">distance_transform</span><span class="p">,</span>
+                <span class="n">mask_exp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">postprocessing_config</span><span class="p">[</span><span class="s2">&quot;mask_exp&quot;</span><span class="p">],</span>
+                <span class="n">outline_multiplier</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">postprocessing_config</span><span class="p">[</span><span class="s2">&quot;outline_multiplier&quot;</span><span class="p">],</span>
+                <span class="n">outline_exp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">postprocessing_config</span><span class="p">[</span><span class="s2">&quot;outline_exp&quot;</span><span class="p">],</span>
+                <span class="n">dist_exp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">postprocessing_config</span><span class="p">[</span><span class="s2">&quot;dist_exp&quot;</span><span class="p">],</span>
+                <span class="n">sigma</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">postprocessing_config</span><span class="p">[</span><span class="s2">&quot;sigma&quot;</span><span class="p">],</span>
+            <span class="p">)</span>
+            <span class="n">entropy_map</span> <span class="o">=</span> <span class="n">tcdpp</span><span class="o">.</span><span class="n">calculate_entropy</span><span class="p">(</span><span class="n">pmap</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Mean entropy in </span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">raster_name</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">entropy_map</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Max entropy in </span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">raster_name</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">entropy_map</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">postprocessing_config</span><span class="p">[</span><span class="s1">&#39;save_entropy_maps&#39;</span><span class="p">]:</span>
+                <span class="n">utils</span><span class="o">.</span><span class="n">array_to_tif</span><span class="p">(</span><span class="n">entropy_map</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;./entropy_maps/entropy_heatmap_</span><span class="si">{</span><span class="n">raster_suffix</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">src_raster</span><span class="o">=</span><span class="n">raster_name</span><span class="p">)</span>
+
+        <span class="c1"># add postprocessing here</span>
+        <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">polygons</span> <span class="o">=</span> <span class="n">tcdpp</span><span class="o">.</span><span class="n">extract_polygons</span><span class="p">(</span>
+            <span class="n">mask</span><span class="p">,</span>
+            <span class="n">outline</span><span class="p">,</span>
+            <span class="n">distance_transform</span><span class="p">,</span>
+            <span class="n">transform</span><span class="o">=</span><span class="n">trafo</span><span class="p">,</span>
+            <span class="n">mask_exp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">postprocessing_config</span><span class="p">[</span><span class="s2">&quot;mask_exp&quot;</span><span class="p">],</span>
+            <span class="n">outline_multiplier</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">postprocessing_config</span><span class="p">[</span><span class="s2">&quot;outline_multiplier&quot;</span><span class="p">],</span>
+            <span class="n">outline_exp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">postprocessing_config</span><span class="p">[</span><span class="s2">&quot;outline_exp&quot;</span><span class="p">],</span>
+            <span class="n">dist_exp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">postprocessing_config</span><span class="p">[</span><span class="s2">&quot;dist_exp&quot;</span><span class="p">],</span>
+            <span class="n">sigma</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">postprocessing_config</span><span class="p">[</span><span class="s2">&quot;sigma&quot;</span><span class="p">],</span>
+            <span class="n">binary_threshold</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">postprocessing_config</span><span class="p">[</span><span class="s2">&quot;binary_threshold&quot;</span><span class="p">],</span>
+            <span class="n">min_dist</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">postprocessing_config</span><span class="p">[</span><span class="s2">&quot;min_dist&quot;</span><span class="p">],</span>
+            <span class="n">label_threshold</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">postprocessing_config</span><span class="p">[</span><span class="s2">&quot;label_threshold&quot;</span><span class="p">],</span>
+            <span class="n">area_min</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">postprocessing_config</span><span class="p">[</span><span class="s2">&quot;area_min&quot;</span><span class="p">],</span>
+            <span class="n">simplify</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">postprocessing_config</span><span class="p">[</span><span class="s2">&quot;simplify&quot;</span><span class="p">],</span>
+        <span class="p">)</span>
+
+        <span class="n">t_process</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span>
+
+        <span class="c1"># TODO add option to extract the masked raster files of the polygons</span>
+
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">polygons</span><span class="p">)</span><span class="si">}</span><span class="s2"> polygons.&quot;</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Inference time: </span><span class="si">{</span><span class="n">t_inference</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> seconds&quot;</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Post-processing time: </span><span class="si">{</span><span class="n">t_process</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> seconds&quot;</span><span class="p">)</span>
+
+        <span class="n">output_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;polygons&quot;</span><span class="p">:</span> <span class="n">polygons</span><span class="p">}</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">postprocessing_config</span><span class="p">[</span><span class="s2">&quot;active_learning&quot;</span><span class="p">]:</span>
+            <span class="n">output_dict</span><span class="p">[</span><span class="s2">&quot;mean_entropy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">entropy_map</span><span class="p">)</span>
+            <span class="n">output_dict</span><span class="p">[</span><span class="s2">&quot;median_entropy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">entropy_map</span><span class="p">)</span>
+
+        <span class="c1"># TODO add traits</span>
+
+        <span class="k">return</span> <span class="n">output_dict</span></div>
+
+
+<div class="viewcode-block" id="DeepTreesModel.configure_optimizers">
+<a class="viewcode-back" href="../../../deeptrees.model.html#deeptrees.model.deeptrees_model.DeepTreesModel.configure_optimizers">[docs]</a>
+    <span class="k">def</span> <span class="nf">configure_optimizers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Configures the optimizer for the model training.</span>
+<span class="sd">        If `freeze_layers` is set to True, logs the names of the parameters that will be trained.</span>
+<span class="sd">        Creates an Adam optimizer with the learning rate specified by `self.lr`, filtering out parameters</span>
+<span class="sd">        that do not require gradients.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            list: A list containing the configured optimizer.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">freeze_layers</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Parameters in </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> will be trained&quot;</span><span class="p">)</span>
+        <span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span>
+            <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">p</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">()),</span> <span class="n">lr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">lr</span>
+        <span class="p">)</span>
+        <span class="c1"># scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, 30, 2)</span>
+        <span class="c1"># return [optimizer], [scheduler]</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">optimizer</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="DeepTreesModel.from_checkpoint">
+<a class="viewcode-back" href="../../../deeptrees.model.html#deeptrees.model.deeptrees_model.DeepTreesModel.from_checkpoint">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_checkpoint</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">architecture</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Unet&quot;</span><span class="p">,</span>
+        <span class="n">backbone</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;resnet18&quot;</span><span class="p">,</span>
+        <span class="n">in_channels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Load a model from a checkpoint file.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            path (str): The path to the checkpoint file.</span>
+<span class="sd">            architecture (str, optional): The architecture of the segmentation model. Defaults to &quot;Unet&quot;.</span>
+<span class="sd">            backbone (str, optional): The backbone of the segmentation model. Defaults to &quot;resnet18&quot;.</span>
+<span class="sd">            in_channels (int, optional): The number of input channels for the segmentation model. Defaults to 8.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            An instance of the model loaded from the checkpoint.</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            NotImplementedError: If the checkpoint cannot be loaded using the provided method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">seg_model</span> <span class="o">=</span> <span class="n">SegmentationModel</span><span class="p">(</span>
+            <span class="n">architecture</span><span class="o">=</span><span class="n">architecture</span><span class="p">,</span> <span class="n">backbone</span><span class="o">=</span><span class="n">backbone</span><span class="p">,</span> <span class="n">in_channels</span><span class="o">=</span><span class="n">in_channels</span>
+        <span class="p">)</span>
+        <span class="n">dist_model</span> <span class="o">=</span> <span class="n">DistanceModel</span><span class="p">(</span><span class="n">in_channels</span><span class="o">=</span><span class="n">in_channels</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">load_from_checkpoint</span><span class="p">(</span>
+                <span class="n">path</span><span class="p">,</span> <span class="n">segmentation_model</span><span class="o">=</span><span class="n">seg_model</span><span class="p">,</span> <span class="n">distance_model</span><span class="o">=</span><span class="n">dist_model</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">NotImplementedError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DeepTreesModel.to_torchscript">
+<a class="viewcode-back" href="../../../deeptrees.model.html#deeptrees.model.deeptrees_model.DeepTreesModel.to_torchscript">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_torchscript</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;trace&quot;</span><span class="p">,</span> <span class="n">example_inputs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Converts the model to TorchScript format using the specified method.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            method (str): The method to use for converting the model to TorchScript.</span>
+<span class="sd">                  Currently, only &#39;trace&#39; is supported.</span>
+<span class="sd">            example_inputs (tuple or torch.Tensor): Example inputs to be used for tracing the model.</span>
+<span class="sd">                                Required if method is &#39;trace&#39;.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            torch.jit.ScriptModule: The TorchScript representation of the model.</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If an unsupported method is provided.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;trace&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="p">,</span> <span class="n">example_inputs</span><span class="o">=</span><span class="n">example_inputs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">method</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Taimur Khan, Caroline Arnold, Harsh Grover.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

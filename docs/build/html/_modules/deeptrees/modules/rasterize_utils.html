@@ -1,0 +1,276 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>deeptrees.modules.rasterize_utils &mdash; TorchTrees  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            TorchTrees
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../overview.html">Architectural Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides.html">Developer Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deeptrees.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">TorchTrees</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../deeptrees.html">deeptrees</a></li>
+      <li class="breadcrumb-item active">deeptrees.modules.rasterize_utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for deeptrees.modules.rasterize_utils</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39; </span>
+<span class="sd">Utils for creating ground truth raster files from polygons.</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">xarray</span> <span class="k">as</span> <span class="nn">xr</span>
+<span class="kn">import</span> <span class="nn">geopandas</span> <span class="k">as</span> <span class="nn">gpd</span>
+<span class="kn">import</span> <span class="nn">rasterio</span>
+<span class="kn">from</span> <span class="nn">osgeo</span> <span class="kn">import</span> <span class="n">gdal</span>
+<span class="kn">from</span> <span class="nn">osgeo</span> <span class="kn">import</span> <span class="n">osr</span>
+<span class="kn">from</span> <span class="nn">osgeo</span> <span class="kn">import</span> <span class="n">ogr</span>
+<span class="kn">from</span> <span class="nn">osgeo</span> <span class="kn">import</span> <span class="n">gdalnumeric</span> <span class="k">as</span> <span class="n">gdn</span>
+
+<span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">Polygon</span>
+
+<div class="viewcode-block" id="get_bbox_polygon">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#deeptrees.modules.rasterize_utils.get_bbox_polygon">[docs]</a>
+<span class="k">def</span> <span class="nf">get_bbox_polygon</span><span class="p">(</span><span class="n">input_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Polygon</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;get_bbox_polygon</span>
+<span class="sd">    </span>
+<span class="sd">    Get the Polygon representing the bounding box </span>
+<span class="sd">    of the tile in input_file</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        input_file (str): path to input file </span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Polygon: bounding box polygon </span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">box</span> <span class="o">=</span> <span class="n">rasterio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">input_file</span><span class="p">)</span><span class="o">.</span><span class="n">bounds</span>
+    <span class="k">return</span> <span class="n">Polygon</span><span class="p">([(</span><span class="n">box</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="n">box</span><span class="o">.</span><span class="n">bottom</span><span class="p">),</span>
+                    <span class="p">(</span><span class="n">box</span><span class="o">.</span><span class="n">right</span><span class="p">,</span> <span class="n">box</span><span class="o">.</span><span class="n">bottom</span><span class="p">),</span>
+                    <span class="p">(</span><span class="n">box</span><span class="o">.</span><span class="n">right</span><span class="p">,</span> <span class="n">box</span><span class="o">.</span><span class="n">top</span><span class="p">),</span>
+                    <span class="p">(</span><span class="n">box</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="n">box</span><span class="o">.</span><span class="n">top</span><span class="p">)]</span>
+                   <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="xarray_trafo_to_gdal_trafo">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#deeptrees.modules.rasterize_utils.xarray_trafo_to_gdal_trafo">[docs]</a>
+<span class="k">def</span> <span class="nf">xarray_trafo_to_gdal_trafo</span><span class="p">(</span><span class="n">xarray_trafo</span><span class="p">):</span>
+    <span class="n">xres</span><span class="p">,</span> <span class="n">xskew</span><span class="p">,</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">yskew</span><span class="p">,</span> <span class="n">yres</span><span class="p">,</span> <span class="n">ymax</span> <span class="o">=</span> <span class="n">xarray_trafo</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xres</span><span class="p">,</span> <span class="n">xskew</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">yskew</span><span class="p">,</span> <span class="n">yres</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_xarray_trafo">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#deeptrees.modules.rasterize_utils.get_xarray_trafo">[docs]</a>
+<span class="k">def</span> <span class="nf">get_xarray_trafo</span><span class="p">(</span><span class="n">arr</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns</span>
+<span class="sd">    xmin, xmax, ymin, ymax, xres, yres</span>
+<span class="sd">    of an xarray. xres and yres can be negative.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+    <span class="n">gt</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">arr</span><span class="o">.</span><span class="n">spatial_ref</span><span class="o">.</span><span class="n">GeoTransform</span><span class="o">.</span><span class="n">split</span><span class="p">()]</span>
+    <span class="n">xres</span><span class="p">,</span> <span class="n">yres</span> <span class="o">=</span> <span class="p">(</span><span class="n">gt</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">gt</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span>
+    <span class="n">xskew</span><span class="p">,</span> <span class="n">yskew</span> <span class="o">=</span> <span class="p">(</span><span class="n">gt</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">gt</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">xres</span><span class="p">,</span> <span class="n">xskew</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">yskew</span><span class="p">,</span> <span class="n">yres</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">y</span><span class="p">)</span></div>
+
+
+
+
+
+<div class="viewcode-block" id="rasterize">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#deeptrees.modules.rasterize_utils.rasterize">[docs]</a>
+<span class="k">def</span> <span class="nf">rasterize</span><span class="p">(</span><span class="n">source_raster</span><span class="p">,</span> <span class="n">features</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">dim_ordering</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;HWC&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Rasterizes the features (polygons/lines) within the extent of the given xarray with the same resolution, all in-memory.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        source_raster: Xarray</span>
+<span class="sd">        features: List of shapely objects</span>
+<span class="sd">        dim_ordering: One of CHW (default) or HWC (height, widht, channels)</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        Rasterized features</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ncol</span> <span class="o">=</span> <span class="n">source_raster</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span>
+    <span class="n">nrow</span> <span class="o">=</span> <span class="n">source_raster</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span>
+
+    <span class="c1"># Fetch projection and extent</span>
+    <span class="k">if</span> <span class="s2">&quot;crs&quot;</span> <span class="ow">in</span> <span class="n">source_raster</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
+        <span class="n">proj</span> <span class="o">=</span> <span class="n">source_raster</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;crs&quot;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">proj</span> <span class="o">=</span> <span class="n">source_raster</span><span class="o">.</span><span class="n">rio</span><span class="o">.</span><span class="n">crs</span><span class="o">.</span><span class="n">to_proj4</span><span class="p">()</span>
+
+    <span class="n">ext</span> <span class="o">=</span> <span class="n">xarray_trafo_to_gdal_trafo</span><span class="p">(</span><span class="n">get_xarray_trafo</span><span class="p">(</span><span class="n">source_raster</span><span class="p">))</span>
+
+    <span class="n">raster_driver</span> <span class="o">=</span> <span class="n">gdal</span><span class="o">.</span><span class="n">GetDriverByName</span><span class="p">(</span><span class="s2">&quot;MEM&quot;</span><span class="p">)</span>
+    <span class="n">out_raster_ds</span> <span class="o">=</span> <span class="n">raster_driver</span><span class="o">.</span><span class="n">Create</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">ncol</span><span class="p">,</span> <span class="n">nrow</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">gdal</span><span class="o">.</span><span class="n">GDT_Byte</span><span class="p">)</span>
+    <span class="n">out_raster_ds</span><span class="o">.</span><span class="n">SetProjection</span><span class="p">(</span><span class="n">proj</span><span class="p">)</span>
+    <span class="n">out_raster_ds</span><span class="o">.</span><span class="n">SetGeoTransform</span><span class="p">(</span><span class="n">ext</span><span class="p">)</span>
+
+    <span class="n">spatref</span> <span class="o">=</span> <span class="n">osr</span><span class="o">.</span><span class="n">SpatialReference</span><span class="p">()</span>
+    <span class="n">spatref</span><span class="o">.</span><span class="n">ImportFromProj4</span><span class="p">(</span><span class="n">proj</span><span class="p">)</span>
+
+    <span class="n">vector_driver</span> <span class="o">=</span> <span class="n">ogr</span><span class="o">.</span><span class="n">GetDriverByName</span><span class="p">(</span><span class="s2">&quot;Memory&quot;</span><span class="p">)</span>
+    <span class="n">vector_ds</span> <span class="o">=</span> <span class="n">vector_driver</span><span class="o">.</span><span class="n">CreateDataSource</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">vector_layer</span> <span class="o">=</span> <span class="n">vector_ds</span><span class="o">.</span><span class="n">CreateLayer</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">spatref</span><span class="p">,</span> <span class="n">ogr</span><span class="o">.</span><span class="n">wkbMultiLineString</span><span class="p">)</span>
+    <span class="n">defn</span> <span class="o">=</span> <span class="n">vector_layer</span><span class="o">.</span><span class="n">GetLayerDefn</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">poly</span> <span class="ow">in</span> <span class="n">features</span><span class="p">:</span>
+        <span class="n">feature</span> <span class="o">=</span> <span class="n">ogr</span><span class="o">.</span><span class="n">Feature</span><span class="p">(</span><span class="n">defn</span><span class="p">)</span>
+        <span class="n">geom</span> <span class="o">=</span> <span class="n">ogr</span><span class="o">.</span><span class="n">CreateGeometryFromWkb</span><span class="p">(</span><span class="n">poly</span><span class="o">.</span><span class="n">wkb</span><span class="p">)</span>
+        <span class="n">feature</span><span class="o">.</span><span class="n">SetGeometry</span><span class="p">(</span><span class="n">geom</span><span class="p">)</span>
+        <span class="n">vector_layer</span><span class="o">.</span><span class="n">CreateFeature</span><span class="p">(</span><span class="n">feature</span><span class="p">)</span>
+
+    <span class="n">vector_layer</span><span class="o">.</span><span class="n">SyncToDisk</span><span class="p">()</span>
+
+    <span class="n">gdal</span><span class="o">.</span><span class="n">RasterizeLayer</span><span class="p">(</span><span class="n">out_raster_ds</span><span class="p">,</span>
+                        <span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                        <span class="n">vector_ds</span><span class="o">.</span><span class="n">GetLayer</span><span class="p">(),</span>
+                        <span class="n">burn_values</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                        <span class="n">options</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;ALL_TOUCHED=TRUE&#39;</span><span class="p">]</span>
+                        <span class="p">)</span>
+
+    <span class="n">out_raster_ds</span><span class="o">.</span><span class="n">FlushCache</span><span class="p">()</span>
+    <span class="n">bands</span> <span class="o">=</span> <span class="p">[</span><span class="n">out_raster_ds</span><span class="o">.</span><span class="n">GetRasterBand</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">out_raster_ds</span><span class="o">.</span><span class="n">RasterCount</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+    <span class="n">arr</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">source_raster</span><span class="p">[[</span><span class="mi">0</span><span class="p">],:,:])</span>
+    <span class="n">arr</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">gdn</span><span class="o">.</span><span class="n">BandReadAsArray</span><span class="p">(</span><span class="n">band</span><span class="p">)</span> <span class="k">for</span> <span class="n">band</span> <span class="ow">in</span> <span class="n">bands</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+    <span class="n">arr</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;nodatavals&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,)</span>
+    <span class="n">arr</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;scales&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,)</span>
+    <span class="n">arr</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;offsets&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,)</span>
+
+    <span class="k">if</span> <span class="n">dim_ordering</span> <span class="o">==</span> <span class="s2">&quot;HWC&quot;</span><span class="p">:</span>
+        <span class="n">arr</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">transpose</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="k">del</span> <span class="n">out_raster_ds</span>
+    <span class="k">del</span> <span class="n">vector_ds</span>
+    <span class="k">return</span> <span class="n">arr</span></div>
+
+
+
+<div class="viewcode-block" id="filter_geometry">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#deeptrees.modules.rasterize_utils.filter_geometry">[docs]</a>
+<span class="k">def</span> <span class="nf">filter_geometry</span><span class="p">(</span><span class="n">polygons</span><span class="p">:</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">,</span>
+                    <span class="n">valid_classes</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;all&#39;</span><span class="p">,</span>
+                    <span class="n">class_column_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;class&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Polygon</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;filter_geometry</span>
+
+<span class="sd">    Filter the provided polygons by keeping only valid classes.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        polygons (gpd.GeoDataFrame): GeoDataFrame containing the polygons and class labels.</span>
+<span class="sd">        valid_classes (Union[str, list]): List of valid class labels. Defaults to &#39;all&#39; (use all classes).</span>
+<span class="sd">        class_column_name (str): Column name of class labels in src. Defaults to &#39;class&#39;.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list[Polygon]: filtered list of Polygons</span>
+<span class="sd">    &#39;&#39;&#39;</span>    
+
+    <span class="n">filtered_polygons</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">polygons</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="n">valid_classes</span> <span class="o">==</span> <span class="s1">&#39;all&#39;</span> <span class="ow">or</span> <span class="n">polygons</span><span class="p">[</span><span class="n">class_column_name</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">in</span> <span class="n">valid_classes</span><span class="p">:</span>
+            <span class="n">filtered_polygons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">polygons</span><span class="p">[</span><span class="s1">&#39;geometry&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">filtered_polygons</span></div>
+
+
+<div class="viewcode-block" id="to_outline">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#deeptrees.modules.rasterize_utils.to_outline">[docs]</a>
+<span class="k">def</span> <span class="nf">to_outline</span><span class="p">(</span><span class="n">polygons</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Polygon</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;to_outline</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        polygons (list[Polygon]): list of polygons</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        _type_: TODO type list of boundaries of the polygons</span>
+<span class="sd">    &#39;&#39;&#39;</span>   
+    <span class="k">return</span> <span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">boundary</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">polygons</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Taimur Khan, Caroline Arnold, Harsh Grover.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -15,7 +15,6 @@ __pycache__/
 
 # Distribution / packaging
 .Python
-build/
 develop-eggs/
 dist/
 downloads/
@@ -75,8 +74,6 @@ instance/
 # Scrapy stuff:
 .scrapy
 
-# Sphinx documentation
-docs/_build/
 
 # PyBuilder
 .pybuilder/
@@ -147,7 +144,6 @@ cython_debug/
 
 # Models
 *.pt
-*.png
 outputs/
 results/
 experiments/
@@ -159,5 +155,6 @@ logs/
 *.tif
 *.sqlite
 lightning_logs/
-*.shp
-*.sh
+
+# MacOS
+.DS_Store

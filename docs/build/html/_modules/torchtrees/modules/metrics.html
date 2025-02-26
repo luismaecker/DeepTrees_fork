@@ -1,0 +1,155 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>torchtrees.modules.metrics &mdash; TorchTrees  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            TorchTrees
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../overview.html">Architectural Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides.html">Developer Guides</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">TorchTrees</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">torchtrees.modules.metrics</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for torchtrees.modules.metrics</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">torch</span>
+
+
+<div class="viewcode-block" id="iou">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#torchtrees.modules.metrics.iou">[docs]</a>
+<span class="k">def</span> <span class="nf">iou</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">y_true</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the Intersection over Union (IoU) between two tensors.</span>
+<span class="sd">    The IoU is a measure of the overlap between two sets, defined as the </span>
+<span class="sd">    intersection divided by the union of the sets. It is commonly used </span>
+<span class="sd">    in image segmentation tasks to evaluate the accuracy of predictions.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        y_pred (torch.Tensor): Predicted tensor, typically a binary mask.</span>
+<span class="sd">        y_true (torch.Tensor): Ground truth tensor, typically a binary mask.</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        float: The IoU score, a value between 0 and 1, where 1 indicates </span>
+<span class="sd">               perfect overlap and 0 indicates no overlap.</span>
+<span class="sd">    Note:</span>
+<span class="sd">        - The function uses a small epsilon value to avoid division by zero.</span>
+<span class="sd">        - Both input tensors should have the same shape.</span>
+<span class="sd">        - The tensors are expected to be of type torch.float32.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">eps</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span>  <span class="c1"># A more stable epsilon for float32</span>
+    <span class="n">intersection</span> <span class="o">=</span> <span class="p">(</span><span class="n">y_pred</span> <span class="o">*</span> <span class="n">y_true</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">union</span> <span class="o">=</span> <span class="n">y_pred</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">+</span> <span class="n">y_true</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">-</span> <span class="n">intersection</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">intersection</span> <span class="o">+</span> <span class="n">eps</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">union</span> <span class="o">+</span> <span class="n">eps</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="iou_with_logits">
+<a class="viewcode-back" href="../../../deeptrees.modules.html#torchtrees.modules.metrics.iou_with_logits">[docs]</a>
+<span class="k">def</span> <span class="nf">iou_with_logits</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">y_true</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the Intersection over Union (IoU) score with logits.</span>
+<span class="sd">    This function applies a sigmoid activation to the predicted logits and then</span>
+<span class="sd">    calculates the IoU score between the predicted and true values.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        y_pred (torch.Tensor): The predicted logits tensor. This tensor should contain raw, unnormalized scores.</span>
+<span class="sd">        y_true (torch.Tensor): The ground truth binary tensor. This tensor should contain binary values (0 or 1).</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        float: The IoU score between the predicted and true values.</span>
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; y_pred = torch.tensor([[0.8, 0.4], [0.3, 0.9]])</span>
+<span class="sd">        &gt;&gt;&gt; y_true = torch.tensor([[1, 0], [0, 1]])</span>
+<span class="sd">        &gt;&gt;&gt; iou_score = iou_with_logits(y_pred, y_true)</span>
+<span class="sd">        &gt;&gt;&gt; print(iou_score)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">y_pred</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">iou</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">y_true</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Taimur Khan, Caroline Arnold, Harsh Grover.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
