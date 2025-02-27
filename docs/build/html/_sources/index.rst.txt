@@ -42,7 +42,7 @@ From PyPi registry:
 
 .. code-block:: bash
 
-    pip install torchtrees
+    pip install deeptrees
 
 or from source:
 
@@ -55,17 +55,17 @@ or from source:
 Cite As
 =======
 
-If you use TorchTrees in your research, please cite it as follows:
+If you use DeepTrees in your research, please cite it as follows:
 
 .. admonition:: APA Citation
 
-   Khan, T., Arnold, C., & Grover, H. (2025). *TorchTrees: Tree crown segmentation and analysis in remote sensing imagery with PyTorch*. arXiv. `https://doi.org/10.48550/arXiv.XXXXX.YYYYY <https://doi.org/10.48550/arXiv.XXXXX.YYYYY>`_
+   Khan, T., Arnold, C., & Grover, H. (2025). *DeepTrees: Tree crown segmentation and analysis in remote sensing imagery with PyTorch*. arXiv. `https://doi.org/10.48550/arXiv.XXXXX.YYYYY <https://doi.org/10.48550/arXiv.XXXXX.YYYYY>`_
 
 .. admonition:: BibTeX Citation
 
    .. code-block:: bibtex
 
-      @article{khan2025torchtrees,
+      @article{khan2025deeptrees,
         author    = {Taimur Khan and Caroline Arnold and Harsh Grover},
         title     = {DeepTrees: Tree Crown Segmentation and Analysis in Remote Sensing Imagery with PyTorch},
         journal   = {arXiv},
