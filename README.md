@@ -34,9 +34,9 @@
   </a>
 </div>
 
-DeepTrees is a PyTorch-based library for tree crown segmentation and analysis in remote sensing imagery. It provides a modular and flexible framework for training and deploying deep learning models for tree crown segmentation. The library is designed to be easy to use and extend, with a focus on reproducibility and scalability. It includes a variety of pre-trained models, datasets, and tree allometrical metrics to help you get started quickly. 
+DeepTrees is a end-to-end library for tree crown semantic and instance segmentation, as well as analysis in remote sensing imagery. It provides a modular and flexible framework based on PyTorch for training, active-learning and deploying deep learning models for tree crown semantic and instance segmentation. The library is designed to be easy to use and extendable, with a focus on reproducibility and scalability. It includes a variety of pre-trained models, datasets, and tree allometrical metrics to help you understand tree crown dynamics. 
 
-This software is a result of the [DeepTrees](https://deeptrees.de) project at the Helmholtz Centre for Environmental Research -- UFZ, in collaboration with Helmholtz AI.
+Read more about this work and find tutorials on: [https://deeptrees.de](https://deeptrees.de). The DeepTrees project funded by the Helmholtz Centre for Environmental Research -- UFZ, in collaboration with Helmholtz AI.
 
 ## Installation
 

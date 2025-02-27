@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>deeptrees.modules &mdash; TorchTrees  documentation</title>
+  <title>deeptrees.modules &mdash; DeepTrees🌳  documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
@@ -31,7 +31,7 @@
           
           
           <a href="index.html" class="icon icon-home">
-            TorchTrees
+            DeepTrees🌳
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -124,7 +124,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#deeptrees.modules.utils.gpu"><code class="docutils literal notranslate"><span class="pre">gpu()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#deeptrees.modules.utils.load_filtered_polygons"><code class="docutils literal notranslate"><span class="pre">load_filtered_polygons()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#deeptrees.modules.utils.load_model_weights"><code class="docutils literal notranslate"><span class="pre">load_model_weights()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#deeptrees.modules.utils.mask_and_scale_raster_from_polygons"><code class="docutils literal notranslate"><span class="pre">mask_and_scale_raster_from_polygons()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#deeptrees.modules.utils.mask_and_save_individual_trees"><code class="docutils literal notranslate"><span class="pre">mask_and_save_individual_trees()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#deeptrees.modules.utils.overlay_heatmap"><code class="docutils literal notranslate"><span class="pre">overlay_heatmap()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#deeptrees.modules.utils.predict_on_array"><code class="docutils literal notranslate"><span class="pre">predict_on_array()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#deeptrees.modules.utils.predict_on_array_cf"><code class="docutils literal notranslate"><span class="pre">predict_on_array_cf()</span></code></a></li>
@@ -149,7 +149,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html">TorchTrees</a>
+          <a href="index.html">DeepTrees🌳</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -1155,8 +1155,8 @@ Returns None if no geo reference was found.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="deeptrees.modules.utils.mask_and_scale_raster_from_polygons">
-<span class="sig-prename descclassname"><span class="pre">deeptrees.modules.utils.</span></span><span class="sig-name descname"><span class="pre">mask_and_scale_raster_from_polygons</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tiff_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polygons</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/deeptrees/modules/utils.html#mask_and_scale_raster_from_polygons"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#deeptrees.modules.utils.mask_and_scale_raster_from_polygons" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="deeptrees.modules.utils.mask_and_save_individual_trees">
+<span class="sig-prename descclassname"><span class="pre">deeptrees.modules.utils.</span></span><span class="sig-name descname"><span class="pre">mask_and_save_individual_trees</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tiff_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polygons</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/deeptrees/modules/utils.html#mask_and_save_individual_trees"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#deeptrees.modules.utils.mask_and_save_individual_trees" title="Link to this definition"></a></dt>
 <dd><p>Masks and optionally scales raster images based on given polygons.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>

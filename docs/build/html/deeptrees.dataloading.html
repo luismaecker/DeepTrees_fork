@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>deeptrees.dataloading &mdash; TorchTrees  documentation</title>
+  <title>deeptrees.dataloading &mdash; DeepTrees🌳  documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
@@ -32,7 +32,7 @@
           
           
           <a href="index.html" class="icon icon-home">
-            TorchTrees
+            DeepTrees🌳
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -83,7 +83,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html">TorchTrees</a>
+          <a href="index.html">DeepTrees🌳</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -110,6 +110,206 @@
 <dt class="sig sig-object py" id="deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">deeptrees.dataloading.datamodule.</span></span><span class="sig-name descname"><span class="pre">TreeCrownDelineationDataModule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rasters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">masks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outlines</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distance_transforms</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training_split</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">augment_train</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">augment_eval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ndvi_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{'concatenate':</span> <span class="pre">False}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">divide_by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dilate_outlines</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_indices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_indices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_indices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ground_truth_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{'labels':</span> <span class="pre">None}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/deeptrees/dataloading/datamodule.html#TreeCrownDelineationDataModule"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">LightningDataModule</span></code></p>
+<p>This class is responsible for managing the datasets, applying preprocessing steps,
+and providing DataLoaders for training, validation, testing, and prediction.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.rasters">
+<span class="sig-name descname"><span class="pre">rasters</span></span><a class="headerlink" href="#deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.rasters" title="Link to this definition"></a></dt>
+<dd><p>List of file paths, or path to folder containing the training raster files (TIF).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Union[str, list]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.masks">
+<span class="sig-name descname"><span class="pre">masks</span></span><a class="headerlink" href="#deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.masks" title="Link to this definition"></a></dt>
+<dd><p>List of file paths, or path to folder containing the masks.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Union[str, list]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.outlines">
+<span class="sig-name descname"><span class="pre">outlines</span></span><a class="headerlink" href="#deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.outlines" title="Link to this definition"></a></dt>
+<dd><p>List of file paths, or path to folder containing the outlines.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Union[str, list]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.distance_transforms">
+<span class="sig-name descname"><span class="pre">distance_transforms</span></span><a class="headerlink" href="#deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.distance_transforms" title="Link to this definition"></a></dt>
+<dd><p>List of file paths, or path to folder containing the distance transforms.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Union[str, list]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.training_split">
+<span class="sig-name descname"><span class="pre">training_split</span></span><a class="headerlink" href="#deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.training_split" title="Link to this definition"></a></dt>
+<dd><p>Training data split. Defaults to 0.7.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.batch_size">
+<span class="sig-name descname"><span class="pre">batch_size</span></span><a class="headerlink" href="#deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.batch_size" title="Link to this definition"></a></dt>
+<dd><p>Training batch size. Defaults to 16.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.val_batch_size">
+<span class="sig-name descname"><span class="pre">val_batch_size</span></span><a class="headerlink" href="#deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.val_batch_size" title="Link to this definition"></a></dt>
+<dd><p>Validation batch size. Defaults to 2.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.num_workers">
+<span class="sig-name descname"><span class="pre">num_workers</span></span><a class="headerlink" href="#deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.num_workers" title="Link to this definition"></a></dt>
+<dd><p>Number of workers in DataLoader. Defaults to 8.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.augment_train">
+<span class="sig-name descname"><span class="pre">augment_train</span></span><a class="headerlink" href="#deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.augment_train" title="Link to this definition"></a></dt>
+<dd><p>Dictionary defining torchvision augmentations to be used during training. Defaults to {}.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[str, Any]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.augment_eval">
+<span class="sig-name descname"><span class="pre">augment_eval</span></span><a class="headerlink" href="#deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.augment_eval" title="Link to this definition"></a></dt>
+<dd><p>Dictionary defining torchvision augmentations to be used during validation/testing. Defaults to {}.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[str, Any]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.ndvi_config">
+<span class="sig-name descname"><span class="pre">ndvi_config</span></span><a class="headerlink" href="#deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.ndvi_config" title="Link to this definition"></a></dt>
+<dd><p>Dictionary defining the NDVI concatenation settings. Defaults to {‘concatenate’: False}.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[str, Any]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.divide_by">
+<span class="sig-name descname"><span class="pre">divide_by</span></span><a class="headerlink" href="#deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.divide_by" title="Link to this definition"></a></dt>
+<dd><p>Scalar used to normalize rasters. Defaults to 1.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.dilate_outlines">
+<span class="sig-name descname"><span class="pre">dilate_outlines</span></span><a class="headerlink" href="#deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.dilate_outlines" title="Link to this definition"></a></dt>
+<dd><p>If present (&gt;0), dilate outlines by the given number of pixels. Defaults to 0.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.shuffle">
+<span class="sig-name descname"><span class="pre">shuffle</span></span><a class="headerlink" href="#deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.shuffle" title="Link to this definition"></a></dt>
+<dd><p>If True, shuffle data before applying split. Defaults to True.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.train_indices">
+<span class="sig-name descname"><span class="pre">train_indices</span></span><a class="headerlink" href="#deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.train_indices" title="Link to this definition"></a></dt>
+<dd><p>List of indices of files to be used for training. Cannot be used with shuffle. Defaults to None.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[int]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.val_indices">
+<span class="sig-name descname"><span class="pre">val_indices</span></span><a class="headerlink" href="#deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.val_indices" title="Link to this definition"></a></dt>
+<dd><p>List of indices of files to be used for validation. Cannot be used with shuffle. Defaults to None.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[int]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.test_indices">
+<span class="sig-name descname"><span class="pre">test_indices</span></span><a class="headerlink" href="#deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.test_indices" title="Link to this definition"></a></dt>
+<dd><p>List of indices of files to be used for testing. Cannot be used with shuffle. Defaults to None.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[int]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.ground_truth_config">
+<span class="sig-name descname"><span class="pre">ground_truth_config</span></span><a class="headerlink" href="#deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.ground_truth_config" title="Link to this definition"></a></dt>
+<dd><p>Dictionary defining the ground truth preprocessing settings. Defaults to {‘labels’: None}.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[str, Any]</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rasters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">masks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outlines</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distance_transforms</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training_split</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">augment_train</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">augment_eval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ndvi_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{'concatenate':</span> <span class="pre">False}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">divide_by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dilate_outlines</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_indices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_indices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_indices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ground_truth_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{'labels':</span> <span class="pre">None}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/deeptrees/dataloading/datamodule.html#TreeCrownDelineationDataModule.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule.__init__" title="Link to this definition"></a></dt>
@@ -480,12 +680,12 @@ segmentation).</p>
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">deeptrees.dataloading.preprocessing.</span></span><span class="sig-name descname"><span class="pre">GroundTruthGenerator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rasters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_file_prefix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ground_truth_labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">valid_class_ids</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'all'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_column_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'class'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">crs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'EPSG:25832'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nproc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/deeptrees/dataloading/preprocessing.html#GroundTruthGenerator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#deeptrees.dataloading.preprocessing.GroundTruthGenerator" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></p>
 <p>Base class to generate ground truth (masks, outlines, distance transforms)</p>
-<p>Based on scripts/rasterize.py</p>
 <p>Loads a raster and a vector file, then rasterizes the vector file within the
 extent of the raster with the same resolution. Uses gdal_rasterize
 under the hood, but provides some more features like specifying which classes
 to rasterize into which layer of the output. If you want to infer the output
 file names, the input file name suffixes have to be delimited by an ‘_’.”,</p>
+<p>Based on scripts/rasterize.py in Freudenberg 2022.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="deeptrees.dataloading.preprocessing.GroundTruthGenerator.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rasters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_file_prefix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ground_truth_labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">valid_class_ids</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'all'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_column_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'class'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">crs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'EPSG:25832'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nproc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/deeptrees/dataloading/preprocessing.html#GroundTruthGenerator.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#deeptrees.dataloading.preprocessing.GroundTruthGenerator.__init__" title="Link to this definition"></a></dt>

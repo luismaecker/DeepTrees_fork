@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>API Reference &mdash; TorchTrees  documentation</title>
+  <title>API Reference &mdash; DeepTrees🌳  documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
@@ -32,7 +32,7 @@
           
           
           <a href="index.html" class="icon icon-home">
-            TorchTrees
+            DeepTrees🌳
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -64,7 +64,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html">TorchTrees</a>
+          <a href="index.html">DeepTrees🌳</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -97,11 +97,20 @@
 
 <dl class="py function">
 <dt class="sig sig-object py" id="deeptrees.predict">
-<span class="sig-prename descclassname"><span class="pre">deeptrees.</span></span><span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/deeptrees.html#predict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#deeptrees.predict" title="Link to this definition"></a></dt>
-<dd><p>Run tree crown delineation prediction on the provided image path.</p>
+<span class="sig-prename descclassname"><span class="pre">deeptrees.</span></span><span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/deeptrees.html#predict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#deeptrees.predict" title="Link to this definition"></a></dt>
+<dd><p>Run tree crown delineation prediction on the provided image paths using the given configuration.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>image_path</strong> (<em>list</em><em>[</em><em>str</em><em>]</em>) – List of image paths to process.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>image_path</strong> (<em>list</em><em>[</em><em>str</em><em>]</em>) – A list of file paths to the images to be processed.</p></li>
+<li><p><strong>config_path</strong> (<em>str</em>) – The file path to the configuration file for the prediction.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>This function does not return any value. It performs the prediction in-place.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
 </dd>
 </dl>
 </dd></dl>

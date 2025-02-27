@@ -3,12 +3,12 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-TorchTrees
+DeepTrees🌳
 =======================
 **Tree Crown Segmentation and Analysis in Remote Sensing Imagery with PyTorch**
 
 
-Welcome to the TorchTrees documentation! 
+Welcome to the DeepTrees documentation! 
 
 .. toctree::
    :maxdepth: 1
@@ -19,7 +19,7 @@ Welcome to the TorchTrees documentation!
    guides
    deeptrees
 
-TorchTrees is a PyTorch-based library for end-to-end tree crown segmentation and analysis in multispectral remote sensing imagery. 
+DeepTrees is a PyTorch-based library for end-to-end tree crown segmentation and analysis in multispectral remote sensing imagery. 
 
 Highlights:
 	-	User-friendly, flexible, and GPU-optimized for efficiency.
@@ -33,7 +33,7 @@ Highlights:
 	-	Tree species classification and height estimation models.
 
 
-TorchTrees is a result of the `DeepTrees <https://deeptrees.de>`_ project, a collaboration between the Helmholtz Center for Environmental Research -- UFZ and the Helmholtz AI initiative.
+DeepTrees is a result of the `DeepTrees <https://deeptrees.de>`_ project, a collaboration between the Helmholtz Center for Environmental Research -- UFZ and the Helmholtz AI initiative.
 
 Installation
 =======
@@ -67,7 +67,7 @@ If you use TorchTrees in your research, please cite it as follows:
 
       @article{khan2025torchtrees,
         author    = {Taimur Khan and Caroline Arnold and Harsh Grover},
-        title     = {TorchTrees: Tree Crown Segmentation and Analysis in Remote Sensing Imagery with PyTorch},
+        title     = {DeepTrees: Tree Crown Segmentation and Analysis in Remote Sensing Imagery with PyTorch},
         journal   = {arXiv},
         year      = {2025},
         archivePrefix = {arXiv},
@@ -78,4 +78,4 @@ If you use TorchTrees in your research, please cite it as follows:
 License
 =======
 
-This package is license under the MIT Liencse. See the `LICENSE <https://codebase.helmholtz.cloud/taimur.khan/DeepTrees/-/blob/main/LICENSE.md?ref_type=heads>`_ file for details.
+This package is license under the MIT License. See the `LICENSE <https://codebase.helmholtz.cloud/taimur.khan/DeepTrees/-/blob/main/LICENSE?ref_type=heads>`_ file for details.

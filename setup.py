@@ -114,7 +114,7 @@ setup(
     name=NAME,
     version=final_version,
     description=DESCRIPTION,
-    keywords='geosptial, pytorch, remote-sensing, deep-learning, segmentation, vegetation-ecology',
+    keywords='tree-crowns, pytorch, remote-sensing, deep-learning, semantic-segmentation, vegetation-ecology, instance-segmentation, active-learning',
     long_description=long_description,
     long_description_content_type='text/markdown',
     author=AUTHOR,
