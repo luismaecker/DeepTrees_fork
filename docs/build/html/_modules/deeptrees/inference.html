@@ -1,0 +1,398 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>deeptrees.inference &mdash; DeepTrees🌳  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            DeepTrees🌳
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../overview.html">Architectural Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guides.html">Developer Guides</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../deeptrees.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">DeepTrees🌳</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../deeptrees.html">deeptrees</a></li>
+      <li class="breadcrumb-item active">deeptrees.inference</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for deeptrees.inference</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Tree Crown Delineation Inference Script</span>
+
+<span class="sd">This script performs tree crown delineation using a pre-trained DeepTreesModel. It loads the model configuration,</span>
+<span class="sd">initializes the model, and runs inference on input raster images to predict tree crowns. The predictions are saved</span>
+<span class="sd">as raster files, and post-processing is performed to extract polygons representing tree crowns.</span>
+
+<span class="sd">Classes:</span>
+<span class="sd">    TreeCrownPredictor: A class to handle the loading of the model, running inference, and post-processing.</span>
+
+<span class="sd">Usage:</span>
+<span class="sd">    python inference.py</span>
+
+<span class="sd">Example:</span>
+<span class="sd">    predictor = TreeCrownPredictor(config_path=&quot;./config&quot;, image_path=[&quot;/path/to/raster/image.tif&quot;])</span>
+<span class="sd">    predictor.predict(&#39;/path/to/raster/image.tif&#39;, &#39;/path/to/config&#39;)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">omegaconf</span> <span class="kn">import</span> <span class="n">OmegaConf</span>
+
+<span class="kn">from</span> <span class="nn">.pretrained</span> <span class="kn">import</span> <span class="n">freudenberg2022</span>
+<span class="kn">from</span> <span class="nn">.model.deeptrees_model</span> <span class="kn">import</span> <span class="n">DeepTreesModel</span>
+<span class="kn">from</span> <span class="nn">.modules</span> <span class="kn">import</span> <span class="n">utils</span>
+<span class="kn">from</span> <span class="nn">.dataloading.datasets</span> <span class="kn">import</span> <span class="n">TreeCrownDelineationInferenceDataset</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">.modules</span> <span class="kn">import</span> <span class="n">postprocessing</span> <span class="k">as</span> <span class="n">tcdpp</span>
+<span class="kn">from</span> <span class="nn">.modules.utils</span> <span class="kn">import</span> <span class="n">mask_and_save_individual_trees</span>
+
+
+<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span>
+    <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span>  <span class="c1"># Set the log level to INFO</span>
+    <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%(asctime)s</span><span class="s1"> - </span><span class="si">%(name)s</span><span class="s1"> - </span><span class="si">%(levelname)s</span><span class="s1"> - </span><span class="si">%(message)s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="n">datefmt</span><span class="o">=</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S&#39;</span><span class="p">,</span>  <span class="c1"># Set the date format to exclude milliseconds</span>
+    <span class="n">handlers</span><span class="o">=</span><span class="p">[</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>  <span class="c1"># Output to stdout</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+
+<div class="viewcode-block" id="TreeCrownPredictor">
+<a class="viewcode-back" href="../../deeptrees.html#deeptrees.inference.TreeCrownPredictor">[docs]</a>
+<span class="k">class</span> <span class="nc">TreeCrownPredictor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A class to handle the loading of the model, running inference, and post-processing.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        config (OmegaConf): The configuration loaded from a YAML file.</span>
+<span class="sd">        model (DeepTreesModel): The deep learning model for tree crown delineation.</span>
+<span class="sd">        image_path (str): The path to the input raster image.</span>
+<span class="sd">        dataset (TreeCrownDelineationInferenceDataset): The dataset for inference.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        _initialize_model(): Initializes the model with the configuration parameters.</span>
+<span class="sd">        predict(): Runs inference on the input data and performs post-processing and saves the results.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="TreeCrownPredictor.__init__">
+<a class="viewcode-back" href="../../deeptrees.html#deeptrees.inference.TreeCrownPredictor.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image_path</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">config_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;./config/inference_on_individual_tiles.yaml&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes the TreeCrownPredictor with the given configuration.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            config_path (str): The path to the configuration folder.            </span>
+<span class="sd">            image_path (str): The path to the input raster image.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Load the config using OmegaConf</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">OmegaConf</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">config_path</span><span class="p">))</span>
+        
+        <span class="c1"># Print the loaded configuration to the console</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loaded Configuration:&quot;</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">OmegaConf</span><span class="o">.</span><span class="n">to_yaml</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">))</span>  <span class="c1"># This prints the entire configuration in YAML format</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="kc">None</span>
+        
+        <span class="c1"># Check if the image path is provided and is valid list of strings        </span>
+        <span class="k">if</span> <span class="n">image_path</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">image_path</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">image_path</span> <span class="o">=</span> <span class="n">image_path</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Please provide input raster image/s path as a list&quot;</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span> <span class="o">=</span> <span class="n">TreeCrownDelineationInferenceDataset</span><span class="p">(</span>
+                <span class="n">raster_files</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">image_path</span><span class="p">,</span>
+                <span class="n">augmentation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">augment_eval</span><span class="p">,</span>
+                <span class="n">ndvi_config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">ndvi_config</span><span class="p">,</span>
+                <span class="n">dilate_outlines</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">dilate_outlines</span><span class="p">,</span>
+                <span class="n">in_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">divide_by</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">divide_by</span><span class="p">)</span>
+    
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_model</span><span class="p">()</span>      
+        
+        <span class="c1"># Directories for saving output</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;save_predictions&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="s1">&#39;predictions&#39;</span><span class="p">):</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="s1">&#39;predictions&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;save_entropy_maps&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="s1">&#39;entropy_maps&#39;</span><span class="p">):</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="s1">&#39;entropy_maps&#39;</span><span class="p">)</span></div>
+
+  
+
+<div class="viewcode-block" id="TreeCrownPredictor._initialize_model">
+<a class="viewcode-back" href="../../deeptrees.html#deeptrees.inference.TreeCrownPredictor._initialize_model">[docs]</a>
+    <span class="k">def</span> <span class="nf">_initialize_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes the model with the configuration parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">pretrained_model_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;pretrained_model_path&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;pretrained_model_name&#39;</span><span class="p">])</span>
+
+        <span class="c1"># Access the model parameters from config and pass them to the constructor manually</span>
+        <span class="n">model_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">model</span>
+   
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">DeepTreesModel</span><span class="p">(</span>
+                <span class="n">num_backbones</span><span class="o">=</span><span class="n">model_config</span><span class="o">.</span><span class="n">num_backbones</span><span class="p">,</span>
+                <span class="n">in_channels</span> <span class="o">=</span> <span class="n">model_config</span><span class="o">.</span><span class="n">in_channels</span><span class="p">,</span>
+                <span class="n">architecture</span><span class="o">=</span> <span class="n">model_config</span><span class="o">.</span><span class="n">architecture</span><span class="p">,</span>
+                <span class="n">backbone</span><span class="o">=</span><span class="n">model_config</span><span class="o">.</span><span class="n">backbone</span><span class="p">,</span>                                  
+                <span class="n">apply_sigmoid</span><span class="o">=</span><span class="n">model_config</span><span class="o">.</span><span class="n">apply_sigmoid</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;download_pretrained_model&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">pretrained_model_file</span><span class="p">):</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="s1">&#39;./pretrained_models&#39;</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">freudenberg2022</span><span class="p">(</span><span class="n">pretrained_model_file</span><span class="p">)</span>        
+        
+        <span class="c1"># check this after the model download</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pretrained_model_file</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Pretrained model file path must be passed.&quot;</span><span class="p">)</span>
+
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Loading state dict from pretrained model at :</span><span class="si">{</span><span class="n">pretrained_model_file</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">pretrained_model</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">pretrained_model_file</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">tcd_backbone</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">pretrained_model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">())</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Finished loading state dict&#39;</span><span class="p">)</span></div>
+
+        
+
+<div class="viewcode-block" id="TreeCrownPredictor.predict">
+<a class="viewcode-back" href="../../deeptrees.html#deeptrees.inference.TreeCrownPredictor.predict">[docs]</a>
+    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Runs inference on the input data and performs post-processing.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Run inference on the data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>  <span class="c1"># Set the model to evaluation mode</span>
+        <span class="n">all_polygons</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">batch</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="p">):</span>
+            <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="n">raster</span><span class="p">,</span> <span class="n">raster_dict</span> <span class="o">=</span> <span class="n">batch</span>            
+            <span class="n">trafo</span> <span class="o">=</span> <span class="n">raster_dict</span><span class="p">[</span><span class="s1">&#39;trafo&#39;</span><span class="p">]</span> 
+            <span class="n">raster_name</span> <span class="o">=</span> <span class="n">raster_dict</span><span class="p">[</span><span class="s1">&#39;raster_id&#39;</span><span class="p">]</span>
+            <span class="n">raster_suffix</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">raster_name</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;tile_&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Predicting on </span><span class="si">{</span><span class="n">raster_name</span><span class="si">}</span><span class="s2"> ...&quot;</span><span class="p">)</span>
+            
+            <span class="n">raster</span> <span class="o">=</span> <span class="n">raster</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># Add batch dimension</span>
+            
+            <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">predict_on_tile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">raster</span><span class="p">)</span>
+                
+            <span class="n">t_inference</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span>
+
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">output</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+            <span class="n">outline</span> <span class="o">=</span> <span class="n">output</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+            <span class="n">distance_transform</span> <span class="o">=</span> <span class="n">output</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;save_predictions&#39;</span><span class="p">]:</span>
+                <span class="n">utils</span><span class="o">.</span><span class="n">array_to_tif</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;./predictions/mask_</span><span class="si">{</span><span class="n">raster_suffix</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">src_raster</span><span class="o">=</span><span class="n">raster_name</span><span class="p">,</span> <span class="n">num_bands</span><span class="o">=</span><span class="s1">&#39;single&#39;</span><span class="p">)</span>                
+                <span class="n">utils</span><span class="o">.</span><span class="n">array_to_tif</span><span class="p">(</span><span class="n">outline</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;./predictions/outline_</span><span class="si">{</span><span class="n">raster_suffix</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">src_raster</span><span class="o">=</span><span class="n">raster_name</span><span class="p">,</span> <span class="n">num_bands</span><span class="o">=</span><span class="s1">&#39;single&#39;</span><span class="p">)</span>
+                <span class="n">utils</span><span class="o">.</span><span class="n">array_to_tif</span><span class="p">(</span><span class="n">distance_transform</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;./predictions/distance_transform_</span><span class="si">{</span><span class="n">raster_suffix</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">src_raster</span><span class="o">=</span><span class="n">raster_name</span><span class="p">,</span> <span class="n">num_bands</span><span class="o">=</span><span class="s1">&#39;single&#39;</span><span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Saved Mask, Outline and Distance Transform output to </span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span><span class="w"> </span><span class="s1">&#39;predictions&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="c1"># active learning</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;active_learning&quot;</span><span class="p">]:</span>
+                <span class="n">pmap</span> <span class="o">=</span> <span class="n">tcdpp</span><span class="o">.</span><span class="n">calculate_probability_map</span><span class="p">(</span>
+                    <span class="n">mask</span><span class="p">,</span>
+                    <span class="n">outline</span><span class="p">,</span>
+                    <span class="n">distance_transform</span><span class="p">,</span>
+                    <span class="n">mask_exp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">polygon_extraction</span><span class="p">[</span><span class="s2">&quot;mask_exp&quot;</span><span class="p">],</span>
+                    <span class="n">outline_multiplier</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">polygon_extraction</span><span class="p">[</span><span class="s2">&quot;outline_multiplier&quot;</span><span class="p">],</span>
+                    <span class="n">outline_exp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">polygon_extraction</span><span class="p">[</span><span class="s2">&quot;outline_exp&quot;</span><span class="p">],</span>
+                    <span class="n">dist_exp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">polygon_extraction</span><span class="p">[</span><span class="s2">&quot;dist_exp&quot;</span><span class="p">],</span>
+                    <span class="n">sigma</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">polygon_extraction</span><span class="p">[</span><span class="s2">&quot;sigma&quot;</span><span class="p">]</span>
+                <span class="p">)</span>
+                
+                <span class="n">entropy_map</span> <span class="o">=</span> <span class="n">tcdpp</span><span class="o">.</span><span class="n">calculate_entropy</span><span class="p">(</span><span class="n">pmap</span><span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Mean entropy in </span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">raster_name</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">entropy_map</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Max entropy in </span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">raster_name</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">entropy_map</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;save_entropy_maps&#39;</span><span class="p">]:</span>
+                    <span class="n">utils</span><span class="o">.</span><span class="n">array_to_tif</span><span class="p">(</span><span class="n">entropy_map</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;./entropy_maps/entropy_heatmap_</span><span class="si">{</span><span class="n">raster_suffix</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">src_raster</span><span class="o">=</span><span class="n">raster_name</span><span class="p">)</span>
+                    
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Saving entropy map to ./entropy_maps&#39;</span><span class="p">)</span>
+                    
+                <span class="c1"># add postprocessing here</span>
+                <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+                <span class="n">polygons</span> <span class="o">=</span> <span class="n">tcdpp</span><span class="o">.</span><span class="n">extract_polygons</span><span class="p">(</span>
+                    <span class="n">mask</span><span class="p">,</span>
+                    <span class="n">outline</span><span class="p">,</span>
+                    <span class="n">distance_transform</span><span class="p">,</span>
+                    <span class="n">transform</span><span class="o">=</span><span class="n">trafo</span><span class="p">,</span>
+                    <span class="n">mask_exp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">polygon_extraction</span><span class="p">[</span><span class="s2">&quot;mask_exp&quot;</span><span class="p">],</span>
+                    <span class="n">outline_multiplier</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">polygon_extraction</span><span class="p">[</span><span class="s2">&quot;outline_multiplier&quot;</span><span class="p">],</span>
+                    <span class="n">outline_exp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">polygon_extraction</span><span class="p">[</span><span class="s2">&quot;outline_exp&quot;</span><span class="p">],</span>
+                    <span class="n">dist_exp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">polygon_extraction</span><span class="p">[</span><span class="s2">&quot;dist_exp&quot;</span><span class="p">],</span>
+                    <span class="n">sigma</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">polygon_extraction</span><span class="p">[</span><span class="s2">&quot;sigma&quot;</span><span class="p">],</span>
+                    <span class="n">binary_threshold</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">polygon_extraction</span><span class="p">[</span><span class="s2">&quot;binary_threshold&quot;</span><span class="p">],</span>
+                    <span class="n">min_dist</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">polygon_extraction</span><span class="p">[</span><span class="s2">&quot;min_dist&quot;</span><span class="p">],</span>
+                    <span class="n">label_threshold</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">polygon_extraction</span><span class="p">[</span><span class="s2">&quot;label_threshold&quot;</span><span class="p">],</span>
+                    <span class="n">area_min</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">polygon_extraction</span><span class="p">[</span><span class="s2">&quot;area_min&quot;</span><span class="p">],</span>
+                    <span class="n">simplify</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">polygon_extraction</span><span class="p">[</span><span class="s2">&quot;simplify&quot;</span><span class="p">]</span>
+                <span class="p">)</span>
+                
+                <span class="n">t_process</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span>
+                
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">save_masked_rasters</span><span class="p">:</span>
+                
+                    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Saving mask_and_scale_raster_from_polygons to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">masked_rasters_output_dir</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+                    
+                    <span class="n">mask_and_save_individual_trees</span><span class="p">(</span><span class="n">tiff_path</span><span class="o">=</span><span class="n">raster_name</span><span class="p">,</span>
+                                                        <span class="n">polygons</span><span class="o">=</span><span class="n">polygons</span><span class="p">,</span>                                                         
+                                                        <span class="n">output_dir</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">masked_rasters_output_dir</span><span class="p">,</span> 
+                                                                                <span class="n">raster_suffix</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]),</span>
+                                                                                <span class="n">scale_factor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">scale_factor</span><span class="p">)</span>
+                
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">polygons</span><span class="p">)</span><span class="si">}</span><span class="s2"> polygons.&quot;</span><span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Inference time: </span><span class="si">{</span><span class="n">t_inference</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> seconds&quot;</span><span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Post-processing time: </span><span class="si">{</span><span class="n">t_process</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> seconds&quot;</span><span class="p">)</span>
+                
+                <span class="n">all_polygons</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">polygons</span><span class="p">)</span>  <span class="c1"># Process your predictions here</span>
+                
+                <span class="c1"># create a diectory and save all polygons to that directory</span>
+                <span class="n">polygon_file</span> <span class="o">=</span>  <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">raster_name</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;.shp&#39;</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="s1">&#39;./saved_polygons&#39;</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">polygon_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">&#39;saved_polygons&#39;</span> <span class="p">,</span><span class="n">polygon_file</span><span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Saving all polygons to </span><span class="si">{</span><span class="n">polygon_path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="n">utils</span><span class="o">.</span><span class="n">save_polygons</span><span class="p">(</span><span class="n">all_polygons</span><span class="p">,</span> <span class="n">polygon_path</span><span class="p">,</span> <span class="n">crs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;crs&#39;</span><span class="p">])</span></div>
+</div>
+
+      
+
+<span class="c1"># For command parsing run the main function</span>
+<div class="viewcode-block" id="main">
+<a class="viewcode-back" href="../../deeptrees.html#deeptrees.inference.main">[docs]</a>
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="c1"># Initialize the argument parser</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Predict tree crown from image tiles.&quot;</span><span class="p">)</span>
+    
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--image_path&quot;</span><span class="p">,</span> 
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>  <span class="c1"># Accept multiple paths</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;List of image paths to process.&quot;</span><span class="p">,</span> 
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span>        
+    <span class="p">)</span>
+    
+        
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--config_path&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>    
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>   
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Directory containing the configuration file.&quot;</span>
+    <span class="p">)</span>
+    
+    
+    <span class="c1"># Parse the arguments</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+
+    <span class="c1"># Check if the image path is provided and is valid list of strings        </span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">image_path</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">image_path</span> <span class="o">=</span> <span class="p">[</span><span class="n">args</span><span class="o">.</span><span class="n">image_path</span><span class="p">]</span>
+        
+    <span class="c1"># Initialize the predictor with the passed with configuration and image paths</span>
+    <span class="n">predictor</span> <span class="o">=</span> <span class="n">TreeCrownPredictor</span><span class="p">(</span><span class="n">image_path</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">image_path</span><span class="p">,</span> <span class="n">config_path</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">config_path</span><span class="p">)</span>
+
+
+    <span class="c1"># Run the prediction</span>
+    <span class="n">predictor</span><span class="o">.</span><span class="n">predict</span><span class="p">()</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Taimur Khan, Caroline Arnold, Harsh Grover.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
