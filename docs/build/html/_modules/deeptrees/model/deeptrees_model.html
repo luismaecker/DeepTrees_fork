@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>deeptrees.model.deeptrees_model &mdash; TorchTrees  documentation</title>
+  <title>deeptrees.model.deeptrees_model &mdash; DeepTrees🌳  documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
 
@@ -29,7 +29,7 @@
           
           
           <a href="../../../index.html" class="icon icon-home">
-            TorchTrees
+            DeepTrees🌳
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
@@ -53,7 +53,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../../index.html">TorchTrees</a>
+          <a href="../../../index.html">DeepTrees🌳</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -73,21 +73,7 @@
            <div itemprop="articleBody">
              
   <h1>Source code for deeptrees.model.deeptrees_model</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">rootutils</span>
-<span class="kn">import</span> <span class="nn">os</span>
-
-<span class="c1"># path = rootutils.find_root(search_from=__file__, indicator=&quot;.project-root&quot;)</span>
-<span class="n">path</span> <span class="o">=</span> <span class="n">rootutils</span><span class="o">.</span><span class="n">find_root</span><span class="p">(</span><span class="n">search_from</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">),</span> <span class="n">indicator</span><span class="o">=</span><span class="s2">&quot;.project-root&quot;</span><span class="p">)</span>
-
-<span class="c1"># set root directory</span>
-<span class="n">rootutils</span><span class="o">.</span><span class="n">set_root</span><span class="p">(</span>
-    <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span>  <span class="c1"># path to the root directory</span>
-    <span class="n">project_root_env_var</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># set the PROJECT_ROOT environment variable to root directory</span>
-    <span class="n">dotenv</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># load environment variables from .env if exists in root directory</span>
-    <span class="n">pythonpath</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># add root directory to the PYTHONPATH (helps with imports)</span>
-    <span class="n">cwd</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="c1"># we do not want that with hydra</span>
-<span class="p">)</span>
-
+<span></span><span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">os</span>
 
@@ -98,12 +84,12 @@
 <span class="kn">import</span> <span class="nn">lightning</span> <span class="k">as</span> <span class="nn">L</span>
 <span class="kn">from</span> <span class="nn">torchmetrics.functional.segmentation</span> <span class="kn">import</span> <span class="n">mean_iou</span>
 
-<span class="kn">from</span> <span class="nn">deeptrees.model.segmentation_model</span> <span class="kn">import</span> <span class="n">SegmentationModel</span>
-<span class="kn">from</span> <span class="nn">deeptrees.model.distance_model</span> <span class="kn">import</span> <span class="n">DistanceModel</span>
-<span class="kn">from</span> <span class="nn">deeptrees.modules</span> <span class="kn">import</span> <span class="n">metrics</span>
-<span class="kn">from</span> <span class="nn">deeptrees.modules.losses</span> <span class="kn">import</span> <span class="n">BinarySegmentationLossWithLogits</span>
-<span class="kn">from</span> <span class="nn">deeptrees.modules</span> <span class="kn">import</span> <span class="n">postprocessing</span> <span class="k">as</span> <span class="n">tcdpp</span>
-<span class="kn">from</span> <span class="nn">deeptrees.modules</span> <span class="kn">import</span> <span class="n">utils</span>
+<span class="kn">from</span> <span class="nn">.segmentation_model</span> <span class="kn">import</span> <span class="n">SegmentationModel</span>
+<span class="kn">from</span> <span class="nn">.distance_model</span> <span class="kn">import</span> <span class="n">DistanceModel</span>
+<span class="kn">from</span> <span class="nn">..modules</span> <span class="kn">import</span> <span class="n">metrics</span>
+<span class="kn">from</span> <span class="nn">..modules.losses</span> <span class="kn">import</span> <span class="n">BinarySegmentationLossWithLogits</span>
+<span class="kn">from</span> <span class="nn">..modules</span> <span class="kn">import</span> <span class="n">postprocessing</span> <span class="k">as</span> <span class="n">tcdpp</span>
+<span class="kn">from</span> <span class="nn">..modules</span> <span class="kn">import</span> <span class="n">utils</span>
 
 <span class="kn">import</span> <span class="nn">logging</span>
 
@@ -124,7 +110,7 @@
                  <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Tree crown delineation model</span>
 
-<span class="sd">        The model consists of two sub-netoworks (two U-Nets with ResNet backbone). The first network calculates a tree</span>
+<span class="sd">        The model consists of two sub-networks (two U-Nets with ResNet backbone) as implemented by Freudenberg et al., 2022. The first network calculates a tree</span>
 <span class="sd">        cover mask and the tree outlines, the second calculates the distance transform of the masks (distance to next</span>
 <span class="sd">        background pixel). The first net receives the input image, the second one receives the input image and the output of network 1.</span>
 

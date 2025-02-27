@@ -4,7 +4,6 @@ from torch.nn.modules.loss import _Loss
 
 from .metrics import iou, iou_with_logits
 
-
 class BinarySegmentationLoss(_Loss):
     """Combines binary cross entropy loss with -log(iou).
     Works with probabilities, so after applying sigmoid activation."""

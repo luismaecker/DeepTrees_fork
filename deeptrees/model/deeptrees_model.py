@@ -31,7 +31,7 @@ class TreeCrownDelineationModel(L.LightningModule):
                  ):
         """Tree crown delineation model
 
-        The model consists of two sub-netoworks (two U-Nets with ResNet backbone). The first network calculates a tree
+        The model consists of two sub-networks (two U-Nets with ResNet backbone) as implemented by Freudenberg et al., 2022. The first network calculates a tree
         cover mask and the tree outlines, the second calculates the distance transform of the masks (distance to next
         background pixel). The first net receives the input image, the second one receives the input image and the output of network 1.
 

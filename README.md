@@ -36,7 +36,7 @@
 
 DeepTrees is a end-to-end library for tree crown semantic and instance segmentation, as well as analysis in remote sensing imagery. It provides a modular and flexible framework based on PyTorch for training, active-learning and deploying deep learning models for tree crown semantic and instance segmentation. The library is designed to be easy to use and extendable, with a focus on reproducibility and scalability. It includes a variety of pre-trained models, datasets, and tree allometrical metrics to help you understand tree crown dynamics. 
 
-Read more about this work and find tutorials on: [https://deeptrees.de](https://deeptrees.de). The DeepTrees project funded by the Helmholtz Centre for Environmental Research -- UFZ, in collaboration with Helmholtz AI.
+Read more about this work and find tutorials on: [https://deeptrees.de](https://deeptrees.de). The DeepTrees project is funded by the Helmholtz Centre for Environmental Research -- UFZ, in collaboration with Helmholtz AI.
 
 ## Installation
 
@@ -83,7 +83,7 @@ This will create the documentation in the `docs/build` directory. Open the `inde
 
 This software requires Hydra for configuration management. The configuration **yaml** files are stored in the `config` directory. 
 
-The configuration schema can be found in
+The full list of configuration options can be found in the `config/schema.yaml` file.
 This software uses Hydra for configuration management. The configuration files are stored in the `config` directory. 
 
 The confirguration schema can be found in the `config/schema.yaml` file.
@@ -140,6 +140,9 @@ predict(image_path=["list of image_paths"],  config_path = "config_path")
 ```
 
 ## Training
+
+DeepTrees calculates pixel-wise entropy maps for each input image. The entropy maps can be used to select the most informative tiles for training. The entropy maps are stored in the `entropy` directory.
+
 
 To train the model, you need to have the labeled tiles in the `tiles` and `labels` directories. The unlabeled tiles go into `pool_tiles`. Your polygon labels need to be in ESRI shapefile format.
 

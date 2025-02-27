@@ -1,4 +1,0 @@
-Segment Tree Crowns
-===============
-
-// Add your content here...

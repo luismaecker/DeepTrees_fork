@@ -7,8 +7,12 @@ DeepTrees🌳
 =======================
 **Tree Crown Segmentation and Analysis in Remote Sensing Imagery with PyTorch**
 
+:Authors:
+    Taimur Khan (UFZ) 
+    Caroline Arnold (Hereon) 
+    Harsh Grover (Hereon)
 
-Welcome to the DeepTrees documentation! 
+:Version: 1.6.0
 
 .. toctree::
    :maxdepth: 1
@@ -21,16 +25,23 @@ Welcome to the DeepTrees documentation!
 
 DeepTrees is a PyTorch-based library for end-to-end tree crown segmentation and analysis in multispectral remote sensing imagery. 
 
-Highlights:
-	-	User-friendly, flexible, and GPU-optimized for efficiency.
-	-	Supports 4-channel imagery (RGBi) with built-in PyTorch data loaders.
-	-	Simple API for training and evaluating U-Net-based tree segmentation and distance transform models.
-	-	Generates pixel-entropy maps for active learning and fine-tuning.
-	-	Computes vegetation indices, tree crown health and allometric metrics.
-	-	Pre-trained models and sample labeled datasets for DOP imagery in Central Germany.
-	-	Easily configurable via a YAML file.
-	-	Integration of Geospatial Foundation Model (GeoFM) backbones.
-	-	Tree species classification and height estimation models.
+**Highlights:**
+
+-	User-friendly, flexible, and GPU-optimized for efficiency.
+-	Supports 4-channel imagery (RGBi) with built-in PyTorch data loaders.
+-	Simple API for training and evaluating U-Net-based tree segmentation and distance transform models.
+-	Generates pixel-entropy maps for active learning and fine-tuning.
+-	Computes vegetation indices and allometric metrics.
+-	Pre-trained models and sample labeled datasets for DOP imagery in Central Germany.
+-	Easily configurable via a YAML file.
+
+
+**Future Work:**
+
+-	Integration of Geospatial Foundation Model (GeoFM) backbones.
+-	Tree species classification and height estimation models.
+-  Integration of 3D point cloud data for tree crown volume estimation.
+-  Tree vitality composites derived from Land Surface Temperature (LST) and multispectral vegetation indices.
 
 
 DeepTrees is a result of the `DeepTrees <https://deeptrees.de>`_ project, a collaboration between the Helmholtz Center for Environmental Research -- UFZ and the Helmholtz AI initiative.
