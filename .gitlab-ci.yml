@@ -30,9 +30,8 @@ pages:
   before_script:
     - python -m pip install --upgrade pip
     - pip3 install sphinx sphinx-rtd-theme sphinx_autodoc_typehints
-    - python setup.py install
   script:
-    - sphinx-build -b html docs/source public
+    - cp -r docs/build/html public/
   artifacts:
     paths:
       - public/
