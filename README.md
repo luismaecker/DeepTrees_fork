@@ -46,7 +46,6 @@ To install the package, clone the repository and install the dependencies.
 git clone https://codebase.helmholtz.cloud/taimur.khan/DeepTrees.git
 cd DeepTrees
 
-## create a new conda environment
 pip install -r requirements.txt
 ```
 
@@ -63,7 +62,7 @@ or from PyPI.
 pip install deeptrees
 ```
 
-> Note: DeepTrees uses python libaries that depend on GDAL. Make sure to have GDAL installed on your system. 
+> Note: DeepTrees uses python libaries that depend on GDAL. Make sure to have GDAL>=3.9.2 installed on your system, e.g. via conda: `conda install -c conda-forge gdal==3.9.2`. 
 
 ## Documentation
 
