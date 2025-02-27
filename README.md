@@ -95,12 +95,12 @@ A list of prediction configurations can be found in: [/docs/prediction_config.md
 
 ## Pretrained Models
 
-DeepTrees provides a set of pretrained models for tree crown segmentation. Currently following models are available:
+DeepTrees provides a set of pretrained models for tree crown segmentation. Currently the following models are available:
 
-| Author | Model Weights |
-|--------|---------------|
-| [Freudenberg et al., 2022](https://doi.org/10.1007/s00521-022-07640-4) | [k=3](https://syncandshare.desy.de/index.php/s/NcFgPM4gX2dtSQq/download/lUnet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=3_jitted.pt) |
-| Caroline Arnold | |
+| Author | Description   | Model Weights |
+|--------|---------------|---------------|
+| [Freudenberg et al., 2022](https://doi.org/10.1007/s00521-022-07640-4) | Ensemble of 5 models | k=[0](https://syncandshare.desy.de/index.php/s/NcFgPM4gX2dtSQq/download/lUnet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=0_jitted.pt), [1](https://syncandshare.desy.de/index.php/s/NcFgPM4gX2dtSQq/download/lUnet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=1_jitted.pt), [2](https://syncandshare.desy.de/index.php/s/NcFgPM4gX2dtSQq/download/lUnet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=2_jitted.pt), [3](https://syncandshare.desy.de/index.php/s/NcFgPM4gX2dtSQq/download/lUnet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=3_jitted.pt), [4](https://syncandshare.desy.de/index.php/s/NcFgPM4gX2dtSQq/download/lUnet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=4_jitted.pt) |
+| | |
 
 > Note: We are in the process of adding more pretrained models.
 
@@ -109,7 +109,7 @@ Download the pretrained models from the links:
 ```python
 from deeptrees.pretrained import freudenberg2022
 
-freundenberg2022(
+freudenberg2022(
   filename="name_your_file", # name of the file to save the model
   k=0, # number of k-fold cross validation
   return_dict=True # returns the weight pytorch model weights dictionary
@@ -130,7 +130,7 @@ load_labels(zip_filename="path/to/labels.zip") #give the path to where you want 
 
 ## Predict on a list of images
 
-Run the inference script with the corresponding config file on list of images.
+Predict tree crown polygons for a list of images. The configuration file in `config_path` controls the pretrained model, output paths, and postprocessing options.
 
 ```bash
 from deeptrees import predict
@@ -206,11 +206,9 @@ However, you can adjust classes as needed in your own training workflow.
 
 
 
-#### Training Logs
+### Training Logs
 
-View the MLFlow logs that were created during training.
-
-TODO
+By default, [MLFlow](https://mlflow.org/) logs are created during training.
 
 ### Inference
 
@@ -222,7 +220,7 @@ python scripts/test.py --config-name=inference_halle
 
 
 ## Semantic Versioning
-This reposirotry has auto semantic versionining enabled. To create new releases, we need to merge into the default `finetuning-halle` branch. 
+This repository has auto semantic versionining enabled. To create new releases, we need to merge into the default `main` branch. 
 
 Semantic Versionining, or SemVer, is a versioning standard for software ([SemVer website](https://semver.org/)). Given a version number MAJOR.MINOR.PATCH, increment the:
 
