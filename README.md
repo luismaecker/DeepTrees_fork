@@ -104,6 +104,8 @@ DeepTrees provides a set of pretrained models for tree crown segmentation. Curre
 
 > Note: We are in the process of adding more pretrained models.
 
+> Note: Like all AI systems, these pretrained models can make mistakes.  Validate predictions, especially in critical applications. Be aware that performance may degrade significantly on data that differs from the training set (e.g., different seasons, regions, or image qualities)
+
 Download the pretrained models from the links:
 
 ```python
