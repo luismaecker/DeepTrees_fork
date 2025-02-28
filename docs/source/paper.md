@@ -15,9 +15,11 @@ affiliations:
     name: "Helmholtz Center for Environmental Research -- UFZ"
     address: "Permoserstr. 15, 04318 Leipzig, Germany"
   - index: 2
-    name: "Helmholtz-Zentrum Dresden-Rossendorf (HZDR)"
+    name: "Helmholtz-Zentrum hereon"
+    address: "Max-Planck-Str. 1, 21502 Geesthacht, Germany"
   - index: 3
-    name: "Helmholtz AI initiative"
+    name: "Helmholtz AI"
+    address: "Germany"
 date: 2025-01-01
 bibliography: paper.bib
 ---
