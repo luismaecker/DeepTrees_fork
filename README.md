@@ -26,6 +26,7 @@
   <a href="https://codebase.helmholtz.cloud/taimur.khan/DeepTrees/-/pipelines">
     <img src="https://codebase.helmholtz.cloud/taimur.khan/DeepTrees/badges/main/pipeline.svg" alt="CI Build">
   </a>
+  <br/>
 </div> 
   <img src="./static/deeptrees.png" alt="DeepTrees" width=800"/>
   <br/>
