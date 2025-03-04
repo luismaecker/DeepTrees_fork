@@ -44,7 +44,6 @@ To install the package, clone the repository and install the dependencies.
 git clone https://codebase.helmholtz.cloud/taimur.khan/DeepTrees.git
 cd DeepTrees
 
-## create a new conda environment
 pip install -r requirements.txt
 ```
 
@@ -61,7 +60,7 @@ or from PyPI.
 pip install deeptrees
 ```
 
-> Note: DeepTrees uses python libaries that depend on GDAL. Make sure to have GDAL installed on your system. 
+> Note: DeepTrees uses python libaries that depend on GDAL. Make sure to have GDAL>=3.9.2 installed on your system, e.g. via conda: `conda install -c conda-forge gdal==3.9.2`. 
 
 ## Documentation
 
@@ -94,21 +93,23 @@ A list of prediction configurations can be found in: [/docs/prediction_config.md
 
 ## Pretrained Models
 
-DeepTrees provides a set of pretrained models for tree crown segmentation. Currently following models are available:
+DeepTrees provides a set of pretrained models for tree crown segmentation. Currently the following models are available:
 
-| Author | Model Weights |
-|--------|---------------|
-| [Freudenberg et al., 2022](https://doi.org/10.1007/s00521-022-07640-4) | [k=3](https://syncandshare.desy.de/index.php/s/NcFgPM4gX2dtSQq/download/lUnet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=3_jitted.pt) |
-| Caroline Arnold | |
+| Author | Description   | Model Weights |
+|--------|---------------|---------------|
+| [Freudenberg et al., 2022](https://doi.org/10.1007/s00521-022-07640-4) | Tree Crown Delineation model based on U-Net with ResNet18 backbone. Trained on 89 images sampled randomly within Germany. Set of 5 model weights from 5-fold cross validation. | k=[0](https://syncandshare.desy.de/index.php/s/NcFgPM4gX2dtSQq/download/lUnet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=0_jitted.pt), [1](https://syncandshare.desy.de/index.php/s/NcFgPM4gX2dtSQq/download/lUnet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=1_jitted.pt), [2](https://syncandshare.desy.de/index.php/s/NcFgPM4gX2dtSQq/download/lUnet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=2_jitted.pt), [3 (default)](https://syncandshare.desy.de/index.php/s/NcFgPM4gX2dtSQq/download/lUnet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=3_jitted.pt), [4](https://syncandshare.desy.de/index.php/s/NcFgPM4gX2dtSQq/download/lUnet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=4_jitted.pt) |
+| | |
 
 > Note: We are in the process of adding more pretrained models.
+
+> Note: Like all AI systems, these pretrained models can make mistakes.  Validate predictions, especially in critical applications. Be aware that performance may degrade significantly on data that differs from the training set (e.g., different seasons, regions, or image qualities)
 
 Download the pretrained models from the links:
 
 ```python
 from deeptrees.pretrained import freudenberg2022
 
-freundenberg2022(
+freudenberg2022(
   filename="name_your_file", # name of the file to save the model
   k=0, # number of k-fold cross validation
   return_dict=True # returns the weight pytorch model weights dictionary
@@ -129,7 +130,7 @@ load_labels(zip_filename="path/to/labels.zip") #give the path to where you want 
 
 ## Predict on a list of images
 
-Run the inference script with the corresponding config file on list of images.
+Predict tree crown polygons for a list of images. The configuration file in `config_path` controls the pretrained model, output paths, and postprocessing options.
 
 ```bash
 from deeptrees import predict
@@ -208,11 +209,9 @@ However, you can adjust classes as needed in your own training workflow.
 
 
 
-#### Training Logs
+### Training Logs
 
-View the MLFlow logs that were created during training.
-
-TODO
+By default, [MLFlow](https://mlflow.org/) logs are created during training.
 
 ### Inference
 
@@ -224,7 +223,7 @@ python scripts/test.py --config-name=inference_halle
 
 
 ## Semantic Versioning
-This reposirotry has auto semantic versionining enabled. To create new releases, we need to merge into the default `finetuning-halle` branch. 
+This repository has auto semantic versionining enabled. To create new releases, we need to merge into the default `main` branch. 
 
 Semantic Versionining, or SemVer, is a versioning standard for software ([SemVer website](https://semver.org/)). Given a version number MAJOR.MINOR.PATCH, increment the:
 
