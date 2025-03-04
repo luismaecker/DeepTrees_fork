@@ -28,7 +28,7 @@
   </a>
   <br/>
 </div> 
-  <img src="https://codebase.helmholtz.cloud/taimur.khan/DeepTrees/-/blob/9192ee4b0e8d83b1a8504c1d6aaf5c4b120d467b/static/deeptrees.png" alt="DeepTrees" width=800"/>
+  <img src="./static/deeptrees.png" alt="DeepTrees" width=800"/>
   <br/>
   <br/>
 </div>
