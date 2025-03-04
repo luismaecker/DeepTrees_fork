@@ -113,3 +113,20 @@ Training your own models
 ========================
 
 If you do not specify a pretrained model (pretrained.model = null), the training script will train a model from scratch. Be aware that a sizeable amount of data is needed to train deep learning models.
+
+
+Prediction
+==========
+
+To run predictions on a single image or a list of images, use the predict function. 
+Pass the image paths as a list along with a corresponding configuration file. 
+Adapt your own config file based on the defaults in `inference_on_individual_tiles.yaml` as needed. 
+
+You can specify your own model in the configuration file. By default, a pre-trained model (ref Freudenberg et al) will be used.
+
+Example usage::
+
+    from deeptrees import predict
+
+    predict(image_path=["path/to/image.tif"], config_path="path/to/config.yaml")
+
