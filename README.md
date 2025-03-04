@@ -63,7 +63,7 @@ pip install deeptrees
 
 > Note: DeepTrees uses python libaries that depend on GDAL. Make sure to have GDAL>=3.9.2 installed on your system, e.g. via conda: `conda install -c conda-forge gdal==3.9.2`. 
 
-## Documentation
+## API Documentation
 
 You can view the documentation on: https://taimur.khan.pages.hzdr.de/deeptrees
 
@@ -81,16 +81,11 @@ This will create the documentation in the `docs/build` directory. Open the `inde
 
 This software requires Hydra for configuration management. The configuration **yaml** files are stored in the `config` directory. 
 
-The full list of configuration options can be found in the `config/schema.yaml` file.
 This software uses Hydra for configuration management. The configuration files are stored in the `config` directory. 
 
 The confirguration schema can be found in the `config/schema.yaml` file.
 
-You can find sample configuration files for training and prediction in the following links:
-- [Training Configs](https://taimur.khan.pages.hzdr.de/deeptrees/config/train/)
-- [Prediction Configs](https://taimur.khan.pages.hzdr.de/deeptrees/config/predict/)
-
-A list of prediction configurations can be found in: [/docs/prediction_config.md](/docs/prediction_config.md)
+A list of Hydra configurations can be found in: [/docs/prediction_config.md](/docs/prediction_config.md)
 
 ## Pretrained Models
 
