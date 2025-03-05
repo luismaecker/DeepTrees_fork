@@ -140,8 +140,7 @@ class TreeCrownPredictor:
         Runs inference on the input data and performs post-processing.
         """
         # Run inference on the data
-        self.model.eval()  # Set the model to evaluation mode
-        all_polygons = []
+        self.model.eval()  # Set the model to evaluation mode        
 
         for idx, batch in enumerate(self.dataset):
             t0 = time.time()
@@ -190,50 +189,50 @@ class TreeCrownPredictor:
                     
                 log.info('Saving entropy map to ./entropy_maps')
                     
-                # add postprocessing here
-                t0 = time.time()
-                polygons = tcdpp.extract_polygons(
-                    mask,
-                    outline,
-                    distance_transform,
-                    transform=trafo,
-                    mask_exp=self.config.polygon_extraction["mask_exp"],
-                    outline_multiplier=self.config.polygon_extraction["outline_multiplier"],
-                    outline_exp=self.config.polygon_extraction["outline_exp"],
-                    dist_exp=self.config.polygon_extraction["dist_exp"],
-                    sigma=self.config.polygon_extraction["sigma"],
-                    binary_threshold=self.config.polygon_extraction["binary_threshold"],
-                    min_dist=self.config.polygon_extraction["min_dist"],
-                    label_threshold=self.config.polygon_extraction["label_threshold"],
-                    area_min=self.config.polygon_extraction["area_min"],
-                    simplify=self.config.polygon_extraction["simplify"]
-                )
+            # Extract polygons 
+            t0 = time.time()
+            polygons = tcdpp.extract_polygons(
+                mask,
+                outline,
+                distance_transform,
+                transform=trafo,
+                mask_exp=self.config.polygon_extraction["mask_exp"],
+                outline_multiplier=self.config.polygon_extraction["outline_multiplier"],
+                outline_exp=self.config.polygon_extraction["outline_exp"],
+                dist_exp=self.config.polygon_extraction["dist_exp"],
+                sigma=self.config.polygon_extraction["sigma"],
+                binary_threshold=self.config.polygon_extraction["binary_threshold"],
+                min_dist=self.config.polygon_extraction["min_dist"],
+                label_threshold=self.config.polygon_extraction["label_threshold"],
+                area_min=self.config.polygon_extraction["area_min"],
+                simplify=self.config.polygon_extraction["simplify"]
+            )
+            
+            t_process = time.time() - t0
                 
-                t_process = time.time() - t0
+            log.info(f"Found {len(polygons)} polygons.")
+            log.info(f"Inference time: {t_inference:.2f} seconds")
+            log.info(f"Post-processing time: {t_process:.2f} seconds")
                 
-                if self.config.save_masked_rasters:
+            # create a diectory and save all above polygons to that directory
+            polygon_file =  os.path.basename(raster_name).split('.')[0] + '.shp'
+            os.makedirs('./saved_polygons', exist_ok=True)
+            polygon_path = os.path.join(os.getcwd(), 'saved_polygons' ,polygon_file)
+            log.info(f'Saving all polygons to {polygon_path}')
+            utils.save_polygons(polygons, polygon_path, crs=self.config['crs'])
+            
+            
+            # save individual trees as rasters
+            if self.config.save_masked_rasters:
+            
+                log.info(f"Saving mask_and_scale_raster_from_polygons to {self.config.masked_rasters_output_dir}.")
                 
-                    log.info(f"Saving mask_and_scale_raster_from_polygons to {self.config.masked_rasters_output_dir}.")
-                    
-                    mask_and_save_individual_trees(tiff_path=raster_name,
-                                                        polygons=polygons,                                                         
-                                                        output_dir=os.path.join(self.config.masked_rasters_output_dir, 
-                                                                                raster_suffix.split('.')[0]),
-                                                                                scale_factor=self.config.scale_factor)
-                
-                log.info(f"Found {len(polygons)} polygons.")
-                log.info(f"Inference time: {t_inference:.2f} seconds")
-                log.info(f"Post-processing time: {t_process:.2f} seconds")
-                
-                all_polygons.extend(polygons)  # Process your predictions here
-                
-                # create a diectory and save all polygons to that directory
-                polygon_file =  os.path.basename(raster_name).split('.')[0] + '.shp'
-                os.makedirs('./saved_polygons', exist_ok=True)
-                polygon_path = os.path.join(os.getcwd(), 'saved_polygons' ,polygon_file)
-                log.info(f'Saving all polygons to {polygon_path}')
-                utils.save_polygons(all_polygons, polygon_path, crs=self.config['crs'])
-      
+                mask_and_save_individual_trees(tiff_path=raster_name,
+                                                    polygons=polygons,                                                         
+                                                    output_dir=os.path.join(self.config.masked_rasters_output_dir, 
+                                                                            raster_suffix.split('.')[0]),
+                                                                            scale_factor=self.config.scale_factor)
+        
 
 # For command parsing run the main function
 def main():
