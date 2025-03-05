@@ -11,15 +11,9 @@
 <div align="left" style="text-align:left">
 <h1>DeepTrees 🌳</h1>
 </div>
-
 <div align="center" style="text-align:center">
-  <h3>Tree Crown Segmentation and Analysis in Remote Sensing Imagery with PyTorch</h3>  
-  <img src="./static/header.png" alt="DeepTrees" width="300"/>
-  <br/>
-  <br/>
-</div>
-
-<div align="center">
+  <h3>Tree Crown Segmentation and Analysis in Remote Sensing Imagery with PyTorch</h3> 
+  <div align="center">
   <a href="https://badge.fury.io/py/deeptrees">
     <img src="https://badge.fury.io/py/deeptrees.svg" alt="PyPI version">
   </a>
@@ -32,6 +26,11 @@
   <a href="https://codebase.helmholtz.cloud/taimur.khan/DeepTrees/-/pipelines">
     <img src="https://codebase.helmholtz.cloud/taimur.khan/DeepTrees/badges/main/pipeline.svg" alt="CI Build">
   </a>
+  <br/>
+</div> 
+  <img src="./static/deeptrees.png" alt="DeepTrees" width=800"/>
+  <br/>
+  <br/>
 </div>
 
 DeepTrees is a end-to-end library for tree crown semantic and instance segmentation, as well as analysis in remote sensing imagery. It provides a modular and flexible framework based on PyTorch for training, active-learning and deploying deep learning models for tree crown semantic and instance segmentation. The library is designed to be easy to use and extendable, with a focus on reproducibility and scalability. It includes a variety of pre-trained models, datasets, and tree allometrical metrics to help you understand tree crown dynamics. 
@@ -64,9 +63,9 @@ pip install deeptrees
 
 > Note: DeepTrees uses python libaries that depend on GDAL. Make sure to have GDAL>=3.9.2 installed on your system, e.g. via conda: `conda install -c conda-forge gdal==3.9.2`. 
 
-## Documentation
+## API Documentation
 
-You can view the documentation on: https://taimur.khan.pages.hzdr.de/deeptrees
+You can view the documentation page on: [https://treecrowndelineation-ai-consultants-dkrz-35d16e8c9ecc31028ba160.pages.hzdr.de/](https://treecrowndelineation-ai-consultants-dkrz-35d16e8c9ecc31028ba160.pages.hzdr.de/)
 
 This library is documented using Sphinx. To build the documentation, run the following command.
 
@@ -82,16 +81,11 @@ This will create the documentation in the `docs/build` directory. Open the `inde
 
 This software requires Hydra for configuration management. The configuration **yaml** files are stored in the `config` directory. 
 
-The full list of configuration options can be found in the `config/schema.yaml` file.
 This software uses Hydra for configuration management. The configuration files are stored in the `config` directory. 
 
 The confirguration schema can be found in the `config/schema.yaml` file.
 
-You can find sample configuration files for training and prediction in the following links:
-- [Training Configs](https://taimur.khan.pages.hzdr.de/deeptrees/config/train/)
-- [Prediction Configs](https://taimur.khan.pages.hzdr.de/deeptrees/config/predict/)
-
-A list of prediction configurations can be found in: [/docs/prediction_config.md](/docs/prediction_config.md)
+A list of Hydra configurations can be found in: [/docs/prediction_config.md](/docs/prediction_config.md)
 
 ## Pretrained Models
 
