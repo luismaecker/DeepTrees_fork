@@ -91,7 +91,8 @@ Active Learning
 Dataset
 =======
 
-5. **Use your own dataset**
+Use your own dataset
+--------------------
 
 The data is handled by the `TreeCrownDelineationDataModule` and the `TreeCrownDelineationBaseDataset`. This class provides functions to load the data, preprocess it, and return it in a format that can be used by the model.
 
@@ -125,7 +126,8 @@ tcdm.prepare_data()
 
 Check `configs/train.yaml` and the `TreeCrownDelineationDataModule` class for an example configuration.
 
-7. **Data Augmentation**
+Data Augmentation
+-----------------
 
 The DeepTrees dataset class provides data augmentation options, which can be enabled in the configuration file (`data.augment_train`, `data.augment_eval`). The following torchvision augmentations are available:
 
@@ -137,7 +139,8 @@ The DeepTrees dataset class provides data augmentation options, which can be ena
 
 To add more augmentations, you can modify the `TreeCrownDelineationBaseDataset` class. Augmentations need to be based on torchvision v2 transforms to work with the current augmentation pipeline.
 
-8. **NDVI Calculation and other indices**
+NDVI Calculation and other indices
+----------------------------------
 
 The Normalized Difference Vegetation Index (NDVI) is a common index used to assess vegetation health and density. You can add the NDVI band to your dataset by setting the `data.ndvi_config.concatenate = True` in the configuration file. 
 
@@ -184,7 +187,8 @@ We use the following classes for training:
 By default, all classes are used for training. You can change this in the config file.
 
 
-**Fine-tune a pretrained model**
+Fine-tune a pretrained model
+----------------------------
 
 Starting from a pretrained model that can be downloaded in `datasets` (see above), you can finetune the model on your own data. This is currently handled by the `train.py` script. It supports starting the training with weights from a pretrained model.
 
@@ -197,23 +201,27 @@ python scripts/train.py --config-name=finetune_halle # finetune with pretrained 
 python scripts/train.py --config-name=yourconfig # with your own config
 ```
 
-**Train a model from scratch**
+Train a model from scratch
+--------------------------
 
 If you do not specify a pretrained model (`pretrained.model = null` in the configuration file), the training script will train a model from scratch. Be aware that a sizeable amount of data is needed to train deep learning models.
 
-**Control the training loop**
+Control the training loop
+-------------------------
 
 DeepTrees is a modular software based to large parts on Pytorch Lightning modules. Training is handled by the Lightning Trainer. To control aspects of the training loop, modify the `trainer` section in the configuration file based on the Lightning Trainer API.
 
 Model architectures
 ===================
 
-**TreeCrownDelineationModel**
+TreeCrownDelineationModel
+-------------------------
 
 We currently support the `TreeCrownDelineationModel`, following the implementation by Freudenberg et al, as a backbone to the `DeepTreesModel`. 
 
 
-**Add your own model**
+Add your own model
+------------------
 
 Thanks to the modular structure, it is easy to substitute your own model architecture. Add your own model to the repository and make sure it inherits from Lightning Module. Then, modify the `DeepTreesModel` in `models.py` to use your new model as a backbone, instead of `TreeCrownDelineationModel`. Add your model's keyword arguments to the configuration file. It will be instantiated while running the `train.py` script. 
 
