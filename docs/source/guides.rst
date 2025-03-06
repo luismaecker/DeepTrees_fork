@@ -1,94 +1,84 @@
 Developer Guides
-===============
+================
 
 
 Analyzing tree metrics
-=====================
-
+======================
 
 
 
 Prediction
 ==========
 
-1. **What does the `predict` function do?**
-   ----------------------------------------
-   The `predict` function runs the core inference pipeline to process input imagery and generate tree crown predictions. Additionally, it can produce multiple output artifacts, such as uncertainty maps, tree crown masks, outlines, distance transforms, and polygons, depending on the configuration settings.
+What does the ``predict`` function do?
+--------------------------------------
+The ``predict`` function runs the core inference pipeline to process input imagery and generate tree crown predictions. It can also produce multiple output artifacts (e.g., uncertainty maps, tree crown masks, outlines, distance transforms, and polygons) based on the configuration settings.
 
-2. **How do I call the `predict` function?**
-   -----------------------------------------
-   To run predictions on a single image or a list of images, use the following command:
+How do I call the ``predict`` function?
+----------------------------------------
+To run predictions on a single image or a list of images, use the following command:
 
-   .. code-block:: python
+.. code-block:: python
 
-      import deeptrees
-      from deeptrees import predict
+   import deeptrees
+   from deeptrees import predict
 
-      predict(image_path=["path/to/image.tif"], config_path="path/to/config.yaml")
+   predict(image_path=["path/to/image.tif"], config_path="path/to/config.yaml")
 
-   - `image_path`: List of image file paths.
-   - `config_path`: Path to the configuration file that defines various settings for the prediction process.
-   
-   You can specify your own model in the configuration file, or use the default pre-trained model (Freudenberg et al.).
+- ``image_path``: List of image file paths.
+- ``config_path``: Path to the configuration file defining various settings for the prediction process.
 
-3. **What can I extract out of the `predict` function?**
-   ---------------------------------------------------
-   The `predict` function generates various outputs based on the configuration settings. Here are the primary outputs that you can extract:
+You can specify your own model in the configuration file or use the default pre-trained model (Freudenberg et al.).
 
-   - **Uncertainty Maps (Entropy Maps)**: These maps highlight areas where the model has high uncertainty in its predictions. They are useful for identifying regions that may require further labeling or data collection.
-     - **Configuration settings to enable**:
-       - `active_learning: True`
-       - `save_entropy_maps: True`
-       - `entropy_maps_output_dir: "entropy_maps"`
-     - **Where it is saved**: 
-       - Entropy maps will be saved in the `entropy_maps/` folder as GeoTIFF files, with higher values indicating regions of high uncertainty.
+What can I extract from the ``predict`` function?
+-------------------------------------------------
+The primary outputs generated are:
 
-   - **Tree Crown Predictions**: These include:
-     - **Mask**: A binary mask of predicted tree crowns.
-     - **Outlines**: Contours of tree crowns.
-     - **Distance Transform**: A map showing the distance to the nearest tree crown.
-     - **Configuration settings to enable**:
-       - `save_predictions: True`
-       - `predictions_output_dir: "predictions"`
-     - **Where it is saved**: 
-       - Prediction outputs (mask, outlines, and distance transform) will be saved in the `predictions/` directory.
+- Uncertainty Maps (Entropy Maps): Highlight areas where the model has high uncertainty.
 
-   - **Individual Trees as Rasters**: You can extract individual trees from the prediction masks as separate raster files, which is useful for further analysis.
-     - **Configuration settings to enable**:
-       - `save_masked_rasters: True`
-       - `masked_rasters_output_dir: "masked_rasters"`
-       - `scale_factor: 4`
-     - **Where it is saved**: 
-       - Individual tree rasters will be saved in the `masked_rasters/` folder.
+   - Configuration settings to enable:
+     - ``active_learning: True``
+     - ``save_entropy_maps: True``
+     - ``entropy_maps_output_dir: "entropy_maps"``
 
-   - **Polygons**: Tree crown polygons are saved as shapefiles (.shp), useful for GIS applications and spatial analysis.
-     - **Configuration settings to enable**:
-       - `save_polygons: True`
-       - `saved_polygons_output_dir: "saved_polygons"`
-     - **Where it is saved**: 
-       - Polygons will be saved in the `saved_polygons/` folder as shapefiles.
+   - Saved location: In the ``entropy_maps/`` folder as GeoTIFF files.
 
+- Tree Crown Predictions: Includes:
+   - Mask: Binary mask of predicted tree crowns.
+   - Outlines: Contours of tree crowns.
+   - Distance Transform: A map showing the distance to the nearest tree crown.
 
-Active Learning
-===============
-       
-4. **What is Active Learning, and why is it important?**
-   ----------------------------------------------------
-   Active learning is a process where the model identifies uncertain areas in its predictions.
-   
-   These areas are marked as **high-entropy regions** where the model is uncertain.
+   - Configuration settings to enable:
+     - ``save_predictions: True``
+     - ``predictions_output_dir: "predictions"``
 
-   Entropy maps provide a visualization of where the model is uncertain. These maps:
-   
-   - **Help identify regions** in the image that are ambiguous or challenging for the model.
-   - Allow **focused data collection** in uncertain regions, which can improve model performance by making sure that areas with low confidence are labeled and included in the dataset.
-   
-   It is often not feasible to label your whole dataset. Run inference on your unlabeled tiles (in pool_tiles). The model will predict the pixel wise entropy and report its mean per tile. The tiles with the highest average entropy are the tiles that you should label next. Repeat finetuning and the active learning loop, until you are satisfied with the results.
+   - Saved location: In the ``predictions/`` directory.
 
-   By integrating entropy maps into your workflow, you ensure that the model is continuously improved, especially in areas where it is most likely to make errors.
+- Individual Trees as Rasters: Extract individual trees from the prediction masks as separate raster files.
 
+   - Configuration settings to enable:
+     - ``save_masked_rasters: True``
+     - ``masked_rasters_output_dir: "masked_rasters"``
+     - ``scale_factor: 4``
 
-Dataset
+Labeling data efficiently
+=========================
+
+Creating the ground truth segmentation polygons is a time-consuming process. DeepTree implements active learning to help you direct your labeling efforts to the most informative regions of the dataset.
+
+What is Active Learning, and why is it important?
+-------------------------------------------------
+Active learning is a process where the model identifies uncertain areas in its predictions. These areas are marked as high-entropy regions where the model is uncertain.
+
+Entropy maps visualize where the model is uncertain by:
+- Identifying regions that are ambiguous or challenging for the model.
+- Allowing for focused data collection in uncertain areas, improving model performance by ensuring that low-confidence regions are labeled and incorporated into the dataset.
+
+Since it is often not feasible to label an entire dataset, run inference on your unlabeled tiles (in ``pool_tiles``). The model will compute pixel-wise entropy and report the mean per tile. Label the tiles with the highest average entropy, then repeat fine-tuning and active learning until you achieve the desired performance.
+
+By integrating entropy maps into your workflow, you ensure continuous improvement of the model, especially in areas where it is most likely to make errors.
+
+Dataset 
 =======
 
 Use your own dataset
@@ -226,3 +216,13 @@ Add your own model
 Thanks to the modular structure, it is easy to substitute your own model architecture. Add your own model to the repository and make sure it inherits from Lightning Module. Then, modify the `DeepTreesModel` in `models.py` to use your new model as a backbone, instead of `TreeCrownDelineationModel`. Add your model's keyword arguments to the configuration file. It will be instantiated while running the `train.py` script. 
 
 Be aware that novel models will not work with the pretrained model weights.
+=======
+   - Saved location: In the ``masked_rasters/`` folder.
+
+- Polygons: Tree crown polygons saved as shapefiles (.shp) for GIS applications.
+
+   - Configuration settings to enable:
+     - ``save_polygons: True``
+     - ``saved_polygons_output_dir: "saved_polygons"``
+
+   - Saved location: In the ``saved_polygons/`` folder.
