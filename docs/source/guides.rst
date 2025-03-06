@@ -100,7 +100,7 @@ DeepTrees can process raster tiles in `TIF` format, e.g. from digital orthophoto
 
 If you want to provide imagery in a different format, you can modify the `TreeCrownDelineationBaseDataset` class to handle the data accordingly.
 
-DeepTrees comes with a small dataset for demonstration purposes. TODO-add-link
+DeepTrees comes with a small dataset for demonstration purposes.
 
 6. **Create ground truth for training and validation**
 
@@ -117,12 +117,11 @@ Option 1, if you use the provided script `train.py` together with a configuratio
 
 Option 2, if you want to generate the target masks, distance transforms, and outlines stand-alone: 
 
-```python
-from deeptrees.dataloading.datamodule import TreeCrownDelineationDataModule
+.. code-block::
+  from deeptrees.dataloading.datamodule import TreeCrownDelineationDataModule
 
-tcdm = TreeCrownDelineationDataModule(**config)
-tcdm.prepare_data()
-```
+  tcdm = TreeCrownDelineationDataModule(**config)
+  tcdm.prepare_data()
 
 Check `configs/train.yaml` and the `TreeCrownDelineationDataModule` class for an example configuration.
 
@@ -155,28 +154,26 @@ You can train your own model based on your own data, or finetune a pre-trained m
 This is the expected directory structure.
 To train the model, you need to have the labeled tiles in the `tiles` and `labels` directories. The unlabeled tiles go into `pool_tiles`. Your polygon labels need to be in ESRI shapefile format.
 
-```
-|-- tiles
-|   |-- tile_0_0.tif
-|   |-- tile_0_1.tif
-|   |-- ...
-|-- labels
-|   |-- label_tile_0_0.shp
-|   |-- label_tile_0_1.shp
-|   |-- ...
-|-- pool_tiles
-|   |-- tile_4_7.tif
-|   |-- tile_4_8.tif
-|   |-- ...
-```
+.. code-block::
+    |-- tiles
+    |   |-- tile_0_0.tif
+    |   |-- tile_0_1.tif
+    |   |-- ...
+    |-- labels
+    |   |-- label_tile_0_0.shp
+    |   |-- label_tile_0_1.shp
+    |   |-- ...
+    |-- pool_tiles
+    |   |-- tile_4_7.tif
+    |   |-- tile_4_8.tif
+    |   |-- ...
 
 The ground truth masks, distance transforms, and outlines are created on the fly in the training script. Their directory structure is as follows:
 
-```
-|-- masks
-|-- outlines
-|-- dist_trafo
-```
+.. code-block::
+    |-- masks
+    |-- outlines
+    |-- dist_trafo
 
 We use the following classes for training:
 
@@ -196,10 +193,9 @@ The pretrained model should be passed in `data.pretrained.path` (root folder) an
 
 Run the training script like this:
 
-```bash
-python scripts/train.py --config-name=finetune_halle # finetune with pretrained model (demo for the Halle DOP dataset)
-python scripts/train.py --config-name=yourconfig # with your own config
-```
+.. code-block::
+  python scripts/train.py --config-name=finetune_halle # finetune with pretrained model (demo for the Halle DOP dataset)
+  python scripts/train.py --config-name=yourconfig # with your own config
 
 Train a model from scratch
 --------------------------
