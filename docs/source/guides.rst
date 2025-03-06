@@ -1,6 +1,30 @@
 Developer Guides
 ================
 
+Configuring DeepTrees
+=====================
+
+DeepTrees is a modular software that can be configured to suit your specific needs. The configuration file is a YAML file that defines various settings for the training, prediction, and evaluation processes. The configuration file is divided into sections, each corresponding to a specific aspect of the software. Arguments for the datamodule, the model, and the training / inference process are specified there.
+
+DeepTrees uses `Hydra <https://hydra.cc/docs/intro/>`_ for configuration management. Hydra allows you to compose and override configurations flexibly. The configuration files are located in the `configs` directory. You can create your own configuration file or modify the existing ones to suit your needs.
+
+By default, the following configuration files are used with the training / inference scripts:
+
+.. code-block::
+
+  Predicting with package (deeptrees.predict) > configs/predict/inference_on_individual_tiles.yaml
+
+  Training / inference with python scripts:
+
+  train.py > configs/train/train_halle.yaml
+  test.py > configs/test/inference_halle.yaml
+
+
+To override the default configuration settings, you should pass your configuration file path as an argument to the training or inference scripts. 
+
+Hydra configs are composable, meaning you do not need to specify parameters again that have been specified in the basis configuration file. Plus, you can overwrite individual configuration parameters on the command line. 
+
+
 
 Analyzing tree metrics
 ======================
@@ -226,4 +250,3 @@ Add your own model
 Thanks to the modular structure, it is easy to substitute your own model architecture. Add your own model to the repository and make sure it inherits from Lightning Module. Then, modify the `DeepTreesModel` in `models.py` to use your new model as a backbone, instead of `TreeCrownDelineationModel`. Add your model's keyword arguments to the configuration file. It will be instantiated while running the `train.py` script. 
 
 Be aware that novel models will not work with the pretrained model weights.
-=======
