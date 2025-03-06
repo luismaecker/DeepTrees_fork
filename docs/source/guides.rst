@@ -61,6 +61,16 @@ The primary outputs generated are:
      - ``masked_rasters_output_dir: "masked_rasters"``
      - ``scale_factor: 4``
 
+   - Saved location: In the ``masked_rasters/`` folder.
+
+- Polygons: Tree crown polygons saved as shapefiles (.shp) for GIS applications.
+
+   - Configuration settings to enable:
+     - ``save_polygons: True``
+     - ``saved_polygons_output_dir: "saved_polygons"``
+
+   - Saved location: In the ``saved_polygons/`` folder.
+
 Labeling data efficiently
 =========================
 
@@ -217,12 +227,3 @@ Thanks to the modular structure, it is easy to substitute your own model archite
 
 Be aware that novel models will not work with the pretrained model weights.
 =======
-   - Saved location: In the ``masked_rasters/`` folder.
-
-- Polygons: Tree crown polygons saved as shapefiles (.shp) for GIS applications.
-
-   - Configuration settings to enable:
-     - ``save_polygons: True``
-     - ``saved_polygons_output_dir: "saved_polygons"``
-
-   - Saved location: In the ``saved_polygons/`` folder.
