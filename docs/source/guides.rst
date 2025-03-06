@@ -118,6 +118,7 @@ Option 1, if you use the provided script `train.py` together with a configuratio
 Option 2, if you want to generate the target masks, distance transforms, and outlines stand-alone: 
 
 .. code-block::
+
   from deeptrees.dataloading.datamodule import TreeCrownDelineationDataModule
 
   tcdm = TreeCrownDelineationDataModule(**config)
@@ -155,6 +156,7 @@ This is the expected directory structure.
 To train the model, you need to have the labeled tiles in the `tiles` and `labels` directories. The unlabeled tiles go into `pool_tiles`. Your polygon labels need to be in ESRI shapefile format.
 
 .. code-block::
+
     |-- tiles
     |   |-- tile_0_0.tif
     |   |-- tile_0_1.tif
@@ -171,6 +173,7 @@ To train the model, you need to have the labeled tiles in the `tiles` and `label
 The ground truth masks, distance transforms, and outlines are created on the fly in the training script. Their directory structure is as follows:
 
 .. code-block::
+
     |-- masks
     |-- outlines
     |-- dist_trafo
@@ -194,6 +197,7 @@ The pretrained model should be passed in `data.pretrained.path` (root folder) an
 Run the training script like this:
 
 .. code-block::
+
   python scripts/train.py --config-name=finetune_halle # finetune with pretrained model (demo for the Halle DOP dataset)
   python scripts/train.py --config-name=yourconfig # with your own config
 
