@@ -209,7 +209,7 @@ If you do not specify a pretrained model (`pretrained.model = null` in the confi
 Control the training loop
 -------------------------
 
-DeepTrees is a modular software based to large parts on Pytorch Lightning modules. Training is handled by the Lightning Trainer. To control aspects of the training loop, modify the `trainer` section in the configuration file based on the Lightning Trainer API.
+DeepTrees is a modular software based to large parts on `Pytorch Lightning <https://lightning.ai/docs/pytorch/stable/>`_ modules. Training is handled by the Lightning Trainer. To control aspects of the training loop, modify the `trainer` section in the configuration file based on the Lightning Trainer API.
 
 Model architectures
 ===================
