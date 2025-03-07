@@ -38,6 +38,20 @@ pages:
   only:
     - main
 
+
+readthedocs:
+  image: alpine:latest
+  stage: docs
+  before_script:
+    - apk add curl
+  script:
+    - 'curl -X POST -H "Authorization: Token $RTD_TOKEN" https://readthedocs.org/api/v3/projects/deeptrees/versions/latest/builds/'
+  rules:
+    # Only run the job on the default branch and not in forks.
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PROJECT_PATH == "taimur.khan/DeepTrees"
+
+
+
 build-package:
   image: python:3.10
   stage: build
