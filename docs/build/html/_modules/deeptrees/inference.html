@@ -225,8 +225,7 @@
 <span class="sd">        Runs inference on the input data and performs post-processing.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Run inference on the data</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>  <span class="c1"># Set the model to evaluation mode</span>
-        <span class="n">all_polygons</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>  <span class="c1"># Set the model to evaluation mode        </span>
 
         <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">batch</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="p">):</span>
             <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
@@ -275,56 +274,54 @@
                     
                 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Saving entropy map to ./entropy_maps&#39;</span><span class="p">)</span>
                     
-                <span class="c1"># add postprocessing here</span>
-                <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-                <span class="n">polygons</span> <span class="o">=</span> <span class="n">tcdpp</span><span class="o">.</span><span class="n">extract_polygons</span><span class="p">(</span>
-                    <span class="n">mask</span><span class="p">,</span>
-                    <span class="n">outline</span><span class="p">,</span>
-                    <span class="n">distance_transform</span><span class="p">,</span>
-                    <span class="n">transform</span><span class="o">=</span><span class="n">trafo</span><span class="p">,</span>
-                    <span class="n">mask_exp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">polygon_extraction</span><span class="p">[</span><span class="s2">&quot;mask_exp&quot;</span><span class="p">],</span>
-                    <span class="n">outline_multiplier</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">polygon_extraction</span><span class="p">[</span><span class="s2">&quot;outline_multiplier&quot;</span><span class="p">],</span>
-                    <span class="n">outline_exp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">polygon_extraction</span><span class="p">[</span><span class="s2">&quot;outline_exp&quot;</span><span class="p">],</span>
-                    <span class="n">dist_exp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">polygon_extraction</span><span class="p">[</span><span class="s2">&quot;dist_exp&quot;</span><span class="p">],</span>
-                    <span class="n">sigma</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">polygon_extraction</span><span class="p">[</span><span class="s2">&quot;sigma&quot;</span><span class="p">],</span>
-                    <span class="n">binary_threshold</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">polygon_extraction</span><span class="p">[</span><span class="s2">&quot;binary_threshold&quot;</span><span class="p">],</span>
-                    <span class="n">min_dist</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">polygon_extraction</span><span class="p">[</span><span class="s2">&quot;min_dist&quot;</span><span class="p">],</span>
-                    <span class="n">label_threshold</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">polygon_extraction</span><span class="p">[</span><span class="s2">&quot;label_threshold&quot;</span><span class="p">],</span>
-                    <span class="n">area_min</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">polygon_extraction</span><span class="p">[</span><span class="s2">&quot;area_min&quot;</span><span class="p">],</span>
-                    <span class="n">simplify</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">polygon_extraction</span><span class="p">[</span><span class="s2">&quot;simplify&quot;</span><span class="p">]</span>
-                <span class="p">)</span>
+            <span class="c1"># Extract polygons </span>
+            <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="n">polygons</span> <span class="o">=</span> <span class="n">tcdpp</span><span class="o">.</span><span class="n">extract_polygons</span><span class="p">(</span>
+                <span class="n">mask</span><span class="p">,</span>
+                <span class="n">outline</span><span class="p">,</span>
+                <span class="n">distance_transform</span><span class="p">,</span>
+                <span class="n">transform</span><span class="o">=</span><span class="n">trafo</span><span class="p">,</span>
+                <span class="n">mask_exp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">polygon_extraction</span><span class="p">[</span><span class="s2">&quot;mask_exp&quot;</span><span class="p">],</span>
+                <span class="n">outline_multiplier</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">polygon_extraction</span><span class="p">[</span><span class="s2">&quot;outline_multiplier&quot;</span><span class="p">],</span>
+                <span class="n">outline_exp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">polygon_extraction</span><span class="p">[</span><span class="s2">&quot;outline_exp&quot;</span><span class="p">],</span>
+                <span class="n">dist_exp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">polygon_extraction</span><span class="p">[</span><span class="s2">&quot;dist_exp&quot;</span><span class="p">],</span>
+                <span class="n">sigma</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">polygon_extraction</span><span class="p">[</span><span class="s2">&quot;sigma&quot;</span><span class="p">],</span>
+                <span class="n">binary_threshold</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">polygon_extraction</span><span class="p">[</span><span class="s2">&quot;binary_threshold&quot;</span><span class="p">],</span>
+                <span class="n">min_dist</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">polygon_extraction</span><span class="p">[</span><span class="s2">&quot;min_dist&quot;</span><span class="p">],</span>
+                <span class="n">label_threshold</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">polygon_extraction</span><span class="p">[</span><span class="s2">&quot;label_threshold&quot;</span><span class="p">],</span>
+                <span class="n">area_min</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">polygon_extraction</span><span class="p">[</span><span class="s2">&quot;area_min&quot;</span><span class="p">],</span>
+                <span class="n">simplify</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">polygon_extraction</span><span class="p">[</span><span class="s2">&quot;simplify&quot;</span><span class="p">]</span>
+            <span class="p">)</span>
+            
+            <span class="n">t_process</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span>
                 
-                <span class="n">t_process</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">polygons</span><span class="p">)</span><span class="si">}</span><span class="s2"> polygons.&quot;</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Inference time: </span><span class="si">{</span><span class="n">t_inference</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> seconds&quot;</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Post-processing time: </span><span class="si">{</span><span class="n">t_process</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> seconds&quot;</span><span class="p">)</span>
                 
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">save_masked_rasters</span><span class="p">:</span>
+            <span class="c1"># create a diectory and save all above polygons to that directory</span>
+            <span class="n">polygon_file</span> <span class="o">=</span>  <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">raster_name</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;.shp&#39;</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="s1">&#39;./saved_polygons&#39;</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">polygon_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">&#39;saved_polygons&#39;</span> <span class="p">,</span><span class="n">polygon_file</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Saving all polygons to </span><span class="si">{</span><span class="n">polygon_path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">save_polygons</span><span class="p">(</span><span class="n">polygons</span><span class="p">,</span> <span class="n">polygon_path</span><span class="p">,</span> <span class="n">crs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;crs&#39;</span><span class="p">])</span>
+            
+            
+            <span class="c1"># save individual trees as rasters</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">save_masked_rasters</span><span class="p">:</span>
+            
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Saving mask_and_scale_raster_from_polygons to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">masked_rasters_output_dir</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
                 
-                    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Saving mask_and_scale_raster_from_polygons to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">masked_rasters_output_dir</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
-                    
-                    <span class="n">mask_and_save_individual_trees</span><span class="p">(</span><span class="n">tiff_path</span><span class="o">=</span><span class="n">raster_name</span><span class="p">,</span>
-                                                        <span class="n">polygons</span><span class="o">=</span><span class="n">polygons</span><span class="p">,</span>                                                         
-                                                        <span class="n">output_dir</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">masked_rasters_output_dir</span><span class="p">,</span> 
-                                                                                <span class="n">raster_suffix</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]),</span>
-                                                                                <span class="n">scale_factor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">scale_factor</span><span class="p">)</span>
-                
-                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">polygons</span><span class="p">)</span><span class="si">}</span><span class="s2"> polygons.&quot;</span><span class="p">)</span>
-                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Inference time: </span><span class="si">{</span><span class="n">t_inference</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> seconds&quot;</span><span class="p">)</span>
-                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Post-processing time: </span><span class="si">{</span><span class="n">t_process</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> seconds&quot;</span><span class="p">)</span>
-                
-                <span class="n">all_polygons</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">polygons</span><span class="p">)</span>  <span class="c1"># Process your predictions here</span>
-                
-                <span class="c1"># create a diectory and save all polygons to that directory</span>
-                <span class="n">polygon_file</span> <span class="o">=</span>  <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">raster_name</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;.shp&#39;</span>
-                <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="s1">&#39;./saved_polygons&#39;</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                <span class="n">polygon_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">&#39;saved_polygons&#39;</span> <span class="p">,</span><span class="n">polygon_file</span><span class="p">)</span>
-                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Saving all polygons to </span><span class="si">{</span><span class="n">polygon_path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-                <span class="n">utils</span><span class="o">.</span><span class="n">save_polygons</span><span class="p">(</span><span class="n">all_polygons</span><span class="p">,</span> <span class="n">polygon_path</span><span class="p">,</span> <span class="n">crs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;crs&#39;</span><span class="p">])</span></div>
+                <span class="n">mask_and_save_individual_trees</span><span class="p">(</span><span class="n">tiff_path</span><span class="o">=</span><span class="n">raster_name</span><span class="p">,</span>
+                                                    <span class="n">polygons</span><span class="o">=</span><span class="n">polygons</span><span class="p">,</span>                                                         
+                                                    <span class="n">output_dir</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">masked_rasters_output_dir</span><span class="p">,</span> 
+                                                                            <span class="n">raster_suffix</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]),</span>
+                                                                            <span class="n">scale_factor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">scale_factor</span><span class="p">)</span></div>
 </div>
 
-      
+        
 
 <span class="c1"># For command parsing run the main function</span>
-<div class="viewcode-block" id="main">
-<a class="viewcode-back" href="../../deeptrees.html#deeptrees.inference.main">[docs]</a>
 <span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
     <span class="c1"># Initialize the argument parser</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Predict tree crown from image tiles.&quot;</span><span class="p">)</span>
@@ -360,8 +357,7 @@
 
 
     <span class="c1"># Run the prediction</span>
-    <span class="n">predictor</span><span class="o">.</span><span class="n">predict</span><span class="p">()</span></div>
-
+    <span class="n">predictor</span><span class="o">.</span><span class="n">predict</span><span class="p">()</span>
 
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>

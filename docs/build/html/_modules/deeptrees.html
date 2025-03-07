@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>deeptrees &mdash; TorchTrees  documentation</title>
+  <title>deeptrees &mdash; DeepTrees🌳  documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
 
@@ -29,7 +29,7 @@
           
           
           <a href="../index.html" class="icon icon-home">
-            TorchTrees
+            DeepTrees🌳
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -53,7 +53,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../index.html">TorchTrees</a>
+          <a href="../index.html">DeepTrees🌳</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -72,8 +72,7 @@
            <div itemprop="articleBody">
              
   <h1>Source code for deeptrees</h1><div class="highlight"><pre>
-<span></span><span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Max Freudenberg&quot;</span>
-<span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;0.1.0&quot;</span>
+<span></span><span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;v1.6.0&quot;</span>
 
 <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">model</span>
 <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">modules</span>
@@ -81,42 +80,28 @@
 
 <span class="kn">from</span> <span class="nn">.model.deeptrees_model</span> <span class="kn">import</span> <span class="n">TreeCrownDelineationModel</span>
 
-<span class="kn">from</span> <span class="nn">deeptrees.inference</span> <span class="kn">import</span> <span class="n">TreeCrownPredictor</span>
+<span class="kn">from</span> <span class="nn">.inference</span> <span class="kn">import</span> <span class="n">TreeCrownPredictor</span>
 
-<span class="kn">from</span> <span class="nn">deeptrees.pretrained</span> <span class="kn">import</span> <span class="n">freudenberg2022</span>
+<span class="kn">from</span> <span class="nn">.pretrained</span> <span class="kn">import</span> <span class="n">freudenberg2022</span>
 
 <span class="kn">import</span> <span class="nn">os</span>
 
 
 <div class="viewcode-block" id="predict">
 <a class="viewcode-back" href="../deeptrees.html#deeptrees.predict">[docs]</a>
-<span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="n">image_path</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
+<span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="n">image_path</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">config_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Run tree crown delineation prediction on the provided image path.</span>
+<span class="sd">    Run tree crown delineation prediction on the provided image paths using the given configuration.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        image_path (list[str]): List of image paths to process.</span>
+<span class="sd">        image_path (list[str]): A list of file paths to the images to be processed.</span>
+<span class="sd">        config_path (str): The file path to the configuration file for the prediction.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        None: This function does not return any value. It performs the prediction in-place.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">predictor</span> <span class="o">=</span> <span class="n">TreeCrownPredictor</span><span class="p">(</span><span class="n">image_path</span><span class="o">=</span><span class="n">image_path</span><span class="p">)</span>  <span class="c1"># Uses default config path and name</span>
+    <span class="n">predictor</span> <span class="o">=</span> <span class="n">TreeCrownPredictor</span><span class="p">(</span><span class="n">image_path</span><span class="o">=</span><span class="n">image_path</span><span class="p">,</span> <span class="n">config_path</span><span class="o">=</span><span class="n">config_path</span><span class="p">)</span>  <span class="c1"># Uses default config path and name</span>
     <span class="n">predictor</span><span class="o">.</span><span class="n">predict</span><span class="p">()</span></div>
-
-    
-
-<div class="viewcode-block" id="download_pre_trained_model_weights">
-<a class="viewcode-back" href="../deeptrees.html#deeptrees.download_pre_trained_model_weights">[docs]</a>
-<span class="k">def</span> <span class="nf">download_pre_trained_model_weights</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Downloads the pretrained model weights for the Freudenberg et al. 2022 model.</span>
-<span class="sd">    </span>
-<span class="sd">    Args:</span>
-<span class="sd">        download_path (str): The path to save the downloaded model weights to.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    
-    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="s1">&#39;./pretrained_models&#39;</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    
-    <span class="n">file_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;./pretrained_models&#39;</span><span class="p">,</span> <span class="s2">&quot;lUnet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=3_jitted.pt&quot;</span><span class="p">)</span>
-    
-    <span class="n">freudenberg2022</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span></div>
 
 </pre></div>
 

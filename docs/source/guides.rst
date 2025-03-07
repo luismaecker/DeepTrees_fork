@@ -2,7 +2,7 @@ Developer Guides
 ================
 
 Configuring DeepTrees
-=====================
+---------------------
 
 DeepTrees is a modular software that can be configured to suit your specific needs. The configuration file is a YAML file that defines various settings for the training, prediction, and evaluation processes. The configuration file is divided into sections, each corresponding to a specific aspect of the software. Arguments for the datamodule, the model, and the training / inference process are specified there.
 
@@ -27,12 +27,12 @@ Hydra configs are composable, meaning you do not need to specify parameters agai
 
 
 Analyzing tree metrics
-======================
+----------------------
 
 
 
 Prediction
-==========
+----------
 
 What does the ``predict`` function do?
 --------------------------------------
@@ -96,7 +96,7 @@ The primary outputs generated are:
    - Saved location: In the ``saved_polygons/`` folder.
 
 Labeling data efficiently
-=========================
+-------------------------
 
 Creating the ground truth segmentation polygons is a time-consuming process. DeepTree implements active learning to help you direct your labeling efforts to the most informative regions of the dataset.
 
@@ -113,7 +113,7 @@ Since it is often not feasible to label an entire dataset, run inference on your
 By integrating entropy maps into your workflow, you ensure continuous improvement of the model, especially in areas where it is most likely to make errors.
 
 Dataset 
-=======
+-------
 
 Use your own dataset
 --------------------
@@ -171,8 +171,7 @@ The Normalized Difference Vegetation Index (NDVI) is a common index used to asse
 Note that this attaches the NDVI to your other input channels and needs to be reflected in your model's number of input channels. To add more indices, you can modify the `TreeCrownDelineationBaseDataset` class.
 
 Training
-========
-
+--------
 
 You can train your own model based on your own data, or finetune a pre-trained model. For this, you need to have raster tiles and the accompanying labels representing the ground truth delineated tree crowns as polygons.
 
@@ -236,7 +235,7 @@ Control the training loop
 DeepTrees is a modular software based to large parts on `Pytorch Lightning <https://lightning.ai/docs/pytorch/stable/>`_ modules. Training is handled by the Lightning Trainer. To control aspects of the training loop, modify the `trainer` section in the configuration file based on the Lightning Trainer API.
 
 Model architectures
-===================
+-------------------
 
 TreeCrownDelineationModel
 -------------------------

@@ -76,7 +76,124 @@
              
   <section id="configuration">
 <h1>Configuration<a class="headerlink" href="#configuration" title="Link to this heading"></a></h1>
-<p>// Add your content here…</p>
+<p>DeepTrees uses <a class="reference external" href="https://hydra.cc">Hydra</a> for configuration. Users must a configuration file called <cite>config.yaml</cite> in the root folder of the project. We will continue to add more parameters in the future as we parameterize the code further with <a class="reference external" href="https://hydra.cc">Hydra</a>.</p>
+<p>Below you can find the default configuration for training and inference. You can use this as a template for your own configuration file.</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt><strong>Inference default configuration</strong> <em>(object)</em>: Cannot contain additional properties.</dt><dd><ul>
+<li><p><strong>name</strong> <em>(string, required)</em>: Identifier for the run. Will be used in folder names and logs. Default: <cite>“inference-halle”</cite>.</p></li>
+<li><p><strong>output_dir</strong> <em>(string, required)</em>: Output folder. Default: <cite>“results”</cite>.</p></li>
+<li><p><strong>pretrained_model</strong> <em>(string, required)</em>: Path to pretrained model(s). You can pass a single model or a list of pretrained models. In the latter case, their predictions will be averaged. Default: <cite>“/work/ka1176/caroline/gitlab/deeptrees/experiments/finetune-halle/2024-11-25_09-32-21/unet-halle_jitted.pt”</cite>.</p></li>
+<li><p><strong>logdir</strong> <em>(string, required)</em>: Set by hydra. This is where we find logs and results. Default: <cite>“${hydra.run.dir}”</cite>.</p></li>
+<li><p><strong>model_name</strong> <em>(string, required)</em>: Short and memorable model name. Default: <cite>“unet-halle”</cite>.</p></li>
+<li><p><strong>seed</strong> <em>(null, required)</em>: Random seed. If null, it is not fixed. Default: <cite>null</cite>.</p></li>
+<li><p><strong>crs</strong> <em>(string, required)</em>: Coordinate reference system. Default: <cite>“EPSG:25832”</cite>.</p></li>
+<li><p><strong>polygon_file</strong> <em>(string, required)</em>: Output file to store the segmented polygons. Default: <cite>“treecrowns.sqlite”</cite>.</p></li>
+<li><p><strong>baumkataster_file</strong> <em>(string, required)</em>: Path to the file containing the Baumkataster ground truth. Default: <cite>“/work/ka1176/shared_data/2024-ufz-deeptree/halle-baumkataster/itc005211130105323_point.shp”</cite>.</p></li>
+<li><p><strong>baumkataster_intersection_file</strong> <em>(string, required)</em>: Output file to store the polygons that intersect with Baumkataster. Default: <cite>“treecrowns_baumkataster.sqlite”</cite>.</p></li>
+<li><p><strong>callbacks</strong>: Refer to <span class="xref std std-ref">Callbacks</span>.</p></li>
+<li><p><strong>data</strong>: Refer to <span class="xref std std-ref">Data</span>.</p></li>
+<li><p><strong>model</strong>: Refer to <span class="xref std std-ref">Model</span>.</p></li>
+<li><p><strong>trainer</strong>: Refer to <span class="xref std std-ref">Trainer</span>.</p></li>
+<li><p><strong>hydra</strong>: Refer to <span class="xref std std-ref">Hydra</span>.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p><strong>Callbacks</strong> <em>(object)</em>: Callbacks to pass to the trainer during inference. Cannot contain additional properties.</p></li>
+<li><dl class="simple">
+<dt><strong>Data</strong> <em>(object)</em>: Cannot contain additional properties.</dt><dd><ul>
+<li><p><strong>_target_</strong> <em>(string, required)</em>: class to instantiate. Default: <cite>“deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule”</cite>.</p></li>
+<li><p><strong>rasters</strong> <em>(string, required)</em>: Path to folder containing the raster tiles. Default: <cite>“/work/ka1176/shared_data/2024-ufz-deeptree/polygon-labelling/pool_tiles”</cite>.</p></li>
+<li><p><strong>masks</strong> <em>(string, required)</em>: Only for consistency. Default: <cite>null</cite>.</p></li>
+<li><p><strong>outlines</strong> <em>(string, required)</em>: Only for consistency. Default: <cite>null</cite>.</p></li>
+<li><p><strong>distance_transforms</strong> <em>(string, required)</em>: Only for consistency. Default: <cite>null</cite>.</p></li>
+<li><p><strong>batch_size</strong> <em>(integer, required)</em>: Test batch size (must be 1). Default: <cite>1</cite>.</p></li>
+<li><p><strong>test_indices</strong> <em>(array, required)</em>: Optional list of test indices. If given, only these rasters are used for prediction. Default: <cite>null</cite>.</p></li>
+<li><p><strong>divide_by</strong> <em>(integer, required)</em>: Value by which to divide the input rasters. Default: <cite>255</cite>.</p></li>
+<li><p><strong>dilate_outlines</strong> <em>(integer, required)</em>: Number of pixels by which to dilate the outlines. Default: <cite>0</cite>.</p></li>
+<li><p><strong>num_workers</strong> <em>(integer, required)</em>: Number of workers in the Pytorch DataLoader. Default: <cite>8</cite>.</p></li>
+<li><p><strong>ndvi_config</strong>: Refer to <span class="xref std std-ref">NdviConfig</span>.</p></li>
+<li><p><strong>augment_eval</strong>: Refer to <span class="xref std std-ref">AugmentEval</span>.</p></li>
+<li><p><strong>ground_truth_config</strong>: Refer to <span class="xref std std-ref">GroundTruthConfig</span>.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><strong>AugmentEval</strong> <em>(object)</em>: Cannot contain additional properties.</dt><dd><ul>
+<li><p><strong>Pad</strong>: Refer to <span class="xref std std-ref">Pad</span>.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><strong>Pad</strong> <em>(object)</em>: Cannot contain additional properties.</dt><dd><ul>
+<li><p><strong>padding</strong> <em>(integer, required)</em>: Padding to apply to all sides of the input raster. This is currently hard-coded 500-&gt; 512! Default: <cite>6</cite>.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><strong>GroundTruthConfig</strong> <em>(object)</em>: Cannot contain additional properties.</dt><dd><ul>
+<li><p><strong>labels</strong> <em>(string, required)</em>: Only for consistency. Default: <cite>null</cite>.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><strong>NdviConfig</strong> <em>(object)</em>: Cannot contain additional properties.</dt><dd><ul>
+<li><p><strong>concatenate</strong> <em>(boolean, required)</em>: Concatenate NDVI to RGBI. Default: <cite>true</cite>.</p></li>
+<li><p><strong>rescale</strong> <em>(boolean, required)</em>: Rescale NDVI to [0, 1]. Default: <cite>false</cite>.</p></li>
+<li><p><strong>red</strong> <em>(integer, required)</em>: Index of red channel in raster. Default: <cite>0</cite>.</p></li>
+<li><p><strong>nir</strong> <em>(integer, required)</em>: Index of infrared channel in raster. Default: <cite>3</cite>.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><strong>Model</strong> <em>(object)</em>: Cannot contain additional properties.</dt><dd><ul>
+<li><p><strong>_target_</strong> <em>(string, required)</em>: Class to instantiate. Default: <cite>“deeptrees.model.deeptrees_model.DeepTreesModel”</cite>.</p></li>
+<li><p><strong>num_backbones</strong> <em>(integer, required)</em>: Number of models to average. This will be overwritten if pretrained_model is a list. Default: <cite>1</cite>.</p></li>
+<li><p><strong>in_channels</strong> <em>(integer, required)</em>: Number of input channels (e.g. RGBI+NDVI). Default: <cite>5</cite>.</p></li>
+<li><p><strong>architecture</strong> <em>(string, required)</em>: TreeCrownDelineation architecture. Default: <cite>“Unet”</cite>.</p></li>
+<li><p><strong>backbone</strong> <em>(string, required)</em>: TreeCrownDelineation backbone. Default: <cite>“resnet18”</cite>.</p></li>
+<li><p><strong>apply_sigmoid</strong> <em>(boolean, required)</em>: If True, apply sigmoid to mask and outline outputs to return probability maps. Default: <cite>false</cite>.</p></li>
+<li><p><strong>postprocessing_config</strong>: Refer to <span class="xref std std-ref">PostprocessingConfig</span>.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><strong>PostprocessingConfig</strong> <em>(object)</em>: Cannot contain additional properties.</dt><dd><ul>
+<li><p><strong>min_dist</strong> <em>(integer, required)</em>: Minimum distance between neighbouring tree crowns. Default: <cite>10</cite>.</p></li>
+<li><p><strong>mask_exp</strong> <em>(integer, required)</em>: Parameter for feature extraction. Default: <cite>2</cite>.</p></li>
+<li><p><strong>outline_multiplier</strong> <em>(integer, required)</em>: Parameter for feature extraction. Default: <cite>5</cite>.</p></li>
+<li><p><strong>outline_exp</strong> <em>(integer, required)</em>: Parameter for feature extraction. Default: <cite>1</cite>.</p></li>
+<li><p><strong>dist_exp</strong> <em>(number, required)</em>: Parameter for feature extraction. Default: <cite>0.5</cite>.</p></li>
+<li><p><strong>area_min</strong> <em>(integer, required)</em>: Minimum area for a polygon to be considered. Default: <cite>3</cite>.</p></li>
+<li><p><strong>sigma</strong> <em>(integer, required)</em>: Gaussian filter standard deviation in feature extraction. Default: <cite>2</cite>.</p></li>
+<li><p><strong>label_threshold</strong> <em>(number, required)</em>: Minimum height of local maxima during feature extraction. Default: <cite>0.5</cite>.</p></li>
+<li><p><strong>binary_threshold</strong> <em>(number, required)</em>: Threshold value for the feature map, lower is background. Default: <cite>0.1</cite>.</p></li>
+<li><p><strong>simplify</strong> <em>(number, required)</em>: Polygon simplification distance, vertices closer than this value are simplified. Default: <cite>0.3</cite>.</p></li>
+<li><p><strong>active_learning</strong> <em>(boolean, required)</em>: Calculate mean entropy per tile. Default: <cite>true</cite>.</p></li>
+<li><p><strong>save_entropy_maps</strong> <em>(boolean, required)</em>: Save the entropy heatmaps. Default: <cite>true</cite>.</p></li>
+<li><p><strong>save_predictions</strong> <em>(boolean, required)</em>: Save the predictions (mask, outline, distance transform). Default: <cite>true</cite>.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><strong>Trainer</strong> <em>(object)</em>: Cannot contain additional properties.</dt><dd><ul>
+<li><p><strong>_target_</strong> <em>(string, required)</em></p></li>
+<li><p><strong>devices</strong> <em>(integer, required)</em>: Number of GPUs to use in parallel. Default: <cite>1</cite>.</p></li>
+<li><p><strong>accelerator</strong> <em>(string, required)</em>: Choose GPU if available. Default: <cite>“auto”</cite>.</p></li>
+<li><p><strong>enable_progress_bar</strong> <em>(boolean, required)</em>: Enable progress bar. Default: <cite>true</cite>.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
 </section>
 
 

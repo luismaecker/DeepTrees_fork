@@ -46,7 +46,28 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="overview.html">Architectural Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Developer Guides</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Developer Guides</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#configuring-deeptrees">Configuring DeepTrees</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#analyzing-tree-metrics">Analyzing tree metrics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#prediction">Prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#what-does-the-predict-function-do">What does the <code class="docutils literal notranslate"><span class="pre">predict</span></code> function do?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#how-do-i-call-the-predict-function">How do I call the <code class="docutils literal notranslate"><span class="pre">predict</span></code> function?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#what-can-i-extract-from-the-predict-function">What can I extract from the <code class="docutils literal notranslate"><span class="pre">predict</span></code> function?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#labeling-data-efficiently">Labeling data efficiently</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#what-is-active-learning-and-why-is-it-important">What is Active Learning, and why is it important?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#dataset">Dataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#use-your-own-dataset">Use your own dataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#data-augmentation">Data Augmentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#ndvi-calculation-and-other-indices">NDVI Calculation and other indices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#training">Training</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fine-tune-a-pretrained-model">Fine-tune a pretrained model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#train-a-model-from-scratch">Train a model from scratch</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#control-the-training-loop">Control the training loop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#model-architectures">Model architectures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#treecrowndelineationmodel">TreeCrownDelineationModel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#add-your-own-model">Add your own model</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="deeptrees.html">API Reference</a></li>
 </ul>
 
@@ -76,7 +97,219 @@
              
   <section id="developer-guides">
 <h1>Developer Guides<a class="headerlink" href="#developer-guides" title="Link to this heading"></a></h1>
-<p>// Add your content here…</p>
+<section id="configuring-deeptrees">
+<h2>Configuring DeepTrees<a class="headerlink" href="#configuring-deeptrees" title="Link to this heading"></a></h2>
+<p>DeepTrees is a modular software that can be configured to suit your specific needs. The configuration file is a YAML file that defines various settings for the training, prediction, and evaluation processes. The configuration file is divided into sections, each corresponding to a specific aspect of the software. Arguments for the datamodule, the model, and the training / inference process are specified there.</p>
+<p>DeepTrees uses <a class="reference external" href="https://hydra.cc/docs/intro/">Hydra</a> for configuration management. Hydra allows you to compose and override configurations flexibly. The configuration files are located in the <cite>configs</cite> directory. You can create your own configuration file or modify the existing ones to suit your needs.</p>
+<p>By default, the following configuration files are used with the training / inference scripts:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Predicting</span> <span class="k">with</span> <span class="n">package</span> <span class="p">(</span><span class="n">deeptrees</span><span class="o">.</span><span class="n">predict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">configs</span><span class="o">/</span><span class="n">predict</span><span class="o">/</span><span class="n">inference_on_individual_tiles</span><span class="o">.</span><span class="n">yaml</span>
+
+<span class="n">Training</span> <span class="o">/</span> <span class="n">inference</span> <span class="k">with</span> <span class="n">python</span> <span class="n">scripts</span><span class="p">:</span>
+
+<span class="n">train</span><span class="o">.</span><span class="n">py</span> <span class="o">&gt;</span> <span class="n">configs</span><span class="o">/</span><span class="n">train</span><span class="o">/</span><span class="n">train_halle</span><span class="o">.</span><span class="n">yaml</span>
+<span class="n">test</span><span class="o">.</span><span class="n">py</span> <span class="o">&gt;</span> <span class="n">configs</span><span class="o">/</span><span class="n">test</span><span class="o">/</span><span class="n">inference_halle</span><span class="o">.</span><span class="n">yaml</span>
+</pre></div>
+</div>
+<p>To override the default configuration settings, you should pass your configuration file path as an argument to the training or inference scripts.</p>
+<p>Hydra configs are composable, meaning you do not need to specify parameters again that have been specified in the basis configuration file. Plus, you can overwrite individual configuration parameters on the command line.</p>
+</section>
+<section id="analyzing-tree-metrics">
+<h2>Analyzing tree metrics<a class="headerlink" href="#analyzing-tree-metrics" title="Link to this heading"></a></h2>
+</section>
+<section id="prediction">
+<h2>Prediction<a class="headerlink" href="#prediction" title="Link to this heading"></a></h2>
+</section>
+<section id="what-does-the-predict-function-do">
+<h2>What does the <code class="docutils literal notranslate"><span class="pre">predict</span></code> function do?<a class="headerlink" href="#what-does-the-predict-function-do" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">predict</span></code> function runs the core inference pipeline to process input imagery and generate tree crown predictions. It can also produce multiple output artifacts (e.g., uncertainty maps, tree crown masks, outlines, distance transforms, and polygons) based on the configuration settings.</p>
+</section>
+<section id="how-do-i-call-the-predict-function">
+<h2>How do I call the <code class="docutils literal notranslate"><span class="pre">predict</span></code> function?<a class="headerlink" href="#how-do-i-call-the-predict-function" title="Link to this heading"></a></h2>
+<p>To run predictions on a single image or a list of images, use the following command:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">deeptrees</span>
+<span class="kn">from</span> <span class="nn">deeptrees</span> <span class="kn">import</span> <span class="n">predict</span>
+
+<span class="n">predict</span><span class="p">(</span><span class="n">image_path</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;path/to/image.tif&quot;</span><span class="p">],</span> <span class="n">config_path</span><span class="o">=</span><span class="s2">&quot;path/to/config.yaml&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">image_path</span></code>: List of image file paths.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">config_path</span></code>: Path to the configuration file defining various settings for the prediction process.</p></li>
+</ul>
+<p>You can specify your own model in the configuration file or use the default pre-trained model (Freudenberg et al.).</p>
+</section>
+<section id="what-can-i-extract-from-the-predict-function">
+<h2>What can I extract from the <code class="docutils literal notranslate"><span class="pre">predict</span></code> function?<a class="headerlink" href="#what-can-i-extract-from-the-predict-function" title="Link to this heading"></a></h2>
+<p>The primary outputs generated are:</p>
+<ul>
+<li><p>Uncertainty Maps (Entropy Maps): Highlight areas where the model has high uncertainty.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Configuration settings to enable:
+- <code class="docutils literal notranslate"><span class="pre">active_learning:</span> <span class="pre">True</span></code>
+- <code class="docutils literal notranslate"><span class="pre">save_entropy_maps:</span> <span class="pre">True</span></code>
+- <code class="docutils literal notranslate"><span class="pre">entropy_maps_output_dir:</span> <span class="pre">&quot;entropy_maps&quot;</span></code></p></li>
+<li><p>Saved location: In the <code class="docutils literal notranslate"><span class="pre">entropy_maps/</span></code> folder as GeoTIFF files.</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><dl class="simple">
+<dt>Tree Crown Predictions: Includes:</dt><dd><ul class="simple">
+<li><p>Mask: Binary mask of predicted tree crowns.</p></li>
+<li><p>Outlines: Contours of tree crowns.</p></li>
+<li><p>Distance Transform: A map showing the distance to the nearest tree crown.</p></li>
+<li><p>Configuration settings to enable:
+- <code class="docutils literal notranslate"><span class="pre">save_predictions:</span> <span class="pre">True</span></code>
+- <code class="docutils literal notranslate"><span class="pre">predictions_output_dir:</span> <span class="pre">&quot;predictions&quot;</span></code></p></li>
+<li><p>Saved location: In the <code class="docutils literal notranslate"><span class="pre">predictions/</span></code> directory.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p>Individual Trees as Rasters: Extract individual trees from the prediction masks as separate raster files.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Configuration settings to enable:
+- <code class="docutils literal notranslate"><span class="pre">save_masked_rasters:</span> <span class="pre">True</span></code>
+- <code class="docutils literal notranslate"><span class="pre">masked_rasters_output_dir:</span> <span class="pre">&quot;masked_rasters&quot;</span></code>
+- <code class="docutils literal notranslate"><span class="pre">scale_factor:</span> <span class="pre">4</span></code></p></li>
+<li><p>Saved location: In the <code class="docutils literal notranslate"><span class="pre">masked_rasters/</span></code> folder.</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>Polygons: Tree crown polygons saved as shapefiles (.shp) for GIS applications.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Configuration settings to enable:
+- <code class="docutils literal notranslate"><span class="pre">save_polygons:</span> <span class="pre">True</span></code>
+- <code class="docutils literal notranslate"><span class="pre">saved_polygons_output_dir:</span> <span class="pre">&quot;saved_polygons&quot;</span></code></p></li>
+<li><p>Saved location: In the <code class="docutils literal notranslate"><span class="pre">saved_polygons/</span></code> folder.</p></li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+</section>
+<section id="labeling-data-efficiently">
+<h2>Labeling data efficiently<a class="headerlink" href="#labeling-data-efficiently" title="Link to this heading"></a></h2>
+<p>Creating the ground truth segmentation polygons is a time-consuming process. DeepTree implements active learning to help you direct your labeling efforts to the most informative regions of the dataset.</p>
+</section>
+<section id="what-is-active-learning-and-why-is-it-important">
+<h2>What is Active Learning, and why is it important?<a class="headerlink" href="#what-is-active-learning-and-why-is-it-important" title="Link to this heading"></a></h2>
+<p>Active learning is a process where the model identifies uncertain areas in its predictions. These areas are marked as high-entropy regions where the model is uncertain.</p>
+<p>Entropy maps visualize where the model is uncertain by:
+- Identifying regions that are ambiguous or challenging for the model.
+- Allowing for focused data collection in uncertain areas, improving model performance by ensuring that low-confidence regions are labeled and incorporated into the dataset.</p>
+<p>Since it is often not feasible to label an entire dataset, run inference on your unlabeled tiles (in <code class="docutils literal notranslate"><span class="pre">pool_tiles</span></code>). The model will compute pixel-wise entropy and report the mean per tile. Label the tiles with the highest average entropy, then repeat fine-tuning and active learning until you achieve the desired performance.</p>
+<p>By integrating entropy maps into your workflow, you ensure continuous improvement of the model, especially in areas where it is most likely to make errors.</p>
+</section>
+<section id="dataset">
+<h2>Dataset<a class="headerlink" href="#dataset" title="Link to this heading"></a></h2>
+</section>
+<section id="use-your-own-dataset">
+<h2>Use your own dataset<a class="headerlink" href="#use-your-own-dataset" title="Link to this heading"></a></h2>
+<p>The data is handled by the <cite>TreeCrownDelineationDataModule</cite> and the <cite>TreeCrownDelineationBaseDataset</cite>. This class provides functions to load the data, preprocess it, and return it in a format that can be used by the model.</p>
+<p>DeepTrees can process raster tiles in <cite>TIF</cite> format, e.g. from digital orthophotos. You can provide your own dataset by replacing the corresponding paths <cite>data.rasters</cite> in the configuration file.</p>
+<p>If you want to provide imagery in a different format, you can modify the <cite>TreeCrownDelineationBaseDataset</cite> class to handle the data accordingly.</p>
+<p>DeepTrees comes with a small dataset for demonstration purposes.</p>
+<ol class="arabic simple" start="6">
+<li><p><strong>Create ground truth for training and validation</strong></p></li>
+</ol>
+<p>For training or validating with your own dataset, you will create ground truth tree crown polygons in an external software, e.g. QGIS. We work with the following classes:</p>
+<ul class="simple">
+<li><p><cite>0</cite>: Tree</p></li>
+<li><p><cite>1</cite>: Cluster of trees</p></li>
+<li><p><cite>2</cite>: Unsure</p></li>
+<li><p><cite>3</cite>: (dead tree, not yet implemented)</p></li>
+</ul>
+<p>The deep learning model requires the ground truth tree crown polygons to be transformed into raster masks, distance transforms, and outlines. These can be created on the fly during training or inference.</p>
+<p>Option 1, if you use the provided script <cite>train.py</cite> together with a configuration file derived from <cite>configs/train.yaml</cite>: Set <cite>data.ground_truth_config.labels</cite> to the path of the directory containing the shapefiles with the polygons. During setup of the datamodule, the target masks, distance transforms, and outlines will be created.</p>
+<p>Option 2, if you want to generate the target masks, distance transforms, and outlines stand-alone:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">deeptrees.dataloading.datamodule</span> <span class="kn">import</span> <span class="n">TreeCrownDelineationDataModule</span>
+
+<span class="n">tcdm</span> <span class="o">=</span> <span class="n">TreeCrownDelineationDataModule</span><span class="p">(</span><span class="o">**</span><span class="n">config</span><span class="p">)</span>
+<span class="n">tcdm</span><span class="o">.</span><span class="n">prepare_data</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Check <cite>configs/train.yaml</cite> and the <cite>TreeCrownDelineationDataModule</cite> class for an example configuration.</p>
+</section>
+<section id="data-augmentation">
+<h2>Data Augmentation<a class="headerlink" href="#data-augmentation" title="Link to this heading"></a></h2>
+<p>The DeepTrees dataset class provides data augmentation options, which can be enabled in the configuration file (<cite>data.augment_train</cite>, <cite>data.augment_eval</cite>). The following torchvision augmentations are available:</p>
+<ul class="simple">
+<li><p>Random resized crop</p></li>
+<li><p>Resize</p></li>
+<li><p>Random crop</p></li>
+<li><p>Random horizontal flip</p></li>
+<li><p>Random vertical flip</p></li>
+</ul>
+<p>To add more augmentations, you can modify the <cite>TreeCrownDelineationBaseDataset</cite> class. Augmentations need to be based on torchvision v2 transforms to work with the current augmentation pipeline.</p>
+</section>
+<section id="ndvi-calculation-and-other-indices">
+<h2>NDVI Calculation and other indices<a class="headerlink" href="#ndvi-calculation-and-other-indices" title="Link to this heading"></a></h2>
+<p>The Normalized Difference Vegetation Index (NDVI) is a common index used to assess vegetation health and density. You can add the NDVI band to your dataset by setting the <cite>data.ndvi_config.concatenate = True</cite> in the configuration file.</p>
+<p>Note that this attaches the NDVI to your other input channels and needs to be reflected in your model’s number of input channels. To add more indices, you can modify the <cite>TreeCrownDelineationBaseDataset</cite> class.</p>
+</section>
+<section id="training">
+<h2>Training<a class="headerlink" href="#training" title="Link to this heading"></a></h2>
+<p>You can train your own model based on your own data, or finetune a pre-trained model. For this, you need to have raster tiles and the accompanying labels representing the ground truth delineated tree crowns as polygons.</p>
+<p>This is the expected directory structure.
+To train the model, you need to have the labeled tiles in the <cite>tiles</cite> and <cite>labels</cite> directories. The unlabeled tiles go into <cite>pool_tiles</cite>. Your polygon labels need to be in ESRI shapefile format.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">|--</span> <span class="n">tiles</span>
+<span class="o">|</span>   <span class="o">|--</span> <span class="n">tile_0_0</span><span class="o">.</span><span class="n">tif</span>
+<span class="o">|</span>   <span class="o">|--</span> <span class="n">tile_0_1</span><span class="o">.</span><span class="n">tif</span>
+<span class="o">|</span>   <span class="o">|--</span> <span class="o">...</span>
+<span class="o">|--</span> <span class="n">labels</span>
+<span class="o">|</span>   <span class="o">|--</span> <span class="n">label_tile_0_0</span><span class="o">.</span><span class="n">shp</span>
+<span class="o">|</span>   <span class="o">|--</span> <span class="n">label_tile_0_1</span><span class="o">.</span><span class="n">shp</span>
+<span class="o">|</span>   <span class="o">|--</span> <span class="o">...</span>
+<span class="o">|--</span> <span class="n">pool_tiles</span>
+<span class="o">|</span>   <span class="o">|--</span> <span class="n">tile_4_7</span><span class="o">.</span><span class="n">tif</span>
+<span class="o">|</span>   <span class="o">|--</span> <span class="n">tile_4_8</span><span class="o">.</span><span class="n">tif</span>
+<span class="o">|</span>   <span class="o">|--</span> <span class="o">...</span>
+</pre></div>
+</div>
+<p>The ground truth masks, distance transforms, and outlines are created on the fly in the training script. Their directory structure is as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">|--</span> <span class="n">masks</span>
+<span class="o">|--</span> <span class="n">outlines</span>
+<span class="o">|--</span> <span class="n">dist_trafo</span>
+</pre></div>
+</div>
+<p>We use the following classes for training:</p>
+<p>0 = tree
+1 = cluster of trees
+2 = unsure</p>
+<p>By default, all classes are used for training. You can change this in the config file.</p>
+</section>
+<section id="fine-tune-a-pretrained-model">
+<h2>Fine-tune a pretrained model<a class="headerlink" href="#fine-tune-a-pretrained-model" title="Link to this heading"></a></h2>
+<p>Starting from a pretrained model that can be downloaded in <cite>datasets</cite> (see above), you can finetune the model on your own data. This is currently handled by the <cite>train.py</cite> script. It supports starting the training with weights from a pretrained model.</p>
+<p>The pretrained model should be passed in <cite>data.pretrained.path</cite> (root folder) and <cite>data.pretrained.model</cite> (checkpoint file). For inspiration for a configuration file, check <cite>configs/train/finetune_halle.yaml</cite>.</p>
+<p>Run the training script like this:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">scripts</span><span class="o">/</span><span class="n">train</span><span class="o">.</span><span class="n">py</span> <span class="o">--</span><span class="n">config</span><span class="o">-</span><span class="n">name</span><span class="o">=</span><span class="n">finetune_halle</span> <span class="c1"># finetune with pretrained model (demo for the Halle DOP dataset)</span>
+<span class="n">python</span> <span class="n">scripts</span><span class="o">/</span><span class="n">train</span><span class="o">.</span><span class="n">py</span> <span class="o">--</span><span class="n">config</span><span class="o">-</span><span class="n">name</span><span class="o">=</span><span class="n">yourconfig</span> <span class="c1"># with your own config</span>
+</pre></div>
+</div>
+</section>
+<section id="train-a-model-from-scratch">
+<h2>Train a model from scratch<a class="headerlink" href="#train-a-model-from-scratch" title="Link to this heading"></a></h2>
+<p>If you do not specify a pretrained model (<cite>pretrained.model = null</cite> in the configuration file), the training script will train a model from scratch. Be aware that a sizeable amount of data is needed to train deep learning models.</p>
+</section>
+<section id="control-the-training-loop">
+<h2>Control the training loop<a class="headerlink" href="#control-the-training-loop" title="Link to this heading"></a></h2>
+<p>DeepTrees is a modular software based to large parts on <a class="reference external" href="https://lightning.ai/docs/pytorch/stable/">Pytorch Lightning</a> modules. Training is handled by the Lightning Trainer. To control aspects of the training loop, modify the <cite>trainer</cite> section in the configuration file based on the Lightning Trainer API.</p>
+</section>
+<section id="model-architectures">
+<h2>Model architectures<a class="headerlink" href="#model-architectures" title="Link to this heading"></a></h2>
+</section>
+<section id="treecrowndelineationmodel">
+<h2>TreeCrownDelineationModel<a class="headerlink" href="#treecrowndelineationmodel" title="Link to this heading"></a></h2>
+<p>We currently support the <cite>TreeCrownDelineationModel</cite>, following the implementation by Freudenberg et al, as a backbone to the <cite>DeepTreesModel</cite>.</p>
+</section>
+<section id="add-your-own-model">
+<h2>Add your own model<a class="headerlink" href="#add-your-own-model" title="Link to this heading"></a></h2>
+<p>Thanks to the modular structure, it is easy to substitute your own model architecture. Add your own model to the repository and make sure it inherits from Lightning Module. Then, modify the <cite>DeepTreesModel</cite> in <cite>models.py</cite> to use your new model as a backbone, instead of <cite>TreeCrownDelineationModel</cite>. Add your model’s keyword arguments to the configuration file. It will be instantiated while running the <cite>train.py</cite> script.</p>
+<p>Be aware that novel models will not work with the pretrained model weights.</p>
+</section>
 </section>
 
 
