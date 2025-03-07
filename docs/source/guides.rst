@@ -1,43 +1,28 @@
 Developer Guides
 ================
 
-// Add your content here...
+Configuring DeepTrees
+=====================
 
-Installation
-============
+DeepTrees is a modular software that can be configured to suit your specific needs. The configuration file is a YAML file that defines various settings for the training, prediction, and evaluation processes. The configuration file is divided into sections, each corresponding to a specific aspect of the software. Arguments for the datamodule, the model, and the training / inference process are specified there.
 
+DeepTrees uses `Hydra <https://hydra.cc/docs/intro/>`_ for configuration management. Hydra allows you to compose and override configurations flexibly. The configuration files are located in the `configs` directory. You can create your own configuration file or modify the existing ones to suit your needs.
 
+By default, the following configuration files are used with the training / inference scripts:
 
-Configuration
-=============
+.. code-block::
 
+  Predicting with package (deeptrees.predict) > configs/predict/inference_on_individual_tiles.yaml
 
-Predictions and Analysis
-========================
+  Training / inference with python scripts:
 
-
-Pre-trained models for tree segmentation
-========================================
-
-
-
-Predict on tiles
-================
+  train.py > configs/train/train_halle.yaml
+  test.py > configs/test/inference_halle.yaml
 
 
-Tree masks
-==========
+To override the default configuration settings, you should pass your configuration file path as an argument to the training or inference scripts. 
 
-Distance transform  maps
-========================
-
-You can specify to save the masks, outlines, and distance transforms for each tile. This can be informative for development purposes.
-
-
-Pixel-wise entropy maps
-========================
-
-The model can output the pixel-wise entropy in inference and report the mean entropy per tile. This is used in active learning: Pixels with high entropy imply that the model was uncertain about their classification. Mostly, these pixels are at the outer boundaries of a tree crown. Use this information for active learning (see below).
+Hydra configs are composable, meaning you do not need to specify parameters again that have been specified in the basis configuration file. Plus, you can overwrite individual configuration parameters on the command line. 
 
 
 
@@ -45,71 +30,9 @@ Analyzing tree metrics
 ======================
 
 
-Training
-========
 
-You can train your own model based on your own data, or finetune a pre-trained model. For this, you need to have raster tiles and the accompanying labels representing the ground truth delineated tree crowns as polygons.
-
-This is the expected directory structure.
-To train the model, you need to have the labeled tiles in the `tiles` and `labels` directories. The unlabeled tiles go into `pool_tiles`. Your polygon labels need to be in ESRI shapefile format.
-
-```
-|-- tiles
-|   |-- tile_0_0.tif
-|   |-- tile_0_1.tif
-|   |-- ...
-|-- labels
-|   |-- label_tile_0_0.shp
-|   |-- label_tile_0_1.shp
-|   |-- ...
-|-- pool_tiles
-|   |-- tile_4_7.tif
-|   |-- tile_4_8.tif
-|   |-- ...
-```
-
-The ground truth masks, distance transforms, and outlines are created on the fly in the training script. Their directory structure is as follows:
-
-```
-|-- masks
-|-- outlines
-|-- dist_trafo
-```
-
-We use the following classes for training:
-
-0 = tree
-1 = cluster of trees 
-2 = unsure 
-
-By default, all classes are used for training. You can change this in the config file.
-
-
-Fine-tuning pre-trained models
-==============================
-
-Adapt your own config file based on the defaults in `train_halle.yaml` as needed. For inspiration for a derived config file for finetuning, check `finetune_halle.yaml`.
-
-Run the script like this:
-
-```bash
-python scripts/train.py # this is the default config that trains from scratch
-python scripts/train.py --config-name=finetune_halle # finetune with pretrained model
-python scripts/train.py --config-name=yourconfig # with your own config
-```
-
-The pretrained models need to be specified in the config file, under the attributes 'pretrained.path' for the directory containing the pretrained models, and 'pretrained.model' for the model checkpoitn filename.
-
-You can download the pretrained model by Freudenberg et al by following the instructions above in inference.
-
-Training your own models
-========================
-
-If you do not specify a pretrained model (pretrained.model = null), the training script will train a model from scratch. Be aware that a sizeable amount of data is needed to train deep learning models.
-
-
-Prediction and Active Learning
-==============================
+Prediction
+==========
 
 What does the ``predict`` function do?
 --------------------------------------
@@ -172,6 +95,11 @@ The primary outputs generated are:
 
    - Saved location: In the ``saved_polygons/`` folder.
 
+Labeling data efficiently
+=========================
+
+Creating the ground truth segmentation polygons is a time-consuming process. DeepTree implements active learning to help you direct your labeling efforts to the most informative regions of the dataset.
+
 What is Active Learning, and why is it important?
 -------------------------------------------------
 Active learning is a process where the model identifies uncertain areas in its predictions. These areas are marked as high-entropy regions where the model is uncertain.
@@ -183,3 +111,142 @@ Entropy maps visualize where the model is uncertain by:
 Since it is often not feasible to label an entire dataset, run inference on your unlabeled tiles (in ``pool_tiles``). The model will compute pixel-wise entropy and report the mean per tile. Label the tiles with the highest average entropy, then repeat fine-tuning and active learning until you achieve the desired performance.
 
 By integrating entropy maps into your workflow, you ensure continuous improvement of the model, especially in areas where it is most likely to make errors.
+
+Dataset 
+=======
+
+Use your own dataset
+--------------------
+
+The data is handled by the `TreeCrownDelineationDataModule` and the `TreeCrownDelineationBaseDataset`. This class provides functions to load the data, preprocess it, and return it in a format that can be used by the model.
+
+DeepTrees can process raster tiles in `TIF` format, e.g. from digital orthophotos. You can provide your own dataset by replacing the corresponding paths `data.rasters` in the configuration file.
+
+If you want to provide imagery in a different format, you can modify the `TreeCrownDelineationBaseDataset` class to handle the data accordingly.
+
+DeepTrees comes with a small dataset for demonstration purposes.
+
+6. **Create ground truth for training and validation**
+
+For training or validating with your own dataset, you will create ground truth tree crown polygons in an external software, e.g. QGIS. We work with the following classes:
+
+- `0`: Tree
+- `1`: Cluster of trees
+- `2`: Unsure
+- `3`: (dead tree, not yet implemented)
+
+The deep learning model requires the ground truth tree crown polygons to be transformed into raster masks, distance transforms, and outlines. These can be created on the fly during training or inference.
+
+Option 1, if you use the provided script `train.py` together with a configuration file derived from `configs/train.yaml`: Set `data.ground_truth_config.labels` to the path of the directory containing the shapefiles with the polygons. During setup of the datamodule, the target masks, distance transforms, and outlines will be created.
+
+Option 2, if you want to generate the target masks, distance transforms, and outlines stand-alone: 
+
+.. code-block::
+
+  from deeptrees.dataloading.datamodule import TreeCrownDelineationDataModule
+
+  tcdm = TreeCrownDelineationDataModule(**config)
+  tcdm.prepare_data()
+
+Check `configs/train.yaml` and the `TreeCrownDelineationDataModule` class for an example configuration.
+
+Data Augmentation
+-----------------
+
+The DeepTrees dataset class provides data augmentation options, which can be enabled in the configuration file (`data.augment_train`, `data.augment_eval`). The following torchvision augmentations are available:
+
+- Random resized crop
+- Resize 
+- Random crop
+- Random horizontal flip
+- Random vertical flip
+
+To add more augmentations, you can modify the `TreeCrownDelineationBaseDataset` class. Augmentations need to be based on torchvision v2 transforms to work with the current augmentation pipeline.
+
+NDVI Calculation and other indices
+----------------------------------
+
+The Normalized Difference Vegetation Index (NDVI) is a common index used to assess vegetation health and density. You can add the NDVI band to your dataset by setting the `data.ndvi_config.concatenate = True` in the configuration file. 
+
+Note that this attaches the NDVI to your other input channels and needs to be reflected in your model's number of input channels. To add more indices, you can modify the `TreeCrownDelineationBaseDataset` class.
+
+Training
+========
+
+
+You can train your own model based on your own data, or finetune a pre-trained model. For this, you need to have raster tiles and the accompanying labels representing the ground truth delineated tree crowns as polygons.
+
+This is the expected directory structure.
+To train the model, you need to have the labeled tiles in the `tiles` and `labels` directories. The unlabeled tiles go into `pool_tiles`. Your polygon labels need to be in ESRI shapefile format.
+
+.. code-block::
+
+    |-- tiles
+    |   |-- tile_0_0.tif
+    |   |-- tile_0_1.tif
+    |   |-- ...
+    |-- labels
+    |   |-- label_tile_0_0.shp
+    |   |-- label_tile_0_1.shp
+    |   |-- ...
+    |-- pool_tiles
+    |   |-- tile_4_7.tif
+    |   |-- tile_4_8.tif
+    |   |-- ...
+
+The ground truth masks, distance transforms, and outlines are created on the fly in the training script. Their directory structure is as follows:
+
+.. code-block::
+
+    |-- masks
+    |-- outlines
+    |-- dist_trafo
+
+We use the following classes for training:
+
+0 = tree
+1 = cluster of trees 
+2 = unsure 
+
+By default, all classes are used for training. You can change this in the config file.
+
+
+Fine-tune a pretrained model
+----------------------------
+
+Starting from a pretrained model that can be downloaded in `datasets` (see above), you can finetune the model on your own data. This is currently handled by the `train.py` script. It supports starting the training with weights from a pretrained model.
+
+The pretrained model should be passed in `data.pretrained.path` (root folder) and `data.pretrained.model` (checkpoint file). For inspiration for a configuration file, check `configs/train/finetune_halle.yaml`.
+
+Run the training script like this:
+
+.. code-block::
+
+  python scripts/train.py --config-name=finetune_halle # finetune with pretrained model (demo for the Halle DOP dataset)
+  python scripts/train.py --config-name=yourconfig # with your own config
+
+Train a model from scratch
+--------------------------
+
+If you do not specify a pretrained model (`pretrained.model = null` in the configuration file), the training script will train a model from scratch. Be aware that a sizeable amount of data is needed to train deep learning models.
+
+Control the training loop
+-------------------------
+
+DeepTrees is a modular software based to large parts on `Pytorch Lightning <https://lightning.ai/docs/pytorch/stable/>`_ modules. Training is handled by the Lightning Trainer. To control aspects of the training loop, modify the `trainer` section in the configuration file based on the Lightning Trainer API.
+
+Model architectures
+===================
+
+TreeCrownDelineationModel
+-------------------------
+
+We currently support the `TreeCrownDelineationModel`, following the implementation by Freudenberg et al, as a backbone to the `DeepTreesModel`. 
+
+
+Add your own model
+------------------
+
+Thanks to the modular structure, it is easy to substitute your own model architecture. Add your own model to the repository and make sure it inherits from Lightning Module. Then, modify the `DeepTreesModel` in `models.py` to use your new model as a backbone, instead of `TreeCrownDelineationModel`. Add your model's keyword arguments to the configuration file. It will be instantiated while running the `train.py` script. 
+
+Be aware that novel models will not work with the pretrained model weights.
