@@ -48,7 +48,6 @@
 <li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Developer Guides</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#configuring-deeptrees">Configuring DeepTrees</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#analyzing-tree-metrics">Analyzing tree metrics</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#prediction">Prediction</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#what-does-the-predict-function-do">What does the <code class="docutils literal notranslate"><span class="pre">predict</span></code> function do?</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#how-do-i-call-the-predict-function">How do I call the <code class="docutils literal notranslate"><span class="pre">predict</span></code> function?</a></li>
@@ -63,7 +62,8 @@
 <li class="toctree-l2"><a class="reference internal" href="#fine-tune-a-pretrained-model">Fine-tune a pretrained model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#train-a-model-from-scratch">Train a model from scratch</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#control-the-training-loop">Control the training loop</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#model-architectures">Model architectures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tree-traits">Tree Traits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#evaluation">Evaluation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#treecrowndelineationmodel">TreeCrownDelineationModel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#add-your-own-model">Add your own model</a></li>
 </ul>
@@ -112,9 +112,6 @@
 </div>
 <p>To override the default configuration settings, you should pass your configuration file path as an argument to the training or inference scripts.</p>
 <p>Hydra configs are composable, meaning you do not need to specify parameters again that have been specified in the basis configuration file. Plus, you can overwrite individual configuration parameters on the command line.</p>
-</section>
-<section id="analyzing-tree-metrics">
-<h2>Analyzing tree metrics<a class="headerlink" href="#analyzing-tree-metrics" title="Link to this heading"></a></h2>
 </section>
 <section id="prediction">
 <h2>Prediction<a class="headerlink" href="#prediction" title="Link to this heading"></a></h2>
@@ -247,7 +244,15 @@
 <section id="ndvi-calculation-and-other-indices">
 <h2>NDVI Calculation and other indices<a class="headerlink" href="#ndvi-calculation-and-other-indices" title="Link to this heading"></a></h2>
 <p>The Normalized Difference Vegetation Index (NDVI) is a common index used to assess vegetation health and density. You can add the NDVI band to your dataset by setting the <cite>data.ndvi_config.concatenate = True</cite> in the configuration file.</p>
-<p>Note that this attaches the NDVI to your other input channels and needs to be reflected in your model’s number of input channels. To add more indices, you can modify the <cite>TreeCrownDelineationBaseDataset</cite> class.</p>
+<p>Note that this attaches the NDVI to your other input channels and needs to be reflected in your model’s number of input channels.</p>
+<p>DeepTrees also offer the following vegetation indices:</p>
+<ol class="arabic simple">
+<li><p>Normalized Difference Vegetation Index (NDVI)</p></li>
+<li><p>Green Chlorophyll Index (CIgreen)</p></li>
+<li><p>Hue</p></li>
+</ol>
+<p>These can be calculated by using the functions in <cite>deeptrees.modules.indices</cite>. However, the indices are not yet integrated into the training pipeline.</p>
+<p>To add more indices into the training pipeline, you can modify the <cite>TreeCrownDelineationBaseDataset</cite> class.</p>
 </section>
 <section id="training">
 <h2>Training<a class="headerlink" href="#training" title="Link to this heading"></a></h2>
@@ -298,8 +303,20 @@ To train the model, you need to have the labeled tiles in the <cite>tiles</cite>
 <h2>Control the training loop<a class="headerlink" href="#control-the-training-loop" title="Link to this heading"></a></h2>
 <p>DeepTrees is a modular software based to large parts on <a class="reference external" href="https://lightning.ai/docs/pytorch/stable/">Pytorch Lightning</a> modules. Training is handled by the Lightning Trainer. To control aspects of the training loop, modify the <cite>trainer</cite> section in the configuration file based on the Lightning Trainer API.</p>
 </section>
-<section id="model-architectures">
-<h2>Model architectures<a class="headerlink" href="#model-architectures" title="Link to this heading"></a></h2>
+<section id="tree-traits">
+<h2>Tree Traits<a class="headerlink" href="#tree-traits" title="Link to this heading"></a></h2>
+<p>DeepTrees can compute tree traits from the tree crown predictions. The following tree traits are currently supported:</p>
+<ol class="arabic simple">
+<li><p>Longest crown spread (diameter)</p></li>
+<li><p>Longest crown cross spread (diameter)</p></li>
+<li><p>Tree crown area</p></li>
+</ol>
+<p>To compute tree traits, set <cite>compute_tree_traits: True</cite> in the configuration file. The tree traits are saved as attributes in the resulting output vector data for each segmented polygon.</p>
+<p>A comprehensive list of tree traits will be added in future releases. The current list can be seen in the <cite>deeptrees.modules.traits</cite> module.</p>
+<p>The trait functions expect lists of polygons as input.</p>
+</section>
+<section id="evaluation">
+<h2>Evaluation<a class="headerlink" href="#evaluation" title="Link to this heading"></a></h2>
 </section>
 <section id="treecrowndelineationmodel">
 <h2>TreeCrownDelineationModel<a class="headerlink" href="#treecrowndelineationmodel" title="Link to this heading"></a></h2>

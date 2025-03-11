@@ -26,11 +26,6 @@ Hydra configs are composable, meaning you do not need to specify parameters agai
 
 
 
-Analyzing tree metrics
-----------------------
-
-
-
 Prediction
 ----------
 
@@ -168,7 +163,17 @@ NDVI Calculation and other indices
 
 The Normalized Difference Vegetation Index (NDVI) is a common index used to assess vegetation health and density. You can add the NDVI band to your dataset by setting the `data.ndvi_config.concatenate = True` in the configuration file. 
 
-Note that this attaches the NDVI to your other input channels and needs to be reflected in your model's number of input channels. To add more indices, you can modify the `TreeCrownDelineationBaseDataset` class.
+Note that this attaches the NDVI to your other input channels and needs to be reflected in your model's number of input channels. 
+
+DeepTrees also offer the following vegetation indices:
+
+1. Normalized Difference Vegetation Index (NDVI)
+2. Green Chlorophyll Index (CIgreen)
+3. Hue
+
+These can be calculated by using the functions in `deeptrees.modules.indices`. However, the indices are not yet integrated into the training pipeline.
+
+To add more indices into the training pipeline, you can modify the `TreeCrownDelineationBaseDataset` class.
 
 Training
 --------
@@ -234,8 +239,25 @@ Control the training loop
 
 DeepTrees is a modular software based to large parts on `Pytorch Lightning <https://lightning.ai/docs/pytorch/stable/>`_ modules. Training is handled by the Lightning Trainer. To control aspects of the training loop, modify the `trainer` section in the configuration file based on the Lightning Trainer API.
 
-Model architectures
--------------------
+Tree Traits
+------------
+
+DeepTrees can compute tree traits from the tree crown predictions. The following tree traits are currently supported:
+
+1. Longest crown spread (diameter)
+2. Longest crown cross spread (diameter)
+3. Tree crown area
+
+To compute tree traits, set `compute_tree_traits: True` in the configuration file. The tree traits are saved as attributes in the resulting output vector data for each segmented polygon.
+
+A comprehensive list of tree traits will be added in future releases. The current list can be seen in the `deeptrees.modules.traits` module.
+
+The trait functions expect lists of polygons as input. 
+
+Evaluation
+----------
+
+
 
 TreeCrownDelineationModel
 -------------------------
