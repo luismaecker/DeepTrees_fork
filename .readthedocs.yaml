@@ -11,3 +11,12 @@ sphinx:
 python:
   install:
     - requirements: docs/source/requirements.txt
+
+apt_packages:
+  - gdal-bin
+  - libgdal-dev
+
+# Export GDAL environment variables
+environment:
+  CPLUS_INCLUDE_PATH: "/usr/include/gdal"
+  C_INCLUDE_PATH: "/usr/include/gdal"
