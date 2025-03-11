@@ -1,0 +1,18 @@
+name: deeptrees
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - gdal
+  - numpy
+  - pandas
+  - rasterio
+  - xarray
+  - rioxarray
+  - pytorch
+  - segmentation-models-pytorch
+  - pip
+  - pip:
+      - sphinx
+      - sphinx_rtd_theme
+      - sphinx_autodoc_typehints
