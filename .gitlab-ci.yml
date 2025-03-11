@@ -59,8 +59,6 @@ build-package:
   artifacts:
     paths:
       - dist/
-  only:
-    - main
   dependencies:
     - semantic-versioning
 
