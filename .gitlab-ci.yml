@@ -29,8 +29,10 @@ pages:
   before_script:
     - python -m pip install --upgrade pip
     - pip3 install sphinx sphinx-rtd-theme sphinx_autodoc_typehints
+    - cd docs
   script:
-    - cp -r docs/build/html public/
+    - make html
+    - cp -r build/html public/
   artifacts:
     paths:
       - public/
@@ -42,7 +44,9 @@ readthedocs:
   stage: docs
   before_script:
     - apk add curl
+    - cd docs
   script:
+    - 
     - 'curl -X POST -H "Authorization: Token $RTD_TOKEN" https://readthedocs.org/api/v3/projects/deeptrees/versions/latest/builds/'
   rules:
     # Only run the job on the default branch and not in forks.
