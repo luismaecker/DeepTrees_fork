@@ -12,7 +12,7 @@ DeepTrees🌳
     Caroline Arnold (Hereon) 
     Harsh Grover (Hereon)
 
-:Version: 1.6.0
+:Version: 1.6.1
 
 .. toctree::
    :maxdepth: 1
