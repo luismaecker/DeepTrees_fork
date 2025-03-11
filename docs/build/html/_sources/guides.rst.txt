@@ -30,11 +30,11 @@ Prediction
 ----------
 
 What does the ``predict`` function do?
---------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The ``predict`` function runs the core inference pipeline to process input imagery and generate tree crown predictions. It can also produce multiple output artifacts (e.g., uncertainty maps, tree crown masks, outlines, distance transforms, and polygons) based on the configuration settings.
 
 How do I call the ``predict`` function?
-----------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 To run predictions on a single image or a list of images, use the following command:
 
 .. code-block:: python
@@ -50,7 +50,7 @@ To run predictions on a single image or a list of images, use the following comm
 You can specify your own model in the configuration file or use the default pre-trained model (Freudenberg et al.).
 
 What can I extract from the ``predict`` function?
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The primary outputs generated are:
 
 - Uncertainty Maps (Entropy Maps): Highlight areas where the model has high uncertainty.
@@ -111,7 +111,7 @@ Dataset
 -------
 
 Use your own dataset
---------------------
+~~~~~~~~~~~~~~~~~~~~
 
 The data is handled by the `TreeCrownDelineationDataModule` and the `TreeCrownDelineationBaseDataset`. This class provides functions to load the data, preprocess it, and return it in a format that can be used by the model.
 
@@ -146,7 +146,7 @@ Option 2, if you want to generate the target masks, distance transforms, and out
 Check `configs/train.yaml` and the `TreeCrownDelineationDataModule` class for an example configuration.
 
 Data Augmentation
------------------
+~~~~~~~~~~~~~~~~~~
 
 The DeepTrees dataset class provides data augmentation options, which can be enabled in the configuration file (`data.augment_train`, `data.augment_eval`). The following torchvision augmentations are available:
 
@@ -159,7 +159,7 @@ The DeepTrees dataset class provides data augmentation options, which can be ena
 To add more augmentations, you can modify the `TreeCrownDelineationBaseDataset` class. Augmentations need to be based on torchvision v2 transforms to work with the current augmentation pipeline.
 
 NDVI Calculation and other indices
-----------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The Normalized Difference Vegetation Index (NDVI) is a common index used to assess vegetation health and density. You can add the NDVI band to your dataset by setting the `data.ndvi_config.concatenate = True` in the configuration file. 
 
@@ -216,7 +216,7 @@ By default, all classes are used for training. You can change this in the config
 
 
 Fine-tune a pretrained model
-----------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Starting from a pretrained model that can be downloaded in `datasets` (see above), you can finetune the model on your own data. This is currently handled by the `train.py` script. It supports starting the training with weights from a pretrained model.
 
@@ -230,12 +230,12 @@ Run the training script like this:
   python scripts/train.py --config-name=yourconfig # with your own config
 
 Train a model from scratch
---------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you do not specify a pretrained model (`pretrained.model = null` in the configuration file), the training script will train a model from scratch. Be aware that a sizeable amount of data is needed to train deep learning models.
 
 Control the training loop
--------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 DeepTrees is a modular software based to large parts on `Pytorch Lightning <https://lightning.ai/docs/pytorch/stable/>`_ modules. Training is handled by the Lightning Trainer. To control aspects of the training loop, modify the `trainer` section in the configuration file based on the Lightning Trainer API.
 

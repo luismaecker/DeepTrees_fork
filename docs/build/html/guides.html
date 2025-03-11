@@ -48,20 +48,26 @@
 <li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Developer Guides</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#configuring-deeptrees">Configuring DeepTrees</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#prediction">Prediction</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#what-does-the-predict-function-do">What does the <code class="docutils literal notranslate"><span class="pre">predict</span></code> function do?</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#how-do-i-call-the-predict-function">How do I call the <code class="docutils literal notranslate"><span class="pre">predict</span></code> function?</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#what-can-i-extract-from-the-predict-function">What can I extract from the <code class="docutils literal notranslate"><span class="pre">predict</span></code> function?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#prediction">Prediction</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#what-does-the-predict-function-do">What does the <code class="docutils literal notranslate"><span class="pre">predict</span></code> function do?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#how-do-i-call-the-predict-function">How do I call the <code class="docutils literal notranslate"><span class="pre">predict</span></code> function?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#what-can-i-extract-from-the-predict-function">What can I extract from the <code class="docutils literal notranslate"><span class="pre">predict</span></code> function?</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#labeling-data-efficiently">Labeling data efficiently</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#what-is-active-learning-and-why-is-it-important">What is Active Learning, and why is it important?</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#dataset">Dataset</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#use-your-own-dataset">Use your own dataset</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#data-augmentation">Data Augmentation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#ndvi-calculation-and-other-indices">NDVI Calculation and other indices</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#training">Training</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#fine-tune-a-pretrained-model">Fine-tune a pretrained model</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#train-a-model-from-scratch">Train a model from scratch</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#control-the-training-loop">Control the training loop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#dataset">Dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#use-your-own-dataset">Use your own dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#data-augmentation">Data Augmentation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ndvi-calculation-and-other-indices">NDVI Calculation and other indices</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#training">Training</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#fine-tune-a-pretrained-model">Fine-tune a pretrained model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#train-a-model-from-scratch">Train a model from scratch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#control-the-training-loop">Control the training loop</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#tree-traits">Tree Traits</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#evaluation">Evaluation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#treecrowndelineationmodel">TreeCrownDelineationModel</a></li>
@@ -115,13 +121,12 @@
 </section>
 <section id="prediction">
 <h2>Prediction<a class="headerlink" href="#prediction" title="Link to this heading"></a></h2>
-</section>
 <section id="what-does-the-predict-function-do">
-<h2>What does the <code class="docutils literal notranslate"><span class="pre">predict</span></code> function do?<a class="headerlink" href="#what-does-the-predict-function-do" title="Link to this heading"></a></h2>
+<h3>What does the <code class="docutils literal notranslate"><span class="pre">predict</span></code> function do?<a class="headerlink" href="#what-does-the-predict-function-do" title="Link to this heading"></a></h3>
 <p>The <code class="docutils literal notranslate"><span class="pre">predict</span></code> function runs the core inference pipeline to process input imagery and generate tree crown predictions. It can also produce multiple output artifacts (e.g., uncertainty maps, tree crown masks, outlines, distance transforms, and polygons) based on the configuration settings.</p>
 </section>
 <section id="how-do-i-call-the-predict-function">
-<h2>How do I call the <code class="docutils literal notranslate"><span class="pre">predict</span></code> function?<a class="headerlink" href="#how-do-i-call-the-predict-function" title="Link to this heading"></a></h2>
+<h3>How do I call the <code class="docutils literal notranslate"><span class="pre">predict</span></code> function?<a class="headerlink" href="#how-do-i-call-the-predict-function" title="Link to this heading"></a></h3>
 <p>To run predictions on a single image or a list of images, use the following command:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">deeptrees</span>
 <span class="kn">from</span> <span class="nn">deeptrees</span> <span class="kn">import</span> <span class="n">predict</span>
@@ -136,7 +141,7 @@
 <p>You can specify your own model in the configuration file or use the default pre-trained model (Freudenberg et al.).</p>
 </section>
 <section id="what-can-i-extract-from-the-predict-function">
-<h2>What can I extract from the <code class="docutils literal notranslate"><span class="pre">predict</span></code> function?<a class="headerlink" href="#what-can-i-extract-from-the-predict-function" title="Link to this heading"></a></h2>
+<h3>What can I extract from the <code class="docutils literal notranslate"><span class="pre">predict</span></code> function?<a class="headerlink" href="#what-can-i-extract-from-the-predict-function" title="Link to this heading"></a></h3>
 <p>The primary outputs generated are:</p>
 <ul>
 <li><p>Uncertainty Maps (Entropy Maps): Highlight areas where the model has high uncertainty.</p>
@@ -186,6 +191,7 @@
 </li>
 </ul>
 </section>
+</section>
 <section id="labeling-data-efficiently">
 <h2>Labeling data efficiently<a class="headerlink" href="#labeling-data-efficiently" title="Link to this heading"></a></h2>
 <p>Creating the ground truth segmentation polygons is a time-consuming process. DeepTree implements active learning to help you direct your labeling efforts to the most informative regions of the dataset.</p>
@@ -201,9 +207,8 @@
 </section>
 <section id="dataset">
 <h2>Dataset<a class="headerlink" href="#dataset" title="Link to this heading"></a></h2>
-</section>
 <section id="use-your-own-dataset">
-<h2>Use your own dataset<a class="headerlink" href="#use-your-own-dataset" title="Link to this heading"></a></h2>
+<h3>Use your own dataset<a class="headerlink" href="#use-your-own-dataset" title="Link to this heading"></a></h3>
 <p>The data is handled by the <cite>TreeCrownDelineationDataModule</cite> and the <cite>TreeCrownDelineationBaseDataset</cite>. This class provides functions to load the data, preprocess it, and return it in a format that can be used by the model.</p>
 <p>DeepTrees can process raster tiles in <cite>TIF</cite> format, e.g. from digital orthophotos. You can provide your own dataset by replacing the corresponding paths <cite>data.rasters</cite> in the configuration file.</p>
 <p>If you want to provide imagery in a different format, you can modify the <cite>TreeCrownDelineationBaseDataset</cite> class to handle the data accordingly.</p>
@@ -230,7 +235,7 @@
 <p>Check <cite>configs/train.yaml</cite> and the <cite>TreeCrownDelineationDataModule</cite> class for an example configuration.</p>
 </section>
 <section id="data-augmentation">
-<h2>Data Augmentation<a class="headerlink" href="#data-augmentation" title="Link to this heading"></a></h2>
+<h3>Data Augmentation<a class="headerlink" href="#data-augmentation" title="Link to this heading"></a></h3>
 <p>The DeepTrees dataset class provides data augmentation options, which can be enabled in the configuration file (<cite>data.augment_train</cite>, <cite>data.augment_eval</cite>). The following torchvision augmentations are available:</p>
 <ul class="simple">
 <li><p>Random resized crop</p></li>
@@ -242,7 +247,7 @@
 <p>To add more augmentations, you can modify the <cite>TreeCrownDelineationBaseDataset</cite> class. Augmentations need to be based on torchvision v2 transforms to work with the current augmentation pipeline.</p>
 </section>
 <section id="ndvi-calculation-and-other-indices">
-<h2>NDVI Calculation and other indices<a class="headerlink" href="#ndvi-calculation-and-other-indices" title="Link to this heading"></a></h2>
+<h3>NDVI Calculation and other indices<a class="headerlink" href="#ndvi-calculation-and-other-indices" title="Link to this heading"></a></h3>
 <p>The Normalized Difference Vegetation Index (NDVI) is a common index used to assess vegetation health and density. You can add the NDVI band to your dataset by setting the <cite>data.ndvi_config.concatenate = True</cite> in the configuration file.</p>
 <p>Note that this attaches the NDVI to your other input channels and needs to be reflected in your model’s number of input channels.</p>
 <p>DeepTrees also offer the following vegetation indices:</p>
@@ -253,6 +258,7 @@
 </ol>
 <p>These can be calculated by using the functions in <cite>deeptrees.modules.indices</cite>. However, the indices are not yet integrated into the training pipeline.</p>
 <p>To add more indices into the training pipeline, you can modify the <cite>TreeCrownDelineationBaseDataset</cite> class.</p>
+</section>
 </section>
 <section id="training">
 <h2>Training<a class="headerlink" href="#training" title="Link to this heading"></a></h2>
@@ -284,9 +290,8 @@ To train the model, you need to have the labeled tiles in the <cite>tiles</cite>
 1 = cluster of trees
 2 = unsure</p>
 <p>By default, all classes are used for training. You can change this in the config file.</p>
-</section>
 <section id="fine-tune-a-pretrained-model">
-<h2>Fine-tune a pretrained model<a class="headerlink" href="#fine-tune-a-pretrained-model" title="Link to this heading"></a></h2>
+<h3>Fine-tune a pretrained model<a class="headerlink" href="#fine-tune-a-pretrained-model" title="Link to this heading"></a></h3>
 <p>Starting from a pretrained model that can be downloaded in <cite>datasets</cite> (see above), you can finetune the model on your own data. This is currently handled by the <cite>train.py</cite> script. It supports starting the training with weights from a pretrained model.</p>
 <p>The pretrained model should be passed in <cite>data.pretrained.path</cite> (root folder) and <cite>data.pretrained.model</cite> (checkpoint file). For inspiration for a configuration file, check <cite>configs/train/finetune_halle.yaml</cite>.</p>
 <p>Run the training script like this:</p>
@@ -296,12 +301,13 @@ To train the model, you need to have the labeled tiles in the <cite>tiles</cite>
 </div>
 </section>
 <section id="train-a-model-from-scratch">
-<h2>Train a model from scratch<a class="headerlink" href="#train-a-model-from-scratch" title="Link to this heading"></a></h2>
+<h3>Train a model from scratch<a class="headerlink" href="#train-a-model-from-scratch" title="Link to this heading"></a></h3>
 <p>If you do not specify a pretrained model (<cite>pretrained.model = null</cite> in the configuration file), the training script will train a model from scratch. Be aware that a sizeable amount of data is needed to train deep learning models.</p>
 </section>
 <section id="control-the-training-loop">
-<h2>Control the training loop<a class="headerlink" href="#control-the-training-loop" title="Link to this heading"></a></h2>
+<h3>Control the training loop<a class="headerlink" href="#control-the-training-loop" title="Link to this heading"></a></h3>
 <p>DeepTrees is a modular software based to large parts on <a class="reference external" href="https://lightning.ai/docs/pytorch/stable/">Pytorch Lightning</a> modules. Training is handled by the Lightning Trainer. To control aspects of the training loop, modify the <cite>trainer</cite> section in the configuration file based on the Lightning Trainer API.</p>
+</section>
 </section>
 <section id="tree-traits">
 <h2>Tree Traits<a class="headerlink" href="#tree-traits" title="Link to this heading"></a></h2>

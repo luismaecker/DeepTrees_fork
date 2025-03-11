@@ -17,7 +17,7 @@ The TCD model incorporates two U-Net models for tree crown segmentation and dist
 DeepTrees uses the distance transform model to compute the pixel-entropy map, which is used for active learning and fine-tuning of the segmentation model. The pixel-entropy map is computed by taking the entropy of the distance transform predictions for each pixel. The pixel-entropy map is used to identify pixels that are close to the tree crown boundary, but are not accurately predicted by the segmentation model. These pixels are then used to retrain the segmentation model. DeepTrees also computes certain tree traits and offer user to mask the tree crowns in the image for further analysis.
 A full overview of the deeptrees architecture can be found in the figure below:
 
-.. image:: _static/deeptrees.png
+.. image:: https://codebase.helmholtz.cloud/taimur.khan/DeepTrees/-/raw/7db84d5f0e99a07b144bca2f67d591d5ea0c8501/static/deeptrees.png
     :alt: Pixel Entropy Map
     :width: 600px
     :align: center
