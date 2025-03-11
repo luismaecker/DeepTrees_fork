@@ -59,8 +59,9 @@ build-package:
   artifacts:
     paths:
       - dist/
-  only:
-    - main
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PROJECT_PATH == "taimur.khan/DeepTrees"
   dependencies:
     - semantic-versioning
 

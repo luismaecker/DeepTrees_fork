@@ -11,8 +11,13 @@ dependencies:
   - rioxarray
   - pytorch
   - segmentation-models-pytorch
+  - lightning
+  - shapely
+  - geopandas
+  - fiona
   - pip
   - pip:
       - sphinx
       - sphinx_rtd_theme
       - sphinx_autodoc_typehints
+      - torch==2.4.0
