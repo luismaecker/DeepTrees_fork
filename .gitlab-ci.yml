@@ -44,9 +44,7 @@ readthedocs:
   stage: docs
   before_script:
     - apk add curl
-    - cd docs
   script:
-    - 
     - 'curl -X POST -H "Authorization: Token $RTD_TOKEN" https://readthedocs.org/api/v3/projects/deeptrees/versions/latest/builds/'
   rules:
     # Only run the job on the default branch and not in forks.
