@@ -6,7 +6,7 @@ The TCD library was developed by Maximillian Freudenberg et al. at the Universit
 
 The TCD model incorporates two U-Net models for tree crown segmentation and distance transform prediction. The U-Net models are trained on a dataset of 4-channel imagery (RGBi) with corresponding ground truth labels. The distance transform model is used to predict the distance of each pixel to the nearest tree crown boundary. The distance transform model is trained on the same dataset as the segmentation model, but with the distance transform labels. A complete overview of the TCD architecture can be found in the `TCD paper <https://doi.org/10.1007/s00521-022-07640-4>`_.
 
-.. image:: _static/tcd.png
+.. image:: https://codebase.helmholtz.cloud/taimur.khan/DeepTrees/-/raw/ff03202a2da9b3476ac862fb35a23600b164a59b/static/tcd.png
     :alt: Architectural Diagram
     :width: 600px
     :align: center

@@ -159,4 +159,4 @@ lightning_logs/
 # MacOS
 .DS_Store
 *.shp
-
+*.png
