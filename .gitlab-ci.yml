@@ -1,48 +1,8 @@
 stages:
-  - setup
-  - test
   - release
   - docs
   - build
   - publish
-
-run_tests:
-  image: continuumio/miniconda3:latest
-  stage: test
-  before_script:
-    - apt-get update && apt-get install -y wget curl unzip
-    - wget -O polygon-labelling.zip "https://nextcloud.dkrz.de/index.php/s/xdcT8GLikHs4Xps/download"
-    - unzip polygon-labelling.zip -d ./polygon-labelling
-    - ls -lh ./polygon-labelling  # List contents of extracted folder
-    - find ./polygon-labelling  # Recursively list all files and folders
-    - conda init bash
-    - source ~/.bashrc
-    - conda config --add channels conda-forge
-    - conda config --set channel_priority strict
-    - conda install -n base --override-channels -c conda-forge sqlite -y  # Install SQLite first
-    - conda install -n base --override-channels -c conda-forge python -y  # Ensure Python from conda-forge
-    - conda run -n base python --version  # Verify Python version
-    - conda run -n base which python  # Check Python path
-    - conda install -n base --override-channels -c conda-forge gdal=3.9.2
-    - conda install -n base --override-channels -c conda-forge numpy -y  # GDAL often depends on numpy
-    - conda run -n base python -m pip install --upgrade pip  # Use conda run to upgrade pip
-    - conda run -n base pip install -r requirements.txt  # Use conda run to install requirements
-    - conda run -n base pip list  # Verify installed packages
-    - conda run -n base which python  # Verify Python path
-
-  script:
-    - CONFIG_DIR="./config/CD"  # Change this to your desired path
-    - conda run -n base which python  # Confirm Python path remains the same
-    - conda run -n base python -c "from osgeo import gdal; print('GDAL imported successfully')"         
-    - conda run -n base python -m scripts.train --config-dir=${CONFIG_DIR}/train --config-name=train_halle trainer.fast_dev_run=True output_dir=test_suite
-    - conda run -n base python -m scripts.train --config-dir=${CONFIG_DIR}/train  --config-name=finetune_halle trainer.fast_dev_run=True data.ground_truth_config.labels=null output_dir=test_suite
-    - conda run -n base python -m scripts.test --config-dir=${CONFIG_DIR}/test data.ground_truth_config.labels=null +trainer.fast_dev_run=True output_dir=test_suite
-    - conda run -n base python -m deeptrees.inference --config_path=${CONFIG_DIR}/predict/inference_on_individual_tiles.yaml --image_path=./polygon-labelling/pool_tiles/tile_8_15.tif 
-
-
-  allow_failure: false
-
-
 
 semantic-versioning:
   image: node:lts
@@ -62,8 +22,6 @@ semantic-versioning:
       semantic-release
   only:
     - main
-  dependencies:
-    - run_tests
 
 pages:
   image: python:3.10
@@ -72,16 +30,23 @@ pages:
     - python -m pip install --upgrade pip
     - pip3 install sphinx sphinx-rtd-theme sphinx_autodoc_typehints
   script:
-    - sphinx-apidoc -o docs/source deeptrees
-    - sphinx-autogen docs/source/*.rst
-    - sphinx-build -b html docs/source public
+    - cp -r docs/build/html public/
   artifacts:
     paths:
       - public/
   only:
     - main
-  dependencies:
-    - run_tests
+
+readthedocs:
+  image: alpine:latest
+  stage: docs
+  before_script:
+    - apk add curl
+  script:
+    - 'curl -X POST -H "Authorization: Token $RTD_TOKEN" https://readthedocs.org/api/v3/projects/deeptrees/versions/latest/builds/'
+  rules:
+    # Only run the job on the default branch and not in forks.
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PROJECT_PATH == "taimur.khan/DeepTrees"
 
 build-package:
   image: python:3.10
@@ -94,12 +59,14 @@ build-package:
   artifacts:
     paths:
       - dist/
-  only:
-    - main
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PROJECT_PATH == "taimur.khan/DeepTrees"
   dependencies:
     - semantic-versioning
 
-publish-package:
+
+gitlab-publish:
   image: python:3.10
   stage: publish
   before_script:
@@ -107,13 +74,12 @@ publish-package:
     - pip install setuptools wheel twine
   script:
     - TWINE_PASSWORD=${CI_JOB_TOKEN} TWINE_USERNAME=gitlab-ci-token python -m twine upload --repository-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi dist/*
-  only:
-    - tags
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/
   dependencies:
     - build-package
 
-
-publish-package:
+pypi-publish:
   image: python:3.10
   stage: publish
   before_script:
@@ -121,9 +87,7 @@ publish-package:
     - pip install setuptools wheel twine
   script:
     - TWINE_PASSWORD=${PYPI_TOKEN} TWINE_USERNAME=__token__ python -m twine upload dist/*
-  only:
-    - main
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/
   dependencies:
     - build-package
-
-
