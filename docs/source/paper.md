@@ -5,11 +5,11 @@ authors:
     affiliation: 1
     email: "taimur.khan@ufz.de"
   - name: "Caroline Arnold"
-    affiliation: 23
+    affiliation: "2, 3"
     email: "caroline.arnold@hereon.de"
   - name: "Harsh Grover"
-    affiliation: 23
-    email:"harsh.Grover@hereon.de"
+    affiliation: "2, 3"
+    email:"harsh.grover@hereon.de"
 affiliations:
   - index: 1
     name: "Helmholtz Center for Environmental Research -- UFZ"
