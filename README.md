@@ -248,10 +248,11 @@ This repository is licensed under the MIT License. For more information, see the
 @article{khan2025torchtrees,
         author    = {Taimur Khan and Caroline Arnold and Harsh Grover},
         title     = {DeepTrees: Tree Crown Segmentation and Analysis in Remote Sensing Imagery with PyTorch},
-        journal   = {arXiv},
         year      = {2025},
-        archivePrefix = {arXiv},
-        eprint    = {XXXXX.YYYYY},  
+        journal   = {ResearchGate},
+        archivePrefix = {ResearchGate},
+        eprint    = {10.13140/RG.2.2.32837.36329},
+        doi    = {http://dx.doi.org/10.13140/RG.2.2.32837.36329},  
         primaryClass = {cs.CV}      
       }
 ```
