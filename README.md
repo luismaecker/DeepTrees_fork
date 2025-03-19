@@ -17,8 +17,8 @@
   <a href="https://badge.fury.io/py/deeptrees">
     <img src="https://badge.fury.io/py/deeptrees.svg" alt="PyPI version">
   </a>
-  <a href="https://doi.org/10.5281/zenodo.5555555">
-    <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.5555555.svg" alt="DOI">
+  <a href="http://dx.doi.org/10.13140/RG.2.2.32837.36329">
+  <img src="http://img.shields.io/badge/DOI-10.13140/RG.2.2.32837.36329-19C3AD.svg" alt="DOI">
   </a>
   <a href="https://opensource.org/licenses/MIT">
     <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT">
