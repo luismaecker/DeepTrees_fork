@@ -245,7 +245,7 @@ This repository is licensed under the MIT License. For more information, see the
 # Cite as
 
 ```bib
-@article{khan2025torchtrees,
+@article{khan2025deeptrees,
         author    = {Taimur Khan and Caroline Arnold and Harsh Grover},
         title     = {DeepTrees: Tree Crown Segmentation and Analysis in Remote Sensing Imagery with PyTorch},
         year      = {2025},
