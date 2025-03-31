@@ -65,7 +65,7 @@ pip install deeptrees
 
 ## API Documentation
 
-You can view the documentation page on: [https://treecrowndelineation-ai-consultants-dkrz-35d16e8c9ecc31028ba160.pages.hzdr.de/](https://treecrowndelineation-ai-consultants-dkrz-35d16e8c9ecc31028ba160.pages.hzdr.de/)
+You can view the documentation page on: [https://deeptrees.readthedocs.io/en/latest/](https://deeptrees.readthedocs.io/en/latest/)
 
 This library is documented using Sphinx. To build the documentation, run the following command.
 
