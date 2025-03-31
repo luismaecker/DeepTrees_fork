@@ -3,6 +3,7 @@ stages:
   - docs
   - build
   - publish
+  - joss
 
 semantic-versioning:
   image: node:lts
@@ -91,3 +92,20 @@ pypi-publish:
     - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/
   dependencies:
     - build-package
+
+joss-inara:
+  stage: joss
+  image:
+    name: openjournals/inara
+    entrypoint: ["/bin/sh", "-c"]
+  variables:
+    GIT_SHA: $CI_COMMIT_SHA
+    JOURNAL: joss
+  script:
+    - inara -o pdf,cff ./docs/joss/paper.md
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "joss"'
+  allow_failure: false
+  artifacts:
+    paths:
+  needs: []
