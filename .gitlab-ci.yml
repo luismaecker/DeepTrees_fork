@@ -105,6 +105,8 @@ joss-inara:
     - inara -o pdf,cff ./docs/joss/paper.md
   rules:
     - if: '$CI_COMMIT_BRANCH == "joss"'
+      when: always
+    - when: never
   allow_failure: false
   artifacts:
     paths:
