@@ -1,0 +1,118 @@
+name: train-halle
+original_work_dir: ${hydra:runtime.cwd}
+output_dir: experiments
+
+data:
+  _target_: deeptrees.dataloading.datamodule.TreeCrownDelineationDataModule
+  rasters: ${hydra:runtime.cwd}/polygon-labelling/tiles  # directory with raster images
+  masks: ${hydra:runtime.cwd}/polygon-labelling/masks # directory with masks
+  outlines: ${hydra:runtime.cwd}/polygon-labelling/outlines # directory with outlines
+  distance_transforms: ${hydra:runtime.cwd}/polygon-labelling/dist_trafo # directory with distance transforms
+  batch_size: 1          # dataloader batch size
+  val_batch_size: 1      # validation dataloader batch size
+  training_split: 0.8    # Train/val split
+  train_indices: null    # Train set indices (pass explicitly)
+  val_indices: null      # Validation set indices (pass explicitly)
+  ndvi_config:
+    concatenate: True    # If True, concatenate NDVI
+    rescale: False       # If True, rescale to [0, 1]
+    red: 0               # Index of Red channel
+    nir: 3               # Index of Infrared channel
+  ground_truth_config:
+    # path to directory with ground truth labels
+    labels: ${hydra:runtime.cwd}/polygon-labelling/labels
+
+    class_column_name: class # class column in label file
+    crs: EPSG:25832        # reference CRS
+    valid_class_ids: all   # specify IDs that you want to use here (default: all)
+    nproc: 8               # number of workers in preprocessing
+    
+  shuffle: True          # shuffle data before train/val split
+  augment_train:         # augmentations to use during training
+    RandomResizedCrop:
+      size: 256
+    RandomHorizontalFlip:
+      p: 0.5
+    RandomVerticalFlip:
+      p: 0.5
+  augment_eval:          # augmentations to use during validation / testing
+    RandomCrop:
+      size: 256
+  divide_by: 255         # divisor
+  dilate_outlines: False # dilate the outlines by number of pixels
+  num_workers: 8         # Number of workers in dataloader
+pretrained:
+  # path to pretrained models
+  path: ${hydra:runtime.cwd}/polygon-labelling/
+  model: Unet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=0_jitted.pt 
+  
+model:
+  _target_: deeptrees.model.deeptrees_model.DeepTreesModel
+  in_channels: 5         # Number of input channels / bands of the input image
+  architecture: Unet     # segmentation model architecture
+  backbone: resnet18     # backbone
+  lr: 0.0001             # learning rate
+  mask_iou_share: 0.5   # contribution of masks (vs outline) to overall IOU.
+  freeze_layers: False   # freeze layers (keep only segmentation head trainable)
+  track_running_stats: True # update batch norm layers
+  num_backbones: 1       # Only > 1 in inference when averaging predictions across models
+logdir: ${hydra.run.dir} # this is where we find logs, trained models, predictions
+model_save_path: null # TODO
+model_name: unet-halle # short and memorable model name
+seed: null               # Fix random seed 
+
+callbacks:
+  early_stopping:
+    _target_: lightning.pytorch.callbacks.EarlyStopping
+    monitor: "val/iou" # name of the logged metric which determines when model is improving
+    mode: "max" # "max" means higher metric value is better, can be also "min"
+    patience: 6 # how many validation epochs of not improving until training stops
+    min_delta: 0 # minimum change in the monitored metric needed to qualify as an improvement
+
+  model_summary:
+    _target_: lightning.pytorch.callbacks.RichModelSummary
+    max_depth: -1
+
+  rich_progress_bar:
+    _target_: lightning.pytorch.callbacks.RichProgressBar
+
+  learning_rate_monitor:
+    _target_: lightning.pytorch.callbacks.LearningRateMonitor
+
+  model_checkpoint:
+    _target_: lightning.pytorch.callbacks.ModelCheckpoint
+    monitor: "val/iou" # name of the logged metric which determines when model is improving
+    mode: "max" # "max" means higher metric value is better, can be also "min"
+    save_top_k: 1 # save k best models (determined by above metric)
+    save_last: True # additionaly always save model from last epoch
+    verbose: False
+    dirpath: "checkpoints/"
+    filename: "epoch_{epoch:03d}"
+    auto_insert_metric_name: False
+    every_n_epochs: 1
+
+
+trainer:
+  _target_: lightning.Trainer
+  devices: 1               # Number of devices (GPUs) to use
+  accelerator: auto        # Choose GPU if available
+  max_epochs: 10000        # maximum number of epochs
+  log_every_n_steps: 1     # log in training step
+  num_sanity_val_steps: 1  # sanity check before training starts
+  fast_dev_run: False      # if True, runs one batch of each dataloader
+
+hydra:
+  job:
+    chdir: True
+  run:
+    dir: outputs/${output_dir}/${name}/${now:%Y-%m-%d}_${now:%H-%M-%S}
+
+logger:
+  _target_: lightning.pytorch.loggers.MLFlowLogger
+  experiment_name: ${name}
+  run_name: ${now:%Y-%m-%d}_${now:%H-%M-%S}
+  tracking_uri: null
+  tags: null
+  save_dir: ${original_work_dir}/logs/mlruns
+  prefix: ""
+  artifact_location: null

@@ -32,7 +32,7 @@ rootutils.set_root(
     project_root_env_var=True, # set the PROJECT_ROOT environment variable to root directory
     dotenv=True, # load environment variables from .env if exists in root directory
     pythonpath=True, # add root directory to the PYTHONPATH (helps with imports)
-    cwd=False, # we do not want that with hydra
+    cwd=False, 
 )
 
 from deeptrees.model.deeptrees_model import DeepTreesModel
@@ -53,6 +53,8 @@ def test(config: DictConfig) -> None:
         config (DictConfig): Configuration provided by Hydra.
     """
     print(OmegaConf.to_yaml(config))
+
+    log.info(f'Current working directory: {os.getcwd()}')
 
     if config.seed:
         seed_everything(config.seed, workers=True)

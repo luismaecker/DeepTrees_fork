@@ -1,0 +1,43 @@
+data:
+  ndvi_config:
+    concatenate: True    # If True, concatenate NDVI
+    rescale: False       # If True, rescale to [0, 1]
+    red: 0               # Index of Red channel
+    nir: 3               # Index of Infrared channel
+  divide_by: 255         # divisor
+  dilate_outlines: False # dilate the outlines by number of pixels
+  augment_eval: {}
+  
+model:
+  num_backbones: 1
+  in_channels: 5         # Number of input channels / bands of the input image
+  architecture: Unet     # segmentation model architecture
+  backbone: resnet18     # backbone
+  apply_sigmoid: False   # sigmoid function applied to masks and outlines
+
+download_pretrained_model : True
+pretrained_model_path: ./pretrained_models
+pretrained_model_name: lUnet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=3_jitted.pt
+
+polygon_extraction:
+    min_dist: 10 # minimum distance in pixels between local maxima during feature extraction
+    mask_exp: 2             # parameter for feature map extraction
+    outline_multiplier: 5   # parameter for feature map extraction
+    outline_exp: 1          # parameter for feature map extraction
+    dist_exp: 0.5           # parameter for feature map extraction
+    area_min: 3 # smaller polygons are discarded
+    sigma: 2 # standard deviation of Gaussian filter during feature extraction
+    label_threshold: 0.5 # minimum height of local maxima during feature extraction
+    binary_threshold: 0.1 # threshold value for the feature map, lower is background
+    simplify: 0.3 # polygon simplification distance, vertices closer than this value are simplified
+
+active_learning: True # calculate entropy heatmap
+save_entropy_maps: True  # save entropy heatmap
+save_predictions: True  # save predictions (mask, outlines, distance transform)
+
+save_masked_rasters: True # save individual trees from the prediction masks as raster files
+masked_rasters_output_dir: masked_rasters  # directory to save the masked rasters
+scale_factor: 4         # Scale factor for saved raster images
+
+crs: EPSG:25832
+polygon_file: treecrowns.shp
