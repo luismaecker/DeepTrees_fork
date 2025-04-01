@@ -1,0 +1,28 @@
+defaults:
+ - CD/train_halle.yaml
+
+name: finetune-halle
+
+seed: 4321
+
+pretrained:
+  model: Unet-resnet18_epochs=209_lr=0.0001_width=224_bs=32_divby=255_custom_color_augs_k=0_jitted.pt 
+
+model:
+  lr: 0.00003 # choose a smaller learning rate
+  freeze_layers: True
+  track_running_stats: False
+
+data:
+  batch_size: 4
+  train_indices: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+  val_indices: [16, 17, 18, 19]
+  shuffle: False # should not be used with fixed indices
+
+callbacks:
+  early_stopping:
+    monitor: "val/iou_feature_map" # name of the logged metric which determines when model is improving
+    mode: "max"
+
+trainer:
+  devices: 1 

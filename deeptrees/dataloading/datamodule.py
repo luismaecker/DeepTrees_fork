@@ -135,8 +135,11 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
         Prepare the ground truth masks, outlines, and distance transforms from
         ground truth labels.
         """
-
+        print('working directory is: ', os.getcwd())
         if self.ground_truth_config.labels is None:
+
+            print('inside 1: ',self.ground_truth_config.labels)
+
             log.info(
                 "No ground truth labels provided. Proceed with existing ground truth ..."
             )
@@ -149,7 +152,9 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
         # prepare ground truth from labels
         if os.path.isfile(self.ground_truth_config.labels):
             ground_truth = gpd.read_file(self.ground_truth_config.labels)
+            print('inside 2: ',self.ground_truth_config.labels)
         elif os.path.isdir(self.ground_truth_config.labels):
+            print('inside 3: ',self.ground_truth_config.labels)
             # combine all the ground truth labels
             shapes = np.sort(
                 glob.glob(f"{self.ground_truth_config.labels}/label_*.shp")
@@ -162,6 +167,10 @@ class TreeCrownDelineationDataModule(L.LightningDataModule):
             )
             ground_truth.drop(columns="tile").to_file(
                 os.path.join(self.ground_truth_config.labels, "all_labels.shp")
+            )
+        else:
+            raise ValueError(
+                f"Ground truth labels not found at {self.ground_truth_config.labels}. Current directory: {os.getcwd()}"
             )
 
         # generate masks
